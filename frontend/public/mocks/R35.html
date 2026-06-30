@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTSUZ Reading Practice</title>
+<style>
+:root {
+  --bg:#ffffff; --panel:#ffffff; --text:#000000; --muted:#666; --border:#e0e0e0;
+  --accent:#4a90e2; --focus:#3581d8; --green:#28a745; --red:#dc3545; --part:#f1f2ec; --timer:#f0f0f0;
+  --card:#fafafa;
+}
+[data-theme="dark"] {
+  --bg:#1a1a1a; --panel:#2d2d2d; --text:#e0e0e0; --muted:#b9b9b9; --border:#444; --accent:#6ca6f0;
+  --focus:#7ab4ff; --part:#3a3a3a; --timer:#444; --card:#343434;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; padding:0; height:100%; font-family: Arial, sans-serif; font-size:16px; line-height:1.4; background:var(--bg); color:var(--text); }
+body { overflow:hidden; transition: background-color .3s, color .3s; }
+button, input, select, textarea { font: inherit; }
+input, select, textarea { accent-color: var(--accent); }
+.hidden { display:none !important; }
+header {
+  position:fixed; top:0; left:0; right:0; height:60px; background:var(--panel); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:1100;
+}
+.header-title { font-size:16px; font-weight:700; }
+.header-center { display:flex; align-items:center; gap:10px; }
+.timer-display {
+  min-width:82px; text-align:center; background:var(--timer); border:1px solid var(--border); border-radius:999px;
+  padding:7px 12px; font-weight:600; color:var(--text);
+}
+.icon-btn {
+  width:32px; height:32px; border-radius:50%; border:1px solid #ccc; background:var(--timer); color:var(--text);
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:.2s;
+}
+.icon-btn:hover { background:#e0e0e0; transform:translateY(-1px); }
+[data-theme="dark"] .icon-btn:hover { background:#555; }
+#notesBtn {
+  border-radius:4px; padding:6px 12px; height:auto; width:auto; font-size:14px; font-weight:600;
+}
+.tg-pill-btn {
+  display:inline-flex; align-items:center; gap:8px; color:#3e3e3e; background:#fff; border:2px solid #3e3e3e; border-radius:9999px;
+  padding:6px 14px; font-size:14px; font-weight:700; text-decoration:none; line-height:1; transition: background-color .2s;
+}
+.tg-pill-btn:hover { background:#f5f5f5; text-decoration:underline; }
+[data-theme="dark"] .tg-pill-btn { color:#e0e0e0; border-color:#e0e0e0; background:transparent; }
+.tg-icon {
+  width:18px; height:18px; background-color:currentColor; display:inline-block;
+  -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M9.78 18.65 9.93 14.8l7.03-6.35c.31-.28-.07-.43-.48-.16l-8.69 5.48-3.75-1.17c-.81-.25-.82-.81.17-1.2L18.88 5.7c.67-.25 1.26.16 1.04 1.19l-2.5 11.78c-.17.84-.67 1.04-1.36.65l-3.8-2.8-1.84 1.77c-.2.2-.37.36-.74.36Z"/></svg>');
+  mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M9.78 18.65 9.93 14.8l7.03-6.35c.31-.28-.07-.43-.48-.16l-8.69 5.48-3.75-1.17c-.81-.25-.82-.81.17-1.2L18.88 5.7c.67-.25 1.26.16 1.04 1.19l-2.5 11.78c-.17.84-.67 1.04-1.36.65l-3.8-2.8-1.84 1.77c-.2.2-.37.36-.74.36Z"/></svg>');
+  background-size:contain; background-repeat:no-repeat;
+}
+.part-banner {
+  position:fixed; top:60px; left:12px; right:12px; background:var(--part); border:1px solid var(--border); border-radius:5px;
+  padding:10px 18px; z-index:1050;
+}
+.part-banner p { margin:2px 0; }
+main {
+  position:fixed; top:118px; left:0; right:0; bottom:80px; display:flex; overflow:hidden;
+}
+.passage-panel, .questions-panel {
+  background:var(--panel); height:100%; overflow:auto; transition:background-color .3s, color .3s;
+}
+.passage-panel { width:50%; min-width:180px; border-right:1px solid var(--border); position:relative; }
+.questions-panel { flex:1; min-width:180px; position:relative; }
+.divider { width:8px; cursor:col-resize; background:var(--border); position:relative; }
+.divider::after { content:''; position:absolute; top:50%; left:2px; transform:translateY(-50%); width:4px; height:64px; border-radius:2px; background:#999; }
+.passage-tabs {
+  position:sticky; top:0; z-index:5; display:flex; gap:18px; padding:14px 18px 0; background:var(--panel);
+  border-bottom:1px solid var(--border);
+}
+.passage-tab {
+  background:none; border:none; padding:10px 0; cursor:pointer; color:var(--text);
+}
+.passage-tab.active { font-weight:700; border-bottom:2px solid var(--accent); }
+.passage-content { padding:20px 24px 90px; }
+.passage-content h4 { margin:0 0 8px; text-align:center; font-size:20px; }
+.passage-subtitle { text-align:center; color:var(--muted); font-style:italic; margin-bottom:16px; }
+.passage-content p { margin:0 0 1.15em; }
+.para-label { font-weight:700; margin-right:6px; }
+.questions-wrap { padding:20px 24px 96px; }
+.question-group { display:none; }
+.question-group.active { display:block; }
+.question-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px;
+}
+.group-header h3 { margin:0 0 8px; }
+.group-header p { margin:4px 0; }
+.question-item { border-top:1px solid var(--border); padding:14px 0; scroll-margin-top:20px; }
+.question-item:first-of-type { border-top:none; }
+.option-grid { display:grid; gap:8px; margin-top:10px; }
+.option-pill {
+  display:flex; align-items:center; gap:10px; border:1px solid #ccc; border-radius:8px; background:#fff; padding:10px 12px; cursor:pointer;
+}
+.option-pill:hover { background:#f1f7ff; }
+.option-pill input { margin:0; }
+.option-pill.correct-opt { background:#d4edda !important; border-color:var(--green); }
+.option-pill.incorrect-opt { background:#f8d7da !important; border-color:var(--red); }
+[data-theme="dark"] .option-pill { background:#3a3a3a; border-color:#555; }
+[data-theme="dark"] .option-pill:hover { background:#424a55; }
+.answer-input {
+  border:1px solid #bfbfbf; border-radius:4px; background:#fff; padding:6px 10px; font-weight:700; color:#000;
+}
+.answer-input:focus { outline:none; border-color:var(--focus); border-width:2px; }
+.answer-input.correct-field { border-color:var(--green); background:#e9f7ef; }
+.answer-input.incorrect-field { border-color:var(--red); background:#f8d7da; }
+[data-theme="dark"] .answer-input { background:#3a3a3a; color:#fff; border-color:#666; }
+.select-input { min-width:120px; }
+.inline-input { min-width:120px; height:32px; display:inline-block; vertical-align:middle; margin:0 6px; }
+.summary-block { line-height:2.1; }
+.choice-box { background:#f9f9f9; border:1px solid #ddd; border-radius:6px; padding:14px; margin:12px 0 8px; }
+[data-theme="dark"] .choice-box { background:#323232; border-color:#555; }
+.roman-list { list-style:none; padding:0; margin:8px 0 0; }
+.roman-list li { margin:6px 0; display:flex; gap:8px; }
+.roman-list span { width:32px; font-weight:700; }
+.qbadge-inline { display:inline-block; border:2px solid #333; padding:1px 6px; font-weight:700; background:#f0f0f0; margin:0 4px; }
+[data-theme="dark"] .qbadge-inline { border-color:#888; background:#4a4a4a; }
+.inline-answer-feedback {
+  margin-top:8px; font-size:14px; font-weight:700;
+}
+.inline-answer-feedback .corr { color:var(--green); }
+.inline-answer-feedback .wrong { color:var(--red); }
+.inline-explanation {
+  margin-top:8px; padding:10px 12px; border-left:4px solid var(--accent); background:rgba(74,144,226,.08); border-radius:6px; font-size:14px;
+}
+.part-explanations {
+  margin-top:22px; border:1px solid var(--border); border-radius:12px; background:var(--card); padding:14px;
+}
+.part-explanations h3 { margin:0 0 12px; }
+.explain-row { display:flex; gap:10px; padding:10px 0; border-top:1px solid var(--border); }
+.explain-row:first-of-type { border-top:none; }
+.exp-q { min-width:44px; height:28px; border-radius:999px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; }
+.exp-answer { font-weight:700; margin-bottom:3px; }
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0; height:80px; background:var(--panel); border-top:1px solid var(--border); z-index:1100;
+  display:flex; align-items:center; gap:12px; padding:10px 14px;
+}
+.nav-arrows { display:flex; gap:10px; }
+.nav-arrow {
+  width:48px; height:48px; border-radius:50%; border:none; color:#fff; cursor:pointer; font-size:20px; font-weight:700;
+}
+.nav-arrow.prev { background:#4b5563; }
+.nav-arrow.next { background:#000; }
+.nav-arrow:hover { transform:translateY(-1px); }
+.part-tabs { display:flex; gap:6px; }
+.part-tab {
+  background:none; color:var(--text); border:none; padding:10px 15px; cursor:pointer; border-radius:6px;
+}
+.part-tab.active { font-weight:700; }
+.part-tab:hover { background:#f8f9fa; }
+[data-theme="dark"] .part-tab:hover { background:#414141; }
+.qnums-scroll { flex:1; overflow:auto hidden; white-space:nowrap; padding-bottom:4px; }
+.subQuestion {
+  width:32px; height:32px; border-radius:2px; border:1px solid #ccc; background:#fff; color:#333; font-size:14px; font-weight:500;
+  cursor:pointer; margin-right:6px;
+}
+.subQuestion.answered { background:#e9ecef; border-color:#ddd; }
+.subQuestion.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.subQuestion.correct { background:var(--green); color:#fff; border-color:var(--green); }
+.subQuestion.incorrect { background:var(--red); color:#fff; border-color:var(--red); }
+.bottom-right { display:flex; align-items:center; gap:12px; }
+#checkBtn {
+  background:#f3f4f6; color:#111827; border:1px solid #d1d5db; border-radius:4px; font-size:15px; font-weight:700; padding:10px 16px; min-width:160px; cursor:pointer;
+}
+#checkBtn:hover { background:#ebedf0; border-color:#c7ccd4; }
+#checkBtn.result-mode { background:#4CAF50; color:#fff; border-color:#4CAF50; }
+.results-modal, .notes-panel-overlay, .note-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1200; display:none; align-items:center; justify-content:center;
+}
+.results-modal.show, .notes-panel-overlay.show, .note-modal-overlay.show { display:flex; }
+.modal-card, .notes-panel, .note-modal {
+  background:var(--panel); color:var(--text); width:min(960px,92vw); max-height:88vh; overflow:auto; border-radius:16px; padding:22px;
+}
+.notes-panel, .note-modal { width:min(480px,92vw); }
+.modal-card h2 { margin-top:0; }
+.score-box {
+  background:rgba(74,144,226,.12); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; margin-bottom:16px;
+}
+.score-big { font-size:46px; font-weight:700; }
+.results-table { width:100%; border-collapse:collapse; }
+.results-table th, .results-table td { border:1px solid var(--border); padding:8px; text-align:left; font-size:14px; vertical-align:top; }
+.status-ok { color:var(--green); font-weight:700; }
+.status-bad { color:var(--red); font-weight:700; }
+.result-explanations { margin-top:18px; }
+.result-explanations .explain-row { padding:8px 0; }
+.close-btn { border:1px solid var(--border); background:var(--panel); padding:8px 12px; border-radius:8px; cursor:pointer; }
+.watermark {
+  position:fixed; right:14px; bottom:88px; font-size:13px; font-weight:700; color:rgba(74,144,226,.35); z-index:900; pointer-events:none;
+}
+.watermark-left {
+  position:fixed; left:14px; top:88px; font-size:12px; font-weight:700; color:rgba(74,144,226,.25); z-index:900; pointer-events:none;
+}
+.question-source-highlight {
+  background:#fff3a3; border-radius:4px; padding:1px 2px; position:relative;
+}
+.question-source-highlight .source-badge {
+  display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:18px; padding:0 6px;
+  background:var(--accent); color:#fff; border-radius:999px; font-size:11px; font-weight:700; margin-left:6px;
+}
+[data-theme="dark"] .question-source-highlight { background:#7a6110; color:#fff; }
+.hl-floating-toolbar {
+  position:fixed; z-index:1300; background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:10px 12px; display:none; flex-direction:column;
+  gap:8px; min-width:150px; box-shadow:0 8px 32px rgba(0,0,0,.18);
+}
+.hl-floating-toolbar.show { display:flex; animation:toolbarPop .15s cubic-bezier(.34,1.56,.64,1); }
+@keyframes toolbarPop { from{opacity:0;transform:translateY(8px) scale(.93);} to{opacity:1;transform:translateY(0) scale(1);} }
+.hl-section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#999; opacity:.8; padding:0 2px; }
+.hl-colors-row { display:flex; gap:7px; align-items:center; }
+.hl-dot { width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+.hl-dot:hover { transform:scale(1.1); border-color:#ddd; }
+.cy{background:#FEF08A;} .cg{background:#BBF7D0;} .cp{background:#FBCFE8;} .cb{background:#BFDBFE;}
+.hl-divider { height:1px; background:#e0e0e0; margin:0 -2px; }
+.hl-text-btn { display:flex; align-items:center; gap:7px; padding:6px 10px; border:none; border-radius:4px; background:none; color:#333; cursor:pointer; font-size:13px; font-weight:500; text-align:left; width:100%; }
+.hl-text-btn.note-btn:hover { color:#4a90e2; background:#f1f7ff; }
+.hl-text-btn.remove-btn:hover { color:#F59E0B; background:#fffbeb; }
+.hl-text-btn.clear-btn:hover { color:#dc3545; background:#fff5f5; }
+mark.hl-y { background:#FEF08A; color:#000; border-radius:3px; padding:1px 0; cursor:pointer; }
+mark.hl-g { background:#BBF7D0; color:#000; border-radius:3px; padding:1px 0; cursor:pointer; }
+mark.hl-p { background:#FBCFE8; color:#000; border-radius:3px; padding:1px 0; cursor:pointer; }
+mark.hl-b { background:#BFDBFE; color:#000; border-radius:3px; padding:1px 0; cursor:pointer; }
+[data-theme="dark"] mark.hl-y { background:#854D0E; color:#fff; }
+[data-theme="dark"] mark.hl-g { background:#166534; color:#fff; }
+[data-theme="dark"] mark.hl-p { background:#9D174D; color:#fff; }
+[data-theme="dark"] mark.hl-b { background:#1E3A5F; color:#fff; }
+.note-modal textarea { width:100%; min-height:90px; resize:vertical; padding:10px; border:1.5px solid #bfbfbf; border-radius:8px; }
+.note-buttons, .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
+.note-excerpt {
+  background:#FEF08A; border-radius:6px; padding:8px 12px; font-size:13px; font-style:italic; color:#333; margin-bottom:14px; max-height:60px; overflow:hidden;
+}
+.note-card { background:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:12px; margin-bottom:10px; color:#333; }
+.note-chip { display:block; background:#FEF08A; border-radius:4px; padding:3px 8px; font-size:12px; font-style:italic; color:#333; margin-bottom:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.note-delete { border:1px solid #ddd; border-radius:4px; background:none; color:#dc3545; cursor:pointer; font-size:13px; font-weight:600; padding:4px 10px; }
+.note-delete:hover { background:#dc3545; color:#fff; }
+.timer-warning { color:#dc3545; animation:timerBlink 1s steps(1) infinite; }
+@keyframes timerBlink { 0%,100%{opacity:1} 50%{opacity:.3} }
+@media (max-width: 980px) {
+  .part-tabs { display:none; }
+  .header-title { display:none; }
+}
+</style>
+<style data-ieltsuz-fix>#cdBlurGuard{display:none!important}</style>
+
+</head>
+<body>
+<div class="watermark-left">IELTSUZ</div>
+<div class="watermark">IELTSUZ</div>
+
+<header>
+  <div class="header-title">IELTS Reading Test</div>
+  <div class="header-center">
+    <button class="icon-btn" id="playPauseBtn" aria-label="Start or pause timer">▶</button>
+    <button class="icon-btn" id="resetTimerBtn" aria-label="Reset timer">↺</button>
+    <div class="timer-display" id="timerDisplay">60:00</div>
+  </div>
+  <div class="header-center">
+    <button class="icon-btn" id="notesBtn">📝 Notes</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode">🌙</button>
+    
+  </div>
+</header>
+
+<div class="part-banner" id="partBanner">
+  <p><strong>Part 1</strong></p>
+  <p>Read the text and answer questions 1–13.</p>
+</div>
+
+<main>
+  <aside class="passage-panel" id="passagePanel">
+    <div class="passage-tabs">
+      <button class="passage-tab active" data-part="1">Passage 1</button>
+      <button class="passage-tab" data-part="2">Passage 2</button>
+      <button class="passage-tab" data-part="3">Passage 3</button>
+    </div>
+    <div class="passage-content" id="passage-1"><h4>A survivor&#x27;s story</h4>
+<div class="passage-subtitle">One native bird in New Zealand that has managed to survive the introduction of non-native species</div>
+<p>As an island country with a fauna dominated by birds, New Zealand was once home to an owl species which is now extinct, the laughing owl, named for its distinctive cry. This bird was widespread throughout the islands when European settlers arrived in the middle of the 19th century and it remained in good numbers for some years thereafter. Where other native birds suffered from predation by the Polynesian rat, the laughing owl turned the tables and adapted its diet to include the rodent. It was also capable of catching and killing the other New Zealand owl, the morepork, and even larger birds, such as the weka. However, the laughing owl was wiped out around the beginning of the 20th century, its demise caused by specimen collectors, habitat changes, and non-native predators including cats and stoats. Surprisingly, it is the smaller owl, the morepork, that has managed to survive until this day.</p>
+<p>Speckled dark brown, with yellow eyes and long tails, they are around 29 centimeters long from head to tail and 175 grams in weight. Moreporks have fringes on the edge of their feathers, so they can fly almost silently and not alert potential prey. They have acute hearing and their large eyes are very sensitive to light.</p>
+<p>Moreporks nest in tree hollows, in clumps of plants, or in cavities among rocks and roots. In the wild, moreporks usually start nesting in October, although zoo specimens have been recorded nesting in midwinter, possibly stimulated by an ample food supply. The female lays up to three white eggs, which she incubates for 20 to 30 days. During this time, she rarely hunts, and the male brings food to her. Once the chicks hatch, she stays mainly on the nest until the young owls are fully feathered. When hatched, chicks are covered in light grey down, and have their eyes closed. The eyes do not open until the eighth day after hatching. They can fly at around 35 days.</p>
+<p>By day, moreporks sleep in roosts. By night, they hunt a variety of animals — mainly large invertebrates including scarab and huhu beetles, moths, caterpillars and spiders. They also take small birds and mice. They can find suitable food in pine forests as well as native forest. A morepork uses its sharp talons to catch or stun its prey, which it then carries away in its bill. Moreporks are clever hunters, and birds such as robins, grey warblers and fantails can end up as their prey. In the day, these small birds sometimes mob drowsy moreporks and chase them away from their roosts. They force the sleepy predators to search for a more peaceful spot.</p>
+<p>Moreporks have proved to be ungracious hosts. Scientists trying to establish a population of plovers on Motuora Island in New Zealand&#x27;s Hauraki Gulf were mystified as to why only two birds survived out of 75 placed there. The culprits turned out to be five pairs of moreporks that ate or chased away the new arrivals.</p>
+<p>Although moreporks are still considered to be relatively common, it is likely that numbers are in gradual decline due to predation and loss of habitat. As the female is a hole-nester, she is vulnerable to predators such as stoats and possums during the breeding season, and eggs and chicks will also be at risk from rats. The use of pesticides is another possible threat to the owls, though not a direct one. As moreporks are at the top of the food chain, they could be affected by an accumulative poison by consuming prey that has ingested poison.</p>
+<p>The New Zealand Department of Conservation is taking steps to ensure the preservation of New Zealand&#x27;s only native owl. The department is involved in measuring the population of moreporks and has put transmitters on a number of birds to determine survival and mortality. As well as being New Zealand&#x27;s only native owl, the morepork has symbolic and spiritual importance, so in monitoring the birds it is hoped that the morepork will continue to survive and thrive.</p>
+<p>At dusk, the melancholy sound of the morepork can be heard in forests and parks as it calls to other moreporks and claims territory. Its Maori name, ruru, echoes its two-part cry. In the tradition of the Maori people of New Zealand, the morepork, or ruru, was often seen as a careful guardian. A number of sayings referred to the bird&#x27;s alertness. As a bird of the night, it was associated with the spirit world. Moreporks were believed to act as messengers to the gods in the heavens, flying along spiritual paths in the sky. They were the mediums used to communicate with the gods. The occasional high, piercing call of the morepork signified bad news, but the lower-pitched and more common “ruru” call heralded good news.</p></div>
+    <div class="passage-content hidden" id="passage-2"><h4>Corporate Social Responsibility</h4>
+<p>Broadly speaking, proponents of CSR have used four arguments to make their case: moral obligation, sustainability, license to operate, and reputation. The moral appeal — arguing that companies have a duty to be good citizens and to “do the right thing” — is prominent in the goal of Business for Social Responsibility, the leading nonprofit CSR business association in the United States. It asks that its members “achieve commercial success in ways that honor ethical values and respect people, communities, and the natural environment.” Sustainability emphasizes environmental and community stewardship.</p>
+<p><span class="para-label">A</span> An excellent definition was developed in the 1980s by Norwegian Prime Minister Gro Harlem Brundtland and used by the World Business Council for Sustainable Development: “Meeting the needs of the present without compromising the ability of future generations to meet their own needs.” The notion of license to operate derives from the fact that every company needs tacit or explicit permission from governments, communities, and numerous other stakeholders to do business. Finally, reputation is used by many companies to justify CSR initiatives on the grounds that they will improve a company’s image, strengthen its brand, enliven morale, and even raise the value of its stock.</p>
+<p><span class="para-label">B</span> To advance CSR, we must root it in a broad understanding of the interrelationship between a corporation and society while at the same time anchoring it in the strategies and activities of specific companies. To say broadly that business and society need each other might seem like a cliché, but it is also the basic truth that will pull companies out of the muddle that their current corporate-responsibility thinking has created. Successful corporations need a healthy society. Education, health care, and equal opportunity are essential to a productive workforce. Safe products and working conditions not only attract customers but lower the internal costs of accidents. Efficient utilization of land, water, energy, and other natural resources makes business more productive. Good government, the rule of law, and property rights are essential for efficiency and innovation. Strong regulatory standards protect both consumers and competitive companies from exploitation. Ultimately, a healthy society creates expanding demand for business, as more human needs are met and aspirations grow. Any business that pursues its ends at the expense of the society in which it operates will find its success to be illusory and ultimately temporary. At the same time, a healthy society needs successful companies. No social program can rival the business sector when it comes to creating the jobs, wealth, and innovation that improve standards of living and social conditions over time.</p>
+<p><span class="para-label">C</span> A company’s impact on society also changes over time, as social standards evolve and science progresses. Asbestos, now understood as a serious health risk, was thought to be safe in the early 1900s, given the scientific knowledge then available. Evidence of its risks gradually mounted for more than 50 years before any company was held liable for the harms it can cause. Many firms that failed to anticipate the consequences of this evolving body of research have been bankrupted by the results. No longer can companies be content to monitor only the obvious social impacts of today. Without a careful process for identifying evolving social effects of tomorrow, firms may risk their very survival.</p>
+<p><span class="para-label">D</span> No business can solve all of society’s problems or bear the cost of doing so. Instead, each company must select issues that intersect with its particular business. Other social agendas are best left to those companies in other industries, NGOs, or government institutions that are better positioned to address them. The essential test that should guide CSR is not whether a cause is worthy but whether it presents an opportunity to create shared value — that is, a meaningful benefit for society that is also valuable to the business. Corporations are not responsible for all the world’s problems, nor do they have the resources to solve them all. Each company can identify the particular set of societal problems that it is best equipped to help resolve and from which it can gain the greatest competitive benefit. Addressing social issues by creating shared value will lead to self-sustaining solutions that do not depend on private or government subsidies. When a well-run business applies its vast resources, expertise, and management talent to problems that it understands and in which it has a stake, it can have a greater impact on social good than any other institution or philanthropic organization.</p>
+<p><span class="para-label">E</span> The best corporate citizenship initiatives involve far more than writing a check: they specify clear, measurable goals and track results over time. A good example is GE’s program to adopt underperforming public high schools near several of its major U.S. facilities. The company contributes between $250,000 and $1 million over a five-year period to each school and makes in-kind donations as well. GE managers and employees take an active role by working with school administrators to assess needs and mentor or tutor students. In an independent study of ten schools in the program between 1989 and 1999, nearly all showed significant improvement, while the graduation rate in four of the five worst-performing schools doubled from an average of 30% to 60%. Effective corporate citizenship initiatives such as this one create goodwill and improve relations with local governments and other important constituencies. What’s more, GE’s employees feel great pride in their participation. Their effect is inherently limited, however. No matter how beneficial the program is, it remains incidental to the company’s business, and the direct effect on GE’s recruiting and retention is modest.</p>
+<p><span class="para-label">F</span> Microsoft’s Working Connections partnership with the American Association of Community Colleges (AACC) is a good example of a shared-value opportunity arising from investments in context. The shortage of information technology workers is a significant constraint on Microsoft’s growth; currently, there are more than 450,000 unfilled IT positions in the United States alone. Community colleges, with an enrollment of 11.6 million students, representing 45% of all U.S. undergraduates, could be a major solution. Microsoft recognizes, however, that community colleges face special challenges: IT curricula are not standardized, technology used in classrooms is often outdated, and there are no systematic professional development programs to keep faculty up to date. Microsoft’s $50 million five-year initiative was aimed at all three problems. In addition to contributing money and products, Microsoft sent employee volunteers to colleges to assess needs, contribute to curriculum development, and create faculty development institutes. Note that in this case, volunteers and assigned staff were able to use their core professional skills to address a social need, a far cry from typical volunteer programs. Microsoft has achieved results that have benefited many communities while having a direct — and potentially significant — impact on the company.</p>
+<p><span class="para-label">G</span> At the heart of any strategy is a unique value proposition: a set of needs a company can meet for its chosen customers that others cannot. The most strategic CSR occurs when a company adds a social dimension to its value proposition, making social impact integral to the overall strategy. Consider Whole Foods Market, whose value proposition is to sell organic, natural and healthy food products to customers who are passionate about food and the environment. The company’s sourcing emphasizes purchases from local farmers through each store’s procurement process. Buyers screen out foods containing any of nearly 100 common ingredients that the company considers unhealthy or environmentally damaging. The same standards apply to products made internally. Whole Foods’ commitment to natural and environmentally friendly operating practices extends well beyond sourcing. Stores are constructed using a minimum of virgin raw materials. Recently, the company purchased renewable wind energy credits equal to 100% of its electricity use in all of its stores and facilities, the only Fortune 500 company to offset its electricity consumption entirely. Spoiled produce and biodegradable waste are trucked to regional centers for composting. Whole Foods’ vehicles are being converted to run on biofuels. Even the cleaning products used in its stores are environmentally friendly. And through its philanthropy, the company has created the Animal Compassion Foundation to develop more natural and humane ways of raising farm animals. In short, nearly every aspect of the company’s value chain reinforces the social dimensions of its value proposition, distinguishing Whole Foods from its competitors.</p></div>
+    <div class="passage-content hidden" id="passage-3"><h4>The Voynich Manuscript</h4>
+<p>The starkly modern Beinecke Library at Yale University is home to some of the most valuable books in the world: first folios of Shakespeare, Gutenberg Bibles and manuscripts from the early Middle Ages. Yet the library’s most controversial possession is an unprepossessing vellum manuscript about the size of a hardback book, containing 240-odd pages of drawings and text of unknown age and authorship. Catalogued as MS408, the manuscript would attract little attention were it not for the fact that the drawings hint at esoteric knowledge, while the text seems to be some sort of code — one that no-one has been able to break. It’s known to scholars as the Voynich manuscript, after the American book dealer Wilfrid Voynich, who bought the manuscript from a Jesuit college in Italy in 1912.</p>
+<p>Over the years, the manuscript has attracted the attention of everyone from amateur dabblers to top codebreakers, all determined to succeed where countless others have failed. Academic research papers, books and websites are devoted to making sense of the contents of the manuscript, which are freely available to all. “Most other mysteries involve second-hand reports,” says Dr Gordon Rugg of Keele University, a leading Voynich expert. “But this is one that you can see for yourself.”</p>
+<p>It is certainly strange: page after page of drawings of weird plants, astrological symbolism and human figures, accompanied by a script that looks like some form of shorthand. What does it say — and what are the drawings about? Voynich himself believed that the manuscript was the work of the 13th-century English monk Roger Bacon, famed for his knowledge of alchemy, philosophy and science. In 1921 Voynich’s view that Bacon was the writer appeared to win support from the work of William Newbold, Professor of Philosophy at the University of Pennsylvania, who claimed to have found the key to the cipher system used by Bacon. According to Newbold, the manuscript proved that Bacon had access to a microscope centuries before they were supposedly first invented. The claim that this medieval monk had observed living cells created a sensation. It soon became clear, however, that Newbold had fallen victim to wishful thinking. Other scholars showed that his “decoding” methods produced a host of possible interpretations.</p>
+<p>The Voynich manuscript has continued to defy the efforts of world-class experts. In 1944, a team was assembled to tackle the mystery, led by William Friedman, the renowned American codebreaker. They began with the most basic codebreaking task: analysing the relative frequencies of the characters making up the text, looking for signs of an underlying structure. Yet Friedman’s team soon found themselves in deep water. The precise size of the “alphabet” of the Voynich manuscript was unclear: it’s possible to make out more than 70 distinct symbols among the 170,000-character text. Furthermore, Friedman discovered that some words and phrases appeared more often than expected in a standard language, casting doubt on claims that the manuscript concealed a real language, as encryption typically reduces word frequencies.</p>
+<p>Friedman concluded that the most plausible resolution of this paradox was that “Voynichese” is some sort of specially created artificial language, whose words are devised from concepts, rather than linguistics. So could the Voynich manuscript be the earliest-known example of artificial language? “Friedman’s hypothesis commands respect because of the lifetime of cryptanalytical expertise he brought to bear,” says Rob Churchill, co-author of The Voynich Manuscript. That still leaves a host of questions unanswered, however, such as the identity of the author and the meaning of the bizarre drawings. “It does little to advance our understanding of the manuscript as a whole,” says Churchill.</p>
+<p>Even though Friedman was working more than 60 years ago, he suspected that major insights would come from using the device that had already transformed codebreaking: the computer. In this he was right — it is now the key tool for uncovering clues about the manuscript’s language.</p>
+<p>The insights so far have been perplexing. For example, in 2001 another leading Voynich scholar, Dr Gabriel Landini of Birmingham University in the UK, published the results of his study of the manuscript using a pattern-detecting method called spectral analysis. This revealed evidence that the manuscript contains genuine words, rather than random nonsense, consistent with the existence of some underlying natural language. Yet the following year, Voynich expert René Zandbergen of the European Space Agency in Darmstadt, Germany showed that the entropy of the text (a measure of the rate of transfer of information) was consistent with Friedman’s suspicions that an artificial language had been used.</p>
+<p>Many are convinced that the Voynich manuscript isn’t a hoax. For how could a medieval hoaxer create so many telltale signs of a message from random nonsense? Yet even this has been challenged in new research by Rugg. Using a system, first published by the Italian mathematician Girolamo Cardano in 1550, in which a specially constructed grille is used to pick out symbols from a table, Rugg found he could rapidly generate text with many of the basic traits of the Voynich manuscript. Publishing his results in 2004, Rugg stresses that he hadn’t set out to prove the manuscript a hoax. “I simply demonstrated that it’s feasible to hoax something this complex in a few months,” he says.</p>
+<p>Inevitably, others beg to differ. Some scholars, such as Zandbergen, still suspect the text has genuine meaning, though believe it may never be decipherable. Others, such as Churchill, have suggested that the sheer weirdness of the illustrations and text hint at an author who had lost touch with reality.</p>
+<p>What is clear is that the book-sized manuscript kept under lock and key at Yale University has lost none of its fascination. “Many derive great intellectual pleasure from solving puzzles,” says Rugg. “The Voynich manuscript is as challenging a puzzle as anyone could ask for.”</p></div>
+  </aside>
+  <div class="divider" id="divider"></div>
+  <section class="questions-panel" id="questionsPanel">
+    <div class="questions-wrap">
+      
+<section class="question-group" data-part="1">
+  <div class="question-card" id="qcard-1">
+    <div class="group-header">
+      <h3>Questions 1–7</h3>
+      <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+      <p>In boxes 1–7 on your answer sheet, write</p>
+      <p><strong>TRUE</strong> if the statement agrees with the information</p>
+      <p><strong>FALSE</strong> if the statement contradicts the information</p>
+      <p><strong>NOT GIVEN</strong> if there is no information on this</p>
+    </div>
+    <div class="question-item" id="q1-block"><p><strong>1</strong> Early European settlers made detailed studies of the morepork.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q1" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q1" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q1" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-1"></div><div class="inline-explanation hidden" id="explain-1"></div></div>
+    <div class="question-item" id="q2-block"><p><strong>2</strong> The Polynesian rat had a negative effect on the number of laughing owls.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q2" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q2" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q2" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-2"></div><div class="inline-explanation hidden" id="explain-2"></div></div>
+    <div class="question-item" id="q3-block"><p><strong>3</strong> The laughing owl was larger than the morepork.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q3" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q3" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q3" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-3"></div><div class="inline-explanation hidden" id="explain-3"></div></div>
+    <div class="question-item" id="q4-block"><p><strong>4</strong> Rats pose a risk to young moreporks.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q4" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q4" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q4" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-4"></div><div class="inline-explanation hidden" id="explain-4"></div></div>
+    <div class="question-item" id="q5-block"><p><strong>5</strong> The New Zealand Department of Conservation is hoping to limit the population of moreporks.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q5" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q5" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q5" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-5"></div><div class="inline-explanation hidden" id="explain-5"></div></div>
+    <div class="question-item" id="q6-block"><p><strong>6</strong> Other bird species are frightened away when they hear the morepork’s cry.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q6" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q6" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q6" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-6"></div><div class="inline-explanation hidden" id="explain-6"></div></div>
+    <div class="question-item" id="q7-block"><p><strong>7</strong> In Maori tradition, the low call of the morepork had negative associations.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q7" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q7" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q7" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-7"></div><div class="inline-explanation hidden" id="explain-7"></div></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 8–13</h3>
+      <p>Complete the notes below.</p>
+      <p>Choose <strong>ONE WORD AND/OR A NUMBER</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 8–13 on your answer sheet.</p>
+      <p><strong>The Morepork</strong></p>
+    </div>
+    <div class="summary-block">
+      <p><strong>Appearance</strong></p>
+      <p>– approximately <span class="qbadge-inline">8</span><input class="answer-input inline-input" id="q8" type="text"> in length</p>
+      <p>– feathers with fringes to enable quiet flight</p>
+      <p><strong>Nesting</strong></p>
+      <p>– nests in trees, plants or spaces in roots and <span class="qbadge-inline">9</span><input class="answer-input inline-input" id="q9" type="text"></p>
+      <p>– after about 35 days, baby moreporks are capable of leaving the nest</p>
+      <p><strong>Hunting</strong></p>
+      <p>– transports its prey using its <span class="qbadge-inline">10</span><input class="answer-input inline-input" id="q10" type="text"></p>
+      <p>– can be chased away by other birds during the <span class="qbadge-inline">11</span><input class="answer-input inline-input" id="q11" type="text"></p>
+      <p>– attacked <span class="qbadge-inline">12</span><input class="answer-input inline-input" id="q12" type="text"> that had been introduced to Motuora Island</p>
+      <p><strong>Threats</strong></p>
+      <p>– may be exposed to <span class="qbadge-inline">13</span><input class="answer-input inline-input" id="q13" type="text"> in their prey</p>
+    </div>
+    <div class="inline-answer-feedback" id="feedback-8"></div><div class="inline-explanation hidden" id="explain-8"></div>
+<div class="inline-answer-feedback" id="feedback-9"></div><div class="inline-explanation hidden" id="explain-9"></div>
+<div class="inline-answer-feedback" id="feedback-10"></div><div class="inline-explanation hidden" id="explain-10"></div>
+<div class="inline-answer-feedback" id="feedback-11"></div><div class="inline-explanation hidden" id="explain-11"></div>
+<div class="inline-answer-feedback" id="feedback-12"></div><div class="inline-explanation hidden" id="explain-12"></div>
+<div class="inline-answer-feedback" id="feedback-13"></div><div class="inline-explanation hidden" id="explain-13"></div>
+  </div>
+</section>
+
+      
+<section class="question-group" data-part="2">
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 14–20</h3>
+      <p>The reading passage has seven paragraphs, A–G.</p>
+      <p>Choose the correct heading for paragraphs A–G from the list below.</p>
+      <p>Write the correct number, i–viii, in boxes 14–20 on your answer sheet.</p>
+    </div>
+    <div class="choice-box">
+      <strong>List of Headings</strong>
+      <ol class="roman-list">
+        <li value="1"><span>i</span> How CSR may help one business to expand</li>
+        <li value="2"><span>ii</span> CSR in many aspects of a company’s business</li>
+        <li value="3"><span>iii</span> A CSR initiative without a financial gain</li>
+        <li value="4"><span>iv</span> Lack of action by the state of social issues</li>
+        <li value="5"><span>v</span> Drives or pressures motivate companies to address CSR</li>
+        <li value="6"><span>vi</span> The past illustrates businesses are responsible for future outcomes</li>
+        <li value="7"><span>vii</span> Companies applying CSR should be selective</li>
+        <li value="8"><span>viii</span> Reasons that business and society benefit each other</li>
+      </ol>
+    </div>
+<div class="question-item" id="q14-block"><p><strong>14</strong> Paragraph A</p>
+    <select class="answer-input select-input" id="q14"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-14"></div><div class="inline-explanation hidden" id="explain-14"></div></div>
+<div class="question-item" id="q15-block"><p><strong>15</strong> Paragraph B</p>
+    <select class="answer-input select-input" id="q15"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-15"></div><div class="inline-explanation hidden" id="explain-15"></div></div>
+<div class="question-item" id="q16-block"><p><strong>16</strong> Paragraph C</p>
+    <select class="answer-input select-input" id="q16"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-16"></div><div class="inline-explanation hidden" id="explain-16"></div></div>
+<div class="question-item" id="q17-block"><p><strong>17</strong> Paragraph D</p>
+    <select class="answer-input select-input" id="q17"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-17"></div><div class="inline-explanation hidden" id="explain-17"></div></div>
+<div class="question-item" id="q18-block"><p><strong>18</strong> Paragraph E</p>
+    <select class="answer-input select-input" id="q18"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-18"></div><div class="inline-explanation hidden" id="explain-18"></div></div>
+<div class="question-item" id="q19-block"><p><strong>19</strong> Paragraph F</p>
+    <select class="answer-input select-input" id="q19"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-19"></div><div class="inline-explanation hidden" id="explain-19"></div></div>
+<div class="question-item" id="q20-block"><p><strong>20</strong> Paragraph G</p>
+    <select class="answer-input select-input" id="q20"><option value=""></option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option></select>
+    <div class="inline-answer-feedback" id="feedback-20"></div><div class="inline-explanation hidden" id="explain-20"></div></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 21–22</h3>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 21–22 on your answer sheet.</p>
+      <p><strong>The implement of CSR, HOW?</strong></p>
+    </div>
+    <div class="summary-block">
+      <p>Promotion of CSR requires the understanding of interdependence between business and society. Corporations’ workers’ productivity generally needs health care, education, and given <span class="qbadge-inline">21</span><input class="answer-input inline-input" id="q21" type="text">. Restrictions imposed by government and companies both protect consumers from being treated unfairly. Improvement of the safety standard can reduce the <span class="qbadge-inline">22</span><input class="answer-input inline-input" id="q22" type="text"> of accidents in the workplace. Similarly, society becomes a pool of more human needs and aspirations.</p>
+    </div>
+    <div class="inline-answer-feedback" id="feedback-21"></div><div class="inline-explanation hidden" id="explain-21"></div>
+    <div class="inline-answer-feedback" id="feedback-22"></div><div class="inline-explanation hidden" id="explain-22"></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 23–26</h3>
+      <p>Look at the statements (Questions 23–26) and the list of companies below.</p>
+      <p>Match each statement with the correct companies, A–C.</p>
+      <p>Write the appropriate letters A–C in boxes 23–26 on your answer sheet.</p>
+      <p>NB: you may use any letter more than once.</p>
+    </div>
+    <div class="choice-box">
+      <strong>List of companies</strong>
+      <div>A General Electronics</div>
+      <div>B Microsoft</div>
+      <div>C Whole Foods Market</div>
+    </div>
+<div class="question-item" id="q23-block"><p><strong>23</strong> The disposable waste</p>
+    <select class="answer-input select-input" id="q23"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+    <div class="inline-answer-feedback" id="feedback-23"></div><div class="inline-explanation hidden" id="explain-23"></div></div>
+<div class="question-item" id="q24-block"><p><strong>24</strong> The way company purchases its goods</p>
+    <select class="answer-input select-input" id="q24"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+    <div class="inline-answer-feedback" id="feedback-24"></div><div class="inline-explanation hidden" id="explain-24"></div></div>
+<div class="question-item" id="q25-block"><p><strong>25</strong> Helping the underperforming</p>
+    <select class="answer-input select-input" id="q25"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+    <div class="inline-answer-feedback" id="feedback-25"></div><div class="inline-explanation hidden" id="explain-25"></div></div>
+<div class="question-item" id="q26-block"><p><strong>26</strong> Ensuring the people have the latest information</p>
+    <select class="answer-input select-input" id="q26"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+    <div class="inline-answer-feedback" id="feedback-26"></div><div class="inline-explanation hidden" id="explain-26"></div></div>
+  </div>
+</section>
+
+      
+<section class="question-group" data-part="3">
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 27–30</h3>
+      <p>Do the following statements agree with the information given in Reading Passage 3?</p>
+      <p>In boxes 27–30 on your answer sheet, write</p>
+      <p><strong>TRUE</strong> if the statement agrees with the information</p>
+      <p><strong>FALSE</strong> if the statement contradicts the information</p>
+      <p><strong>NOT GIVEN</strong> if there is no information on this</p>
+    </div>
+<div class="question-item" id="q27-block"><p><strong>27</strong> It is uncertain when the Voynich manuscript was written.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q27" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q27" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q27" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-27"></div><div class="inline-explanation hidden" id="explain-27"></div></div>
+<div class="question-item" id="q28-block"><p><strong>28</strong> Wilfrid Voynich donated the manuscript to the Beinecke Library.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q28" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q28" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q28" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-28"></div><div class="inline-explanation hidden" id="explain-28"></div></div>
+<div class="question-item" id="q29-block"><p><strong>29</strong> Interest in the Voynich manuscript extends beyond that of academics and professional codebreakers.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q29" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q29" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q29" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-29"></div><div class="inline-explanation hidden" id="explain-29"></div></div>
+<div class="question-item" id="q30-block"><p><strong>30</strong> The text of the Voynich manuscript contains just under 70 symbols.</p><div class="option-grid tfng">
+      <label class="option-pill"><input type="radio" name="q30" value="TRUE"><span>TRUE</span></label>
+      <label class="option-pill"><input type="radio" name="q30" value="FALSE"><span>FALSE</span></label>
+      <label class="option-pill"><input type="radio" name="q30" value="NOT GIVEN"><span>NOT GIVEN</span></label>
+    </div><div class="inline-answer-feedback" id="feedback-30"></div><div class="inline-explanation hidden" id="explain-30"></div></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 31–34</h3>
+      <p>Look at the following statements (Questions 31–34) and the list of people below.</p>
+      <p>Match each statement with the correct person, A–H.</p>
+      <p>Write the correct letter, A–H, in boxes 31–34 on your answer sheet.</p>
+    </div>
+    <div class="choice-box">
+      <strong>List of People</strong>
+      <div>A Gordon Rugg</div>
+      <div>B Roger Bacon</div>
+      <div>C William Newbold</div>
+      <div>D William Friedman</div>
+      <div>E Rob Churchill</div>
+      <div>F Gabriel Landini</div>
+      <div>G René Zandbergen</div>
+      <div>H Girolamo Cardano</div>
+    </div>
+<div class="question-item" id="q31-block"><p><strong>31</strong> The number of times that some words occur makes it unlikely that the manuscript is based on an authentic language.</p>
+    <select class="answer-input select-input" id="q31"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select>
+    <div class="inline-answer-feedback" id="feedback-31"></div><div class="inline-explanation hidden" id="explain-31"></div></div>
+<div class="question-item" id="q32-block"><p><strong>32</strong> Unlike some other similar objects of fascination, people can gain direct access to the Voynich manuscript.</p>
+    <select class="answer-input select-input" id="q32"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select>
+    <div class="inline-answer-feedback" id="feedback-32"></div><div class="inline-explanation hidden" id="explain-32"></div></div>
+<div class="question-item" id="q33-block"><p><strong>33</strong> The person who wrote the manuscript may not have been entirely sane.</p>
+    <select class="answer-input select-input" id="q33"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select>
+    <div class="inline-answer-feedback" id="feedback-33"></div><div class="inline-explanation hidden" id="explain-33"></div></div>
+<div class="question-item" id="q34-block"><p><strong>34</strong> It is likely that the author of the manuscript is the same person as suggested by Wilfrid Voynich.</p>
+    <select class="answer-input select-input" id="q34"><option value=""></option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select>
+    <div class="inline-answer-feedback" id="feedback-34"></div><div class="inline-explanation hidden" id="explain-34"></div></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Questions 35–39</h3>
+      <p>Complete the summary below.</p>
+      <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+      <p>Write your answers in boxes 35–39 on your answer sheet.</p>
+      <p><strong>Voynich Researchers</strong></p>
+    </div>
+    <div class="summary-block">
+      <p>William Newbold believed that the author of the Voynich manuscript had been able to look at cells through a <span class="qbadge-inline">35</span><input class="answer-input inline-input" id="q35" type="text">. Other researchers later demonstrated that there were flaws in his argument.</p>
+      <p>William Friedman concluded that the manuscript was written in an artificial language that was based on <span class="qbadge-inline">36</span><input class="answer-input inline-input" id="q36" type="text">. He couldn’t find out the meaning of this language but he believed that the <span class="qbadge-inline">37</span><input class="answer-input inline-input" id="q37" type="text"> would continue to bring advances in codebreaking.</p>
+      <p>Dr Gabriel Landini used a system known as <span class="qbadge-inline">38</span><input class="answer-input inline-input" id="q38" type="text"> in his research, and claims to have demonstrated the presence of genuine words.</p>
+      <p>Dr Gordon Rugg’s system involved a grille that made it possible to quickly select symbols that appeared in a <span class="qbadge-inline">39</span><input class="answer-input inline-input" id="q39" type="text">. Rugg’s conclusion was that the manuscript lacked genuine meaning.</p>
+    </div>
+<div class="inline-answer-feedback" id="feedback-35"></div><div class="inline-explanation hidden" id="explain-35"></div>
+<div class="inline-answer-feedback" id="feedback-36"></div><div class="inline-explanation hidden" id="explain-36"></div>
+<div class="inline-answer-feedback" id="feedback-37"></div><div class="inline-explanation hidden" id="explain-37"></div>
+<div class="inline-answer-feedback" id="feedback-38"></div><div class="inline-explanation hidden" id="explain-38"></div>
+<div class="inline-answer-feedback" id="feedback-39"></div><div class="inline-explanation hidden" id="explain-39"></div>
+  </div>
+
+  <div class="question-card">
+    <div class="group-header">
+      <h3>Question 40</h3>
+      <p>Choose the correct letter, A, B, C or D.</p>
+      <p>Write the correct letter in box 40 on your answer sheet.</p>
+    </div>
+    <div class="question-item" id="q40-block">
+      <p><strong>40</strong> The writer’s main aim in this passage is to</p>
+      <div class="option-grid mcq">
+        <label class="option-pill"><input type="radio" name="q40" value="A"><span>A explain the meaning of the manuscript.</span></label>
+        <label class="option-pill"><input type="radio" name="q40" value="B"><span>B determine the true identity of the manuscript’s author.</span></label>
+        <label class="option-pill"><input type="radio" name="q40" value="C"><span>C describe the numerous attempts to decode the manuscript.</span></label>
+        <label class="option-pill"><input type="radio" name="q40" value="D"><span>D identify which research into the manuscript has had the most media coverage.</span></label>
+      </div>
+      <div class="inline-answer-feedback" id="feedback-40"></div><div class="inline-explanation hidden" id="explain-40"></div>
+    </div>
+  </div>
+</section>
+
+      <div class="part-explanations hidden" id="explanations-1">
+        <h3>Answer explanations (Questions 1–13)</h3>
+        <div class="explain-row" id="list-exp-1"><span class="exp-q">Q1</span><div class="exp-body"><div class="exp-answer">NOT GIVEN</div><div class="exp-text">The passage says European settlers arrived in the mid-19th century, but it does not say they carried out detailed studies of the morepork.</div></div></div><div class="explain-row" id="list-exp-2"><span class="exp-q">Q2</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The laughing owl was not described as suffering because of the Polynesian rat. Instead, it adapted its diet and ate the rat.</div></div></div><div class="explain-row" id="list-exp-3"><span class="exp-q">Q3</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">The text says the morepork is the smaller owl, so the laughing owl must have been larger.</div></div></div><div class="explain-row" id="list-exp-4"><span class="exp-q">Q4</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">Young moreporks are in danger from rats because the eggs and chicks are said to be at risk from them.</div></div></div><div class="explain-row" id="list-exp-5"><span class="exp-q">Q5</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The Department of Conservation is trying to preserve the owl and help it survive, not reduce or limit its numbers.</div></div></div><div class="explain-row" id="list-exp-6"><span class="exp-q">Q6</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The passage says small birds mob and chase moreporks during the day. It does not say they are frightened away by the owl’s cry.</div></div></div><div class="explain-row" id="list-exp-7"><span class="exp-q">Q7</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The low, common “ruru” call was associated with good news, while the high piercing call meant bad news.</div></div></div><div class="explain-row" id="list-exp-8"><span class="exp-q">Q8</span><div class="exp-body"><div class="exp-answer">29 centimeters</div><div class="exp-text">The passage states that moreporks are around 29 centimeters long from head to tail.</div></div></div><div class="explain-row" id="list-exp-9"><span class="exp-q">Q9</span><div class="exp-body"><div class="exp-answer">rocks</div><div class="exp-text">Their nests are described as being in tree hollows, clumps of plants, or cavities among rocks and roots.</div></div></div><div class="explain-row" id="list-exp-10"><span class="exp-q">Q10</span><div class="exp-body"><div class="exp-answer">bill</div><div class="exp-text">After catching prey, a morepork carries it away in its bill.</div></div></div><div class="explain-row" id="list-exp-11"><span class="exp-q">Q11</span><div class="exp-body"><div class="exp-answer">day</div><div class="exp-text">The passage says other birds can chase moreporks away in the day.</div></div></div><div class="explain-row" id="list-exp-12"><span class="exp-q">Q12</span><div class="exp-body"><div class="exp-answer">plovers</div><div class="exp-text">The new arrivals on Motuora Island that were attacked by moreporks were plovers.</div></div></div><div class="explain-row" id="list-exp-13"><span class="exp-q">Q13</span><div class="exp-body"><div class="exp-answer">poison</div><div class="exp-text">The owls may be affected by poison after eating prey that has ingested it.</div></div></div>
+      </div>
+      <div class="part-explanations hidden" id="explanations-2">
+        <h3>Answer explanations (Questions 14–26)</h3>
+        <div class="explain-row" id="list-exp-14"><span class="exp-q">Q14</span><div class="exp-body"><div class="exp-answer">v</div><div class="exp-text">Paragraph A lists moral obligation, sustainability, license to operate, and reputation — the main forces that push companies toward CSR.</div></div></div><div class="explain-row" id="list-exp-15"><span class="exp-q">Q15</span><div class="exp-body"><div class="exp-answer">viii</div><div class="exp-text">Paragraph B explains that companies need a healthy society and society also needs successful companies.</div></div></div><div class="explain-row" id="list-exp-16"><span class="exp-q">Q16</span><div class="exp-body"><div class="exp-answer">vi</div><div class="exp-text">Paragraph C uses the asbestos example to show that companies must think ahead about future social consequences.</div></div></div><div class="explain-row" id="list-exp-17"><span class="exp-q">Q17</span><div class="exp-body"><div class="exp-answer">vii</div><div class="exp-text">Paragraph D says each company should choose the social issues that connect directly with its own business.</div></div></div><div class="explain-row" id="list-exp-18"><span class="exp-q">Q18</span><div class="exp-body"><div class="exp-answer">iii</div><div class="exp-text">Paragraph E shows GE’s school program is positive, but it remains incidental to the business and has only a modest direct business effect.</div></div></div><div class="explain-row" id="list-exp-19"><span class="exp-q">Q19</span><div class="exp-body"><div class="exp-answer">i</div><div class="exp-text">Paragraph F explains that Microsoft’s CSR work helps address the shortage of IT workers, which is a constraint on its growth.</div></div></div><div class="explain-row" id="list-exp-20"><span class="exp-q">Q20</span><div class="exp-body"><div class="exp-answer">ii</div><div class="exp-text">Paragraph G shows CSR integrated into sourcing, construction, energy, waste, transport, cleaning products, and philanthropy.</div></div></div><div class="explain-row" id="list-exp-21"><span class="exp-q">Q21</span><div class="exp-body"><div class="exp-answer">equal opportunity</div><div class="exp-text">The summary refers to the sentence saying education, health care and equal opportunity are essential to a productive workforce.</div></div></div><div class="explain-row" id="list-exp-22"><span class="exp-q">Q22</span><div class="exp-body"><div class="exp-answer">internal costs</div><div class="exp-text">The passage says safe products and working conditions lower the internal costs of accidents.</div></div></div><div class="explain-row" id="list-exp-23"><span class="exp-q">Q23</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">Whole Foods is linked to disposable waste because spoiled produce and biodegradable waste are sent for composting.</div></div></div><div class="explain-row" id="list-exp-24"><span class="exp-q">Q24</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">Whole Foods is the company whose sourcing and procurement process determine the way it purchases goods.</div></div></div><div class="explain-row" id="list-exp-25"><span class="exp-q">Q25</span><div class="exp-body"><div class="exp-answer">A</div><div class="exp-text">GE is the company helping underperforming public high schools through money, donations and staff support.</div></div></div><div class="explain-row" id="list-exp-26"><span class="exp-q">Q26</span><div class="exp-body"><div class="exp-answer">B</div><div class="exp-text">Microsoft’s initiative created faculty development institutes so staff could keep up to date.</div></div></div>
+      </div>
+      <div class="part-explanations hidden" id="explanations-3">
+        <h3>Answer explanations (Questions 27–40)</h3>
+        <div class="explain-row" id="list-exp-27"><span class="exp-q">Q27</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">The manuscript is described as being of unknown age and authorship.</div></div></div><div class="explain-row" id="list-exp-28"><span class="exp-q">Q28</span><div class="exp-body"><div class="exp-answer">NOT GIVEN</div><div class="exp-text">The passage says Voynich bought the manuscript in 1912, but it does not say he donated it to the Beinecke Library.</div></div></div><div class="explain-row" id="list-exp-29"><span class="exp-q">Q29</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">Interest extends beyond experts because the passage mentions everyone from amateur dabblers to top codebreakers.</div></div></div><div class="explain-row" id="list-exp-30"><span class="exp-q">Q30</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The passage says it is possible to make out more than 70 distinct symbols, not just under 70.</div></div></div><div class="explain-row" id="list-exp-31"><span class="exp-q">Q31</span><div class="exp-body"><div class="exp-answer">D</div><div class="exp-text">William Friedman discovered that some words and phrases appeared more often than expected, which cast doubt on a real language.</div></div></div><div class="explain-row" id="list-exp-32"><span class="exp-q">Q32</span><div class="exp-body"><div class="exp-answer">A</div><div class="exp-text">Gordon Rugg said that unlike many mysteries, this is one people can see for themselves.</div></div></div><div class="explain-row" id="list-exp-33"><span class="exp-q">Q33</span><div class="exp-body"><div class="exp-answer">E</div><div class="exp-text">Rob Churchill suggested the manuscript may reflect an author who had lost touch with reality.</div></div></div><div class="explain-row" id="list-exp-34"><span class="exp-q">Q34</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">William Newbold supported the idea that Roger Bacon was the author, which was the same view held by Voynich.</div></div></div><div class="explain-row" id="list-exp-35"><span class="exp-q">Q35</span><div class="exp-body"><div class="exp-answer">microscope</div><div class="exp-text">Newbold claimed the manuscript showed Bacon had access to a microscope.</div></div></div><div class="explain-row" id="list-exp-36"><span class="exp-q">Q36</span><div class="exp-body"><div class="exp-answer">concepts</div><div class="exp-text">Friedman thought the artificial language had words devised from concepts rather than linguistics.</div></div></div><div class="explain-row" id="list-exp-37"><span class="exp-q">Q37</span><div class="exp-body"><div class="exp-answer">computer</div><div class="exp-text">Friedman believed that the computer would bring major advances in codebreaking.</div></div></div><div class="explain-row" id="list-exp-38"><span class="exp-q">Q38</span><div class="exp-body"><div class="exp-answer">spectral analysis</div><div class="exp-text">Gabriel Landini used a pattern-detecting method called spectral analysis.</div></div></div><div class="explain-row" id="list-exp-39"><span class="exp-q">Q39</span><div class="exp-body"><div class="exp-answer">table</div><div class="exp-text">Rugg’s grille selected symbols from a table.</div></div></div><div class="explain-row" id="list-exp-40"><span class="exp-q">Q40</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">The passage mainly surveys the many attempts to understand, decode or explain the Voynich manuscript.</div></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <div class="nav-arrows">
+    <button class="nav-arrow prev" id="prevBtn">◄</button>
+    <button class="nav-arrow next" id="nextBtn">►</button>
+  </div>
+  <div class="part-tabs">
+    <button class="part-tab active" data-part="1">Part 1</button>
+    <button class="part-tab" data-part="2">Part 2</button>
+    <button class="part-tab" data-part="3">Part 3</button>
+  </div>
+  <div class="qnums-scroll" id="qnums"></div>
+  <div class="bottom-right">
+    <div id="answeredCount">0 of 40 answered</div>
+    <button id="checkBtn">✓ Check Answers</button>
+  </div>
+</nav>
+
+<div class="hl-floating-toolbar" id="hlToolbar">
+  <div class="hl-section-label">Highlight</div>
+  <div class="hl-colors-row">
+    <button class="hl-dot cy" data-color="y" title="Yellow"></button>
+    <button class="hl-dot cg" data-color="g" title="Green"></button>
+    <button class="hl-dot cp" data-color="p" title="Pink"></button>
+    <button class="hl-dot cb" data-color="b" title="Blue"></button>
+  </div>
+  <div class="hl-divider"></div>
+  <button class="hl-text-btn note-btn" id="noteFromSelectionBtn">✏ Note</button>
+  <button class="hl-text-btn remove-btn" id="removeHlBtn">🗑 Remove</button>
+  <button class="hl-text-btn clear-btn" id="clearHlBtn">✕ Clear all</button>
+</div>
+
+<div class="note-modal-overlay" id="noteModalOverlay">
+  <div class="note-modal">
+    <h3>✏️ Add Note</h3>
+    <div class="note-excerpt" id="noteExcerpt"></div>
+    <textarea id="noteTextarea" placeholder="Write your note here..."></textarea>
+    <div class="note-buttons">
+      <button class="close-btn" id="cancelNoteBtn">Cancel</button>
+      <button class="close-btn" id="saveNoteBtn" style="background:#4a90e2;color:#fff;border-color:#4a90e2;">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="notes-panel-overlay" id="notesOverlay">
+  <div class="notes-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;">📝 My Notes</h3>
+      <button class="close-btn" id="closeNotesBtn">×</button>
+    </div>
+    <div id="notesList" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<div class="results-modal" id="resultsModal">
+  <div class="modal-card">
+    <h2>Test Results</h2>
+    <div class="score-box">
+      <div class="score-big" id="scoreBig">0 / 40</div>
+      <div id="bandText">Band 0.0</div>
+    </div>
+    <table class="results-table">
+      <thead><tr><th>Q</th><th>Your answer</th><th>Correct answer</th><th>Status</th></tr></thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+    <div class="result-explanations">
+      <h3>Explanations 1–40</h3>
+      <div class="explain-row"><span class="exp-q">Q1</span><div class="exp-body"><div class="exp-answer">NOT GIVEN</div><div class="exp-text">The passage says European settlers arrived in the mid-19th century, but it does not say they carried out detailed studies of the morepork.</div></div></div><div class="explain-row"><span class="exp-q">Q2</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The laughing owl was not described as suffering because of the Polynesian rat. Instead, it adapted its diet and ate the rat.</div></div></div><div class="explain-row"><span class="exp-q">Q3</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">The text says the morepork is the smaller owl, so the laughing owl must have been larger.</div></div></div><div class="explain-row"><span class="exp-q">Q4</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">Young moreporks are in danger from rats because the eggs and chicks are said to be at risk from them.</div></div></div><div class="explain-row"><span class="exp-q">Q5</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The Department of Conservation is trying to preserve the owl and help it survive, not reduce or limit its numbers.</div></div></div><div class="explain-row"><span class="exp-q">Q6</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The passage says small birds mob and chase moreporks during the day. It does not say they are frightened away by the owl’s cry.</div></div></div><div class="explain-row"><span class="exp-q">Q7</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The low, common “ruru” call was associated with good news, while the high piercing call meant bad news.</div></div></div><div class="explain-row"><span class="exp-q">Q8</span><div class="exp-body"><div class="exp-answer">29 centimeters</div><div class="exp-text">The passage states that moreporks are around 29 centimeters long from head to tail.</div></div></div><div class="explain-row"><span class="exp-q">Q9</span><div class="exp-body"><div class="exp-answer">rocks</div><div class="exp-text">Their nests are described as being in tree hollows, clumps of plants, or cavities among rocks and roots.</div></div></div><div class="explain-row"><span class="exp-q">Q10</span><div class="exp-body"><div class="exp-answer">bill</div><div class="exp-text">After catching prey, a morepork carries it away in its bill.</div></div></div><div class="explain-row"><span class="exp-q">Q11</span><div class="exp-body"><div class="exp-answer">day</div><div class="exp-text">The passage says other birds can chase moreporks away in the day.</div></div></div><div class="explain-row"><span class="exp-q">Q12</span><div class="exp-body"><div class="exp-answer">plovers</div><div class="exp-text">The new arrivals on Motuora Island that were attacked by moreporks were plovers.</div></div></div><div class="explain-row"><span class="exp-q">Q13</span><div class="exp-body"><div class="exp-answer">poison</div><div class="exp-text">The owls may be affected by poison after eating prey that has ingested it.</div></div></div><div class="explain-row"><span class="exp-q">Q14</span><div class="exp-body"><div class="exp-answer">v</div><div class="exp-text">Paragraph A lists moral obligation, sustainability, license to operate, and reputation — the main forces that push companies toward CSR.</div></div></div><div class="explain-row"><span class="exp-q">Q15</span><div class="exp-body"><div class="exp-answer">viii</div><div class="exp-text">Paragraph B explains that companies need a healthy society and society also needs successful companies.</div></div></div><div class="explain-row"><span class="exp-q">Q16</span><div class="exp-body"><div class="exp-answer">vi</div><div class="exp-text">Paragraph C uses the asbestos example to show that companies must think ahead about future social consequences.</div></div></div><div class="explain-row"><span class="exp-q">Q17</span><div class="exp-body"><div class="exp-answer">vii</div><div class="exp-text">Paragraph D says each company should choose the social issues that connect directly with its own business.</div></div></div><div class="explain-row"><span class="exp-q">Q18</span><div class="exp-body"><div class="exp-answer">iii</div><div class="exp-text">Paragraph E shows GE’s school program is positive, but it remains incidental to the business and has only a modest direct business effect.</div></div></div><div class="explain-row"><span class="exp-q">Q19</span><div class="exp-body"><div class="exp-answer">i</div><div class="exp-text">Paragraph F explains that Microsoft’s CSR work helps address the shortage of IT workers, which is a constraint on its growth.</div></div></div><div class="explain-row"><span class="exp-q">Q20</span><div class="exp-body"><div class="exp-answer">ii</div><div class="exp-text">Paragraph G shows CSR integrated into sourcing, construction, energy, waste, transport, cleaning products, and philanthropy.</div></div></div><div class="explain-row"><span class="exp-q">Q21</span><div class="exp-body"><div class="exp-answer">equal opportunity</div><div class="exp-text">The summary refers to the sentence saying education, health care and equal opportunity are essential to a productive workforce.</div></div></div><div class="explain-row"><span class="exp-q">Q22</span><div class="exp-body"><div class="exp-answer">internal costs</div><div class="exp-text">The passage says safe products and working conditions lower the internal costs of accidents.</div></div></div><div class="explain-row"><span class="exp-q">Q23</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">Whole Foods is linked to disposable waste because spoiled produce and biodegradable waste are sent for composting.</div></div></div><div class="explain-row"><span class="exp-q">Q24</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">Whole Foods is the company whose sourcing and procurement process determine the way it purchases goods.</div></div></div><div class="explain-row"><span class="exp-q">Q25</span><div class="exp-body"><div class="exp-answer">A</div><div class="exp-text">GE is the company helping underperforming public high schools through money, donations and staff support.</div></div></div><div class="explain-row"><span class="exp-q">Q26</span><div class="exp-body"><div class="exp-answer">B</div><div class="exp-text">Microsoft’s initiative created faculty development institutes so staff could keep up to date.</div></div></div><div class="explain-row"><span class="exp-q">Q27</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">The manuscript is described as being of unknown age and authorship.</div></div></div><div class="explain-row"><span class="exp-q">Q28</span><div class="exp-body"><div class="exp-answer">NOT GIVEN</div><div class="exp-text">The passage says Voynich bought the manuscript in 1912, but it does not say he donated it to the Beinecke Library.</div></div></div><div class="explain-row"><span class="exp-q">Q29</span><div class="exp-body"><div class="exp-answer">TRUE</div><div class="exp-text">Interest extends beyond experts because the passage mentions everyone from amateur dabblers to top codebreakers.</div></div></div><div class="explain-row"><span class="exp-q">Q30</span><div class="exp-body"><div class="exp-answer">FALSE</div><div class="exp-text">The passage says it is possible to make out more than 70 distinct symbols, not just under 70.</div></div></div><div class="explain-row"><span class="exp-q">Q31</span><div class="exp-body"><div class="exp-answer">D</div><div class="exp-text">William Friedman discovered that some words and phrases appeared more often than expected, which cast doubt on a real language.</div></div></div><div class="explain-row"><span class="exp-q">Q32</span><div class="exp-body"><div class="exp-answer">A</div><div class="exp-text">Gordon Rugg said that unlike many mysteries, this is one people can see for themselves.</div></div></div><div class="explain-row"><span class="exp-q">Q33</span><div class="exp-body"><div class="exp-answer">E</div><div class="exp-text">Rob Churchill suggested the manuscript may reflect an author who had lost touch with reality.</div></div></div><div class="explain-row"><span class="exp-q">Q34</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">William Newbold supported the idea that Roger Bacon was the author, which was the same view held by Voynich.</div></div></div><div class="explain-row"><span class="exp-q">Q35</span><div class="exp-body"><div class="exp-answer">microscope</div><div class="exp-text">Newbold claimed the manuscript showed Bacon had access to a microscope.</div></div></div><div class="explain-row"><span class="exp-q">Q36</span><div class="exp-body"><div class="exp-answer">concepts</div><div class="exp-text">Friedman thought the artificial language had words devised from concepts rather than linguistics.</div></div></div><div class="explain-row"><span class="exp-q">Q37</span><div class="exp-body"><div class="exp-answer">computer</div><div class="exp-text">Friedman believed that the computer would bring major advances in codebreaking.</div></div></div><div class="explain-row"><span class="exp-q">Q38</span><div class="exp-body"><div class="exp-answer">spectral analysis</div><div class="exp-text">Gabriel Landini used a pattern-detecting method called spectral analysis.</div></div></div><div class="explain-row"><span class="exp-q">Q39</span><div class="exp-body"><div class="exp-answer">table</div><div class="exp-text">Rugg’s grille selected symbols from a table.</div></div></div><div class="explain-row"><span class="exp-q">Q40</span><div class="exp-body"><div class="exp-answer">C</div><div class="exp-text">The passage mainly surveys the many attempts to understand, decode or explain the Voynich manuscript.</div></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="close-btn" id="closeResultsBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionMeta = {"1": {"correct": "NOT GIVEN", "display": "NOT GIVEN", "explanation": "The passage says European settlers arrived in the mid-19th century, but it does not say they carried out detailed studies of the morepork.", "source": "This bird was widespread throughout the islands when European settlers arrived in the middle of the 19th century"}, "2": {"correct": "FALSE", "display": "FALSE", "explanation": "The laughing owl was not described as suffering because of the Polynesian rat. Instead, it adapted its diet and ate the rat.", "source": "the laughing owl turned the tables and adapted its diet to include the rodent"}, "3": {"correct": "TRUE", "display": "TRUE", "explanation": "The text says the morepork is the smaller owl, so the laughing owl must have been larger.", "source": "it is the smaller owl, the morepork, that has managed to survive until this day"}, "4": {"correct": "TRUE", "display": "TRUE", "explanation": "Young moreporks are in danger from rats because the eggs and chicks are said to be at risk from them.", "source": "eggs and chicks will also be at risk from rats"}, "5": {"correct": "FALSE", "display": "FALSE", "explanation": "The Department of Conservation is trying to preserve the owl and help it survive, not reduce or limit its numbers.", "source": "it is hoped that the morepork will continue to survive and thrive"}, "6": {"correct": "FALSE", "display": "FALSE", "explanation": "The passage says small birds mob and chase moreporks during the day. It does not say they are frightened away by the owl’s cry.", "source": "these small birds sometimes mob drowsy moreporks and chase them away from their roosts"}, "7": {"correct": "FALSE", "display": "FALSE", "explanation": "The low, common “ruru” call was associated with good news, while the high piercing call meant bad news.", "source": "the lower-pitched and more common “ruru” call heralded good news"}, "8": {"correct": ["29 centimeters", "29 centimetres", "29"], "display": "29 centimeters", "explanation": "The passage states that moreporks are around 29 centimeters long from head to tail.", "source": "they are around 29 centimeters long from head to tail"}, "9": {"correct": "rocks", "display": "rocks", "explanation": "Their nests are described as being in tree hollows, clumps of plants, or cavities among rocks and roots.", "source": "in clumps of plants, or in cavities among rocks and roots"}, "10": {"correct": "bill", "display": "bill", "explanation": "After catching prey, a morepork carries it away in its bill.", "source": "which it then carries away in its bill"}, "11": {"correct": "day", "display": "day", "explanation": "The passage says other birds can chase moreporks away in the day.", "source": "In the day, these small birds sometimes mob drowsy moreporks"}, "12": {"correct": "plovers", "display": "plovers", "explanation": "The new arrivals on Motuora Island that were attacked by moreporks were plovers.", "source": "Scientists trying to establish a population of plovers on Motuora Island"}, "13": {"correct": "poison", "display": "poison", "explanation": "The owls may be affected by poison after eating prey that has ingested it.", "source": "they could be affected by an accumulative poison by consuming prey that has ingested poison"}, "14": {"correct": "v", "display": "v", "explanation": "Paragraph A lists moral obligation, sustainability, license to operate, and reputation — the main forces that push companies toward CSR.", "source": "proponents of CSR have used four arguments to make their case: moral obligation, sustainability, license to operate, and reputation"}, "15": {"correct": "viii", "display": "viii", "explanation": "Paragraph B explains that companies need a healthy society and society also needs successful companies.", "source": "business and society need each other"}, "16": {"correct": "vi", "display": "vi", "explanation": "Paragraph C uses the asbestos example to show that companies must think ahead about future social consequences.", "source": "Many firms that failed to anticipate the consequences of this evolving body of research have been bankrupted"}, "17": {"correct": "vii", "display": "vii", "explanation": "Paragraph D says each company should choose the social issues that connect directly with its own business.", "source": "each company must select issues that intersect with its particular business"}, "18": {"correct": "iii", "display": "iii", "explanation": "Paragraph E shows GE’s school program is positive, but it remains incidental to the business and has only a modest direct business effect.", "source": "it remains incidental to the company’s business, and the direct effect on GE’s recruiting and retention is modest"}, "19": {"correct": "i", "display": "i", "explanation": "Paragraph F explains that Microsoft’s CSR work helps address the shortage of IT workers, which is a constraint on its growth.", "source": "The shortage of information technology workers is a significant constraint on Microsoft’s growth"}, "20": {"correct": "ii", "display": "ii", "explanation": "Paragraph G shows CSR integrated into sourcing, construction, energy, waste, transport, cleaning products, and philanthropy.", "source": "nearly every aspect of the company’s value chain reinforces the social dimensions of its value proposition"}, "21": {"correct": ["equal opportunity", "equal-opportunity"], "display": "equal opportunity", "explanation": "The summary refers to the sentence saying education, health care and equal opportunity are essential to a productive workforce.", "source": "Education, health care, and equal opportunity are essential to a productive workforce"}, "22": {"correct": ["internal costs", "the internal costs"], "display": "internal costs", "explanation": "The passage says safe products and working conditions lower the internal costs of accidents.", "source": "lower the internal costs of accidents"}, "23": {"correct": "C", "display": "C", "explanation": "Whole Foods is linked to disposable waste because spoiled produce and biodegradable waste are sent for composting.", "source": "Spoiled produce and biodegradable waste are trucked to regional centers for composting"}, "24": {"correct": "C", "display": "C", "explanation": "Whole Foods is the company whose sourcing and procurement process determine the way it purchases goods.", "source": "The company’s sourcing emphasizes purchases from local farmers through each store’s procurement process"}, "25": {"correct": "A", "display": "A", "explanation": "GE is the company helping underperforming public high schools through money, donations and staff support.", "source": "GE’s program to adopt underperforming public high schools"}, "26": {"correct": "B", "display": "B", "explanation": "Microsoft’s initiative created faculty development institutes so staff could keep up to date.", "source": "there are no systematic professional development programs to keep faculty up to date"}, "27": {"correct": "TRUE", "display": "TRUE", "explanation": "The manuscript is described as being of unknown age and authorship.", "source": "containing 240-odd pages of drawings and text of unknown age and authorship"}, "28": {"correct": "NOT GIVEN", "display": "NOT GIVEN", "explanation": "The passage says Voynich bought the manuscript in 1912, but it does not say he donated it to the Beinecke Library.", "source": "Wilfrid Voynich, who bought the manuscript from a Jesuit college in Italy in 1912"}, "29": {"correct": "TRUE", "display": "TRUE", "explanation": "Interest extends beyond experts because the passage mentions everyone from amateur dabblers to top codebreakers.", "source": "everyone from amateur dabblers to top codebreakers"}, "30": {"correct": "FALSE", "display": "FALSE", "explanation": "The passage says it is possible to make out more than 70 distinct symbols, not just under 70.", "source": "it’s possible to make out more than 70 distinct symbols"}, "31": {"correct": "D", "display": "D", "explanation": "William Friedman discovered that some words and phrases appeared more often than expected, which cast doubt on a real language.", "source": "Friedman discovered that some words and phrases appeared more often than expected"}, "32": {"correct": "A", "display": "A", "explanation": "Gordon Rugg said that unlike many mysteries, this is one people can see for themselves.", "source": "“But this is one that you can see for yourself.”"}, "33": {"correct": "E", "display": "E", "explanation": "Rob Churchill suggested the manuscript may reflect an author who had lost touch with reality.", "source": "Churchill, have suggested that the sheer weirdness of the illustrations and text hint at an author who had lost touch with reality"}, "34": {"correct": "C", "display": "C", "explanation": "William Newbold supported the idea that Roger Bacon was the author, which was the same view held by Voynich.", "source": "Voynich’s view that Bacon was the writer appeared to win support from the work of William Newbold"}, "35": {"correct": "microscope", "display": "microscope", "explanation": "Newbold claimed the manuscript showed Bacon had access to a microscope.", "source": "the manuscript proved that Bacon had access to a microscope"}, "36": {"correct": "concepts", "display": "concepts", "explanation": "Friedman thought the artificial language had words devised from concepts rather than linguistics.", "source": "whose words are devised from concepts, rather than linguistics"}, "37": {"correct": "computer", "display": "computer", "explanation": "Friedman believed that the computer would bring major advances in codebreaking.", "source": "major insights would come from using the device that had already transformed codebreaking: the computer"}, "38": {"correct": "spectral analysis", "display": "spectral analysis", "explanation": "Gabriel Landini used a pattern-detecting method called spectral analysis.", "source": "using a pattern-detecting method called spectral analysis"}, "39": {"correct": "table", "display": "table", "explanation": "Rugg’s grille selected symbols from a table.", "source": "a specially constructed grille is used to pick out symbols from a table"}, "40": {"correct": "C", "display": "C", "explanation": "The passage mainly surveys the many attempts to understand, decode or explain the Voynich manuscript.", "source": "all determined to succeed where countless others have failed"}};
+let currentPassage = 1;
+let currentQuestion = 1;
+let timeInSeconds = 3600;
+let timerInterval = null;
+let timerRunning = false;
+let savedRange = null;
+let activeHLMark = null;
+let notesData = [];
+let noteIdCounter = 0;
+let checked = false;
+let noteTargetExcerpt = '';
+
+function initialize() {
+  renderQuestionButtons();
+  bindEvents();
+  updateTimerDisplay();
+  switchToPart(1);
+  updateAllIndicators();
+  setupResizer();
+}
+
+function partRange(part) {
+  return part === 1 ? [1,13] : part === 2 ? [14,26] : [27,40];
+}
+
+function renderQuestionButtons() {
+  const wrap = document.getElementById('qnums');
+  wrap.innerHTML = '';
+  const [start,end] = partRange(currentPassage);
+  for (let i=start;i<=end;i++) {
+    const btn = document.createElement('button');
+    btn.className = 'subQuestion';
+    btn.textContent = i;
+    btn.dataset.q = i;
+    btn.addEventListener('click', ()=>goToQuestion(i));
+    wrap.appendChild(btn);
+  }
+}
+
+function switchToPart(n) {
+  currentPassage = n;
+  document.querySelectorAll('.passage-tab').forEach(b=>b.classList.toggle('active', Number(b.dataset.part)===n));
+  document.querySelectorAll('.part-tab').forEach(b=>b.classList.toggle('active', Number(b.dataset.part)===n));
+  [1,2,3].forEach(part=>{
+    document.getElementById('passage-'+part).classList.toggle('hidden', part!==n);
+    document.querySelector('.question-group[data-part="'+part+'"]').classList.toggle('active', part===n);
+    document.getElementById('explanations-'+part).classList.toggle('hidden', !(checked && part===n));
+  });
+  const banner = document.getElementById('partBanner');
+  const ranges = {1:'questions 1–13',2:'questions 14–26',3:'questions 27–40'};
+  banner.innerHTML = `<p><strong>Part ${n}</strong></p><p>Read the text and answer ${ranges[n]}.</p>`;
+  renderQuestionButtons();
+  updateAllIndicators();
+}
+
+function goToQuestion(n) {
+  const targetPart = n<=13 ? 1 : n<=26 ? 2 : 3;
+  if (targetPart !== currentPassage) switchToPart(targetPart);
+  currentQuestion = n;
+  const el = document.getElementById('q'+n+'-block') || document.getElementById('q'+n);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  updateAllIndicators();
+}
+
+function nextQuestion() {
+  if (currentQuestion < 40) currentQuestion++;
+  goToQuestion(currentQuestion);
+}
+
+function previousQuestion() {
+  if (currentQuestion > 1) currentQuestion--;
+  goToQuestion(currentQuestion);
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('playPauseBtn');
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    btn.textContent = '▶';
+  } else {
+    timerRunning = true;
+    btn.textContent = '⏸';
+    timerInterval = setInterval(() => {
+      timeInSeconds--;
+      updateTimerDisplay();
+      if (timeInSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        btn.textContent = '▶';
+        if (!checked) checkAnswers();
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timeInSeconds = 3600;
+  document.getElementById('playPauseBtn').textContent = '▶';
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  const min = Math.floor(timeInSeconds/60).toString().padStart(2,'0');
+  const sec = (timeInSeconds%60).toString().padStart(2,'0');
+  el.textContent = `${min}:${sec}`;
+  el.classList.toggle('timer-warning', timeInSeconds <= 300);
+}
+
+function normalizeAnswer(v) {
+  return String(v || '').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function getUserAnswer(n) {
+  const meta = questionMeta[n];
+  const textInput = document.getElementById('q'+n);
+  if (textInput && (textInput.tagName === 'INPUT' || textInput.tagName === 'SELECT')) return textInput.value || '';
+  const checkedRadio = document.querySelector(`input[name="q${n}"]:checked`);
+  return checkedRadio ? checkedRadio.value : '';
+}
+
+function isQuestionAnswered(n) {
+  return !!getUserAnswer(n);
+}
+
+function updateAllIndicators() {
+  const allBtns = document.querySelectorAll('.subQuestion');
+  allBtns.forEach(btn => {
+    const q = Number(btn.dataset.q);
+    btn.classList.remove('answered','active','correct','incorrect');
+    if (checked) {
+      btn.classList.add(gradeQuestion(q) ? 'correct' : 'incorrect');
+    } else {
+      btn.classList.toggle('answered', isQuestionAnswered(q));
+      btn.classList.toggle('active', q === currentQuestion);
+    }
+  });
+  let answered = 0;
+  for (let i=1;i<=40;i++) if (isQuestionAnswered(i)) answered++;
+  document.getElementById('answeredCount').textContent = `${answered} of 40 answered`;
+}
+
+function gradeQuestion(n) {
+  const user = getUserAnswer(n);
+  const correct = questionMeta[n].correct;
+  if (Array.isArray(correct)) return correct.some(ans => normalizeAnswer(ans) === normalizeAnswer(user));
+  if ((document.getElementById('q'+n) || '').tagName === 'SELECT') return user === correct;
+  if (document.querySelector(`input[name="q${n}"]`)) return user === correct;
+  return normalizeAnswer(user) === normalizeAnswer(correct);
+}
+
+function markRadioOrOptions(n, ok) {
+  const labels = document.querySelectorAll(`input[name="q${n}"]`);
+  labels.forEach(inp => {
+    const wrap = inp.closest('.option-pill');
+    if (!wrap) return;
+    wrap.classList.remove('correct-opt','incorrect-opt');
+    const correct = questionMeta[n].display;
+    if (inp.value === correct) wrap.classList.add('correct-opt');
+    if (inp.checked && inp.value !== correct) wrap.classList.add('incorrect-opt');
+  });
+}
+
+function showInlineFeedback(n, ok) {
+  const feed = document.getElementById('feedback-'+n);
+  const exp = document.getElementById('explain-'+n);
+  if (!feed || !exp) return;
+  const user = getUserAnswer(n) || 'No answer';
+  const correct = questionMeta[n].display;
+  feed.innerHTML = ok
+    ? `<span class="corr">✓ Correct — ${correct}</span>`
+    : `<span class="wrong">✗ Your answer: ${escapeHtml(user)} &nbsp;➜&nbsp; <span class="corr">Correct answer: ${escapeHtml(correct)}</span></span>`;
+  exp.innerHTML = `<strong>Explanation:</strong> ${escapeHtml(questionMeta[n].explanation)}`;
+  exp.classList.add('hidden');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+
+function applyQuestionStyling(n, ok) {
+  const el = document.getElementById('q'+n);
+  if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
+    el.classList.remove('correct-field','incorrect-field');
+    el.classList.add(ok ? 'correct-field' : 'incorrect-field');
+  }
+  if (document.querySelector(`input[name="q${n}"]`)) {
+    markRadioOrOptions(n, ok);
+  }
+  const btn = document.querySelector(`.subQuestion[data-q="${n}"]`);
+  if (btn) {
+    btn.classList.remove('active','answered');
+    btn.classList.add(ok ? 'correct' : 'incorrect');
+  }
+}
+
+function checkAnswers() {
+  if (checked) {
+    showResultsModal();
+    return;
+  }
+  checked = true;
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('playPauseBtn').textContent = '▶';
+  document.querySelectorAll('.questions-panel input, .questions-panel select, .passage-panel input, .passage-panel select').forEach(el => el.disabled = true);
+  let score = 0;
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = '';
+  for (let i=1;i<=40;i++) {
+    const ok = gradeQuestion(i);
+    if (ok) score++;
+    applyQuestionStyling(i, ok);
+    showInlineFeedback(i, ok);
+    const tr = document.createElement('tr');
+    tr.id = 'res-row-'+i;
+    tr.dataset.correct = ok ? '1' : '0';
+    tr.innerHTML = `<td>${i}</td><td>${escapeHtml(getUserAnswer(i) || 'No answer')}</td><td>${escapeHtml(questionMeta[i].display)}</td><td class="${ok ? 'status-ok' : 'status-bad'}">${ok ? 'Correct' : 'Incorrect'}</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('scoreBig').textContent = `${score} / 40`;
+  document.getElementById('bandText').textContent = 'Band ' + calculateBandScore(score);
+  document.getElementById('checkBtn').textContent = 'My Result';
+  document.getElementById('checkBtn').classList.add('result-mode');
+  highlightCorrectAnswersInPassage();
+  document.getElementById('explanations-'+currentPassage).classList.remove('hidden');
+  showResultsModal();
+}
+
+function calculateBandScore(n) {
+  if (n >= 39) return '9.0';
+  if (n >= 37) return '8.5';
+  if (n >= 35) return '8.0';
+  if (n >= 33) return '7.5';
+  if (n >= 30) return '7.0';
+  if (n >= 27) return '6.5';
+  if (n >= 23) return '6.0';
+  if (n >= 19) return '5.5';
+  if (n >= 15) return '5.0';
+  if (n >= 13) return '4.5';
+  if (n >= 10) return '4.0';
+  return '3.5';
+}
+
+function showResultsModal() {
+  document.getElementById('resultsModal').classList.add('show');
+}
+
+function closeResultsModal() {
+  document.getElementById('resultsModal').classList.remove('show');
+}
+
+function bindEvents() {
+  document.getElementById('playPauseBtn').addEventListener('click', toggleTimer);
+  document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('checkBtn').addEventListener('click', checkAnswers);
+  document.getElementById('closeResultsBtn').addEventListener('click', closeResultsModal);
+  document.getElementById('resultsModal').addEventListener('click', e => { if (e.target.id === 'resultsModal') closeResultsModal(); });
+  document.querySelectorAll('.part-tab,.passage-tab').forEach(btn => btn.addEventListener('click', ()=>switchToPart(Number(btn.dataset.part))));
+  document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+  document.getElementById('prevBtn').addEventListener('click', previousQuestion);
+
+  document.querySelectorAll('.questions-panel input, .questions-panel select').forEach(el => {
+    el.addEventListener('change', updateAllIndicators);
+    el.addEventListener('input', updateAllIndicators);
+    el.addEventListener('focus', ev => {
+      const id = ev.target.id || ev.target.name?.replace('q','');
+      if (id) {
+        const n = Number(String(id).replace('q','').split('_')[0]);
+        if (!Number.isNaN(n)) currentQuestion = n;
+        updateAllIndicators();
+      }
+    });
+  });
+
+  document.querySelectorAll('.question-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (!checked) return;
+      const exp = item.querySelector('.inline-explanation');
+      if (exp) exp.classList.toggle('hidden');
+    });
+  });
+
+  document.getElementById('notesBtn').addEventListener('click', () => {
+    renderNotesList();
+    document.getElementById('notesOverlay').classList.add('show');
+  });
+  document.getElementById('closeNotesBtn').addEventListener('click', () => document.getElementById('notesOverlay').classList.remove('show'));
+  document.getElementById('notesOverlay').addEventListener('click', e => { if (e.target.id === 'notesOverlay') document.getElementById('notesOverlay').classList.remove('show'); });
+  document.getElementById('cancelNoteBtn').addEventListener('click', closeNoteInput);
+  document.getElementById('saveNoteBtn').addEventListener('click', saveNote);
+
+  document.addEventListener('mouseup', handleSelection);
+  document.addEventListener('mousedown', e => {
+    const toolbar = document.getElementById('hlToolbar');
+    if (!toolbar.contains(e.target) && e.target.tagName !== 'MARK') toolbar.classList.remove('show');
+  });
+  document.querySelectorAll('.hl-dot').forEach(btn => btn.addEventListener('click', ()=>applyHL(btn.dataset.color)));
+  document.getElementById('removeHlBtn').addEventListener('click', removeCurrentHL);
+  document.getElementById('clearHlBtn').addEventListener('click', clearAllHL);
+  document.getElementById('noteFromSelectionBtn').addEventListener('click', openNoteInput);
+
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement?.tagName;
+    if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+    if (e.altKey && e.key === '1') switchToPart(1);
+    if (e.altKey && e.key === '2') switchToPart(2);
+    if (e.altKey && e.key === '3') switchToPart(3);
+    if (e.key === 'ArrowLeft') previousQuestion();
+    if (e.key === 'ArrowRight') nextQuestion();
+  });
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const dark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', dark ? 'light' : 'dark');
+  if (!dark && root.getAttribute('data-theme') === 'light') root.removeAttribute('data-theme');
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
+}
+
+function setupResizer() {
+  const divider = document.getElementById('divider');
+  const passage = document.getElementById('passagePanel');
+  let dragging = false;
+  divider.addEventListener('mousedown', ()=> dragging = true);
+  document.addEventListener('mouseup', ()=> dragging = false);
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const min = 180;
+    const max = window.innerWidth - min - 8;
+    let x = Math.max(min, Math.min(max, e.clientX));
+    passage.style.width = x + 'px';
+  });
+}
+
+function handleSelection(e) {
+  setTimeout(() => {
+    const sel = window.getSelection();
+    if (!sel || !sel.toString().trim()) return;
+    const range = sel.getRangeAt(0);
+    const panels = [document.getElementById('passagePanel'), document.getElementById('questionsPanel')];
+    if (!panels.some(p => p.contains(range.commonAncestorContainer))) return;
+    savedRange = range.cloneRange();
+    activeHLMark = null;
+    positionToolbar(e.clientX, e.clientY);
+  }, 10);
+}
+
+function positionToolbar(x, y) {
+  const toolbar = document.getElementById('hlToolbar');
+  toolbar.classList.add('show');
+  const rect = toolbar.getBoundingClientRect();
+  let lx = Math.max(8, Math.min(window.innerWidth - rect.width - 8, x));
+  let ly = y - rect.height - 14;
+  if (ly < 8) ly = y + 20;
+  toolbar.style.left = lx + 'px';
+  toolbar.style.top = ly + 'px';
+}
+
+function applyHL(color) {
+  const cls = 'hl-' + color;
+  if (activeHLMark) {
+    activeHLMark.className = cls;
+  } else if (savedRange) {
+    try {
+      const mark = document.createElement('mark');
+      mark.className = cls;
+      mark.appendChild(savedRange.extractContents());
+      savedRange.insertNode(mark);
+      activeHLMark = mark;
+    } catch (err) {
+      const frag = savedRange.extractContents();
+      const mark = document.createElement('mark');
+      mark.className = cls;
+      mark.appendChild(frag);
+      savedRange.insertNode(mark);
+      activeHLMark = mark;
+    }
+    document.querySelectorAll('mark').forEach(m => m.addEventListener('click', ev => {
+      ev.stopPropagation();
+      activeHLMark = m;
+      savedRange = null;
+      positionToolbar(ev.clientX, ev.clientY);
+    }));
+  }
+  window.getSelection().removeAllRanges();
+  savedRange = null;
+  document.getElementById('hlToolbar').classList.remove('show');
+}
+
+function unwrapMark(mark) {
+  const parent = mark.parentNode;
+  while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+  parent.removeChild(mark);
+  parent.normalize();
+}
+
+function removeCurrentHL() {
+  if (activeHLMark) unwrapMark(activeHLMark);
+  activeHLMark = null;
+  document.getElementById('hlToolbar').classList.remove('show');
+}
+
+function clearAllHL() {
+  document.querySelectorAll('mark.hl-y, mark.hl-g, mark.hl-p, mark.hl-b').forEach(unwrapMark);
+  document.getElementById('hlToolbar').classList.remove('show');
+}
+
+function openNoteInput() {
+  const excerpt = activeHLMark ? activeHLMark.textContent.trim() : (savedRange ? savedRange.toString().trim() : '');
+  noteTargetExcerpt = excerpt;
+  document.getElementById('noteExcerpt').textContent = excerpt || 'No excerpt selected';
+  document.getElementById('noteTextarea').value = '';
+  document.getElementById('noteModalOverlay').classList.add('show');
+  document.getElementById('hlToolbar').classList.remove('show');
+}
+
+function closeNoteInput() {
+  document.getElementById('noteModalOverlay').classList.remove('show');
+}
+
+function saveNote() {
+  const text = document.getElementById('noteTextarea').value.trim();
+  if (!text) return;
+  notesData.push({ id: ++noteIdCounter, text, excerpt: noteTargetExcerpt || 'Note' });
+  closeNoteInput();
+  renderNotesList();
+  document.getElementById('notesOverlay').classList.add('show');
+}
+
+function renderNotesList() {
+  const box = document.getElementById('notesList');
+  if (!notesData.length) {
+    box.innerHTML = '<div style="text-align:center;padding:28px;color:#999;font-size:14px;">📝 No notes yet.<br>Select text and click ✏ Note</div>';
+    return;
+  }
+  box.innerHTML = notesData.map(note => `
+    <div class="note-card">
+      <span class="note-chip">${escapeHtml(note.excerpt)}</span>
+      <div style="margin-bottom:8px;line-height:1.5;">${escapeHtml(note.text)}</div>
+      <button class="note-delete" onclick="deleteNote(${note.id})">🗑 Delete</button>
+    </div>
+  `).join('');
+}
+
+function deleteNote(id) {
+  notesData = notesData.filter(n => n.id !== id);
+  renderNotesList();
+}
+
+function findTextNodeWithText(root, text) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) {
+    const idx = node.nodeValue.indexOf(text);
+    if (idx !== -1 && node.parentNode.tagName !== 'SCRIPT' && node.parentNode.tagName !== 'STYLE') {
+      return { node, idx };
+    }
+  }
+  return null;
+}
+
+function applyHighlights(el, text, qn) {
+  if (!text) return;
+  const found = findTextNodeWithText(el, text);
+  if (!found) return;
+  const {node, idx} = found;
+  const before = node.nodeValue.slice(0, idx);
+  const middle = node.nodeValue.slice(idx, idx + text.length);
+  const after = node.nodeValue.slice(idx + text.length);
+  const frag = document.createDocumentFragment();
+  if (before) frag.appendChild(document.createTextNode(before));
+  const span = document.createElement('span');
+  span.className = 'question-source-highlight';
+  span.textContent = middle;
+  const badge = document.createElement('span');
+  badge.className = 'source-badge';
+  badge.textContent = 'Q' + qn;
+  span.appendChild(badge);
+  frag.appendChild(span);
+  if (after) frag.appendChild(document.createTextNode(after));
+  node.parentNode.replaceChild(frag, node);
+}
+
+function highlightCorrectAnswersInPassage() {
+  [1,2,3].forEach(part => {
+    const passage = document.getElementById('passage-'+part);
+    for (let q = part===1?1:part===2?14:27; q <= (part===1?13:part===2?26:40); q++) {
+      applyHighlights(passage, questionMeta[q].source, q);
+    }
+  });
+}
+
+initialize();
+</script>
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

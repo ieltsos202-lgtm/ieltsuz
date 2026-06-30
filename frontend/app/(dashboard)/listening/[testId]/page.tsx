@@ -1,0 +1,492 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useTrialGuard } from "@/hooks/useTrialGuard";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  Trophy,
+  AlertTriangle,
+  Lightbulb,
+  RotateCcw,
+  Headphones,
+} from "lucide-react";
+import { FullscreenToggle } from "@/components/shared/FullscreenToggle";
+import { useTheme } from "@/components/ThemeProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardTitle } from "@/components/ui/card";
+import { apiGet, apiPost } from "@/lib/api";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { AnimatedBand } from "@/components/shared/AnimatedBand";
+import { attachVocabSelection } from "@/lib/vocabSelection";
+
+interface Mock {
+  slug: string;
+  url: string;
+}
+
+interface ListeningFeedback {
+  correct_count: number;
+  total_questions: number;
+  band_score: number;
+  wrong_analysis: {
+    question_number: number;
+    user_answer: string;
+    correct_answer: string;
+    why_wrong: string;
+    tip: string;
+  }[];
+  weak_areas: string[];
+  feedback: string;
+  improvement_tips: string[];
+  estimated_weak_question_types: string[];
+}
+
+export default function ListeningTestPage() {
+  useTrialGuard("listening");
+  const params = useParams<{ testId: string }>();
+  const router = useRouter();
+  const id = (params.testId || "L1").toUpperCase();
+  const [src, setSrc] = useState(`/mocks/${id}.html`);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const submittedRef = useRef(false);
+  const { theme } = useTheme();
+  const [isMockTest, setIsMockTest] = useState(false);
+
+  // Answer panel state
+  const [showPanel, setShowPanel] = useState(false);
+  const [correctCount, setCorrectCount] = useState<string>("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [feedback, setFeedback] = useState<ListeningFeedback | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mockMode = localStorage.getItem('mock_test_mode');
+    if (mockMode === 'true') setIsMockTest(true);
+  }, []);
+
+  useEffect(() => {
+    apiGet<{ mocks: Mock[] }>("/api/listening/mocks")
+      .then((res) => {
+        const found = res.mocks?.find((m) => m.slug.toUpperCase() === id);
+        if (found?.url) setSrc(found.url);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  // Submit a graded result (real per-question data) to the AI feedback API.
+  const submitGraded = async (
+    score: number,
+    total: number,
+    wrong_answers: any[],
+    test_title?: string
+  ) => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    setSubmitting(true);
+    try {
+      const result = await apiPost<ListeningFeedback>("/api/listening/feedback", {
+        test_id: id,
+        test_title: test_title || `Listening Test ${id}`,
+        correct_count: score,
+        total: total || 40,
+        wrong_answers: wrong_answers || [],
+      });
+      setFeedback(result);
+      if (isMockTest) {
+        const mockData = JSON.parse(localStorage.getItem("mock_test_data") || "{}");
+        mockData.listening_band = result.band_score;
+        localStorage.setItem("mock_test_data", JSON.stringify(mockData));
+      }
+    } catch (err: any) {
+      submittedRef.current = false;
+      setSubmitError(err.message || "Failed to get feedback.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Listen for postMessage from HTML test
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === "IELTS_REQUEST_THEME") {
+        sendTheme();
+        return;
+      }
+      if (event.data?.type === "IELTS_TEST_COMPLETE") {
+        const { score, total, wrong_answers, test_title } = event.data.payload;
+        await submitGraded(score, total, wrong_answers, test_title);
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isMockTest]);
+
+  // Same-origin fallback: scrape the test's own results table when the
+  // built-in "Submit/Deliver" modal appears, so the AI gets the REAL
+  // per-question wrong answers without needing to edit every test file.
+  const handleIframeLoad = () => {
+    const iframe = iframeRef.current;
+    sendTheme();
+    let doc: Document | null = null;
+    try {
+      doc = iframe?.contentDocument || iframe?.contentWindow?.document || null;
+    } catch {
+      doc = null; // cross-origin; ignore
+    }
+    if (!doc) return;
+
+    // In-place "Add to Vocabulary" when the learner selects an unknown word.
+    const win = iframe?.contentWindow;
+    if (win) {
+      attachVocabSelection(doc, win, (word, context) =>
+        apiPost("/api/vocabulary/lookup", { word, context, source: "listening" })
+      );
+    }
+
+    const tryScrape = (): boolean => {
+      if (submittedRef.current || !doc) return false;
+      const modal = doc.getElementById("result-modal");
+      const details = doc.getElementById("result-details");
+      const summary = doc.getElementById("score-summary");
+      const modalVisible =
+        modal &&
+        (modal as HTMLElement).offsetParent !== null &&
+        getComputedStyle(modal as HTMLElement).display !== "none";
+      if (!modalVisible || !details) return false;
+
+      const rows = Array.from(details.querySelectorAll("table tr"));
+      const wrong: any[] = [];
+      let correct = 0;
+      let counted = 0;
+      rows.forEach((row) => {
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 4) return; // header or malformed
+        counted++;
+        const qn = parseInt((cells[0].textContent || "").trim(), 10);
+        const userAns = (cells[1].textContent || "").trim();
+        const correctAns = (cells[2].textContent || "").trim();
+        const resultCell = cells[3];
+        const isCorrect =
+          resultCell.className.includes("result-correct") ||
+          /correct/i.test(resultCell.textContent || "") &&
+            !/incorrect/i.test(resultCell.textContent || "");
+        if (isCorrect) {
+          correct++;
+        } else {
+          wrong.push({
+            question_number: isNaN(qn) ? wrong.length + 1 : qn,
+            user_answer: userAns || "No Answer",
+            correct_answer: correctAns,
+          });
+        }
+      });
+
+      // Prefer the score shown by the test if available.
+      let score = correct;
+      const m = summary?.textContent?.match(/(\d+)\s*(?:out of|\/)\s*(\d+)/i);
+      const total = m ? parseInt(m[2], 10) : counted || 40;
+      if (m) score = parseInt(m[1], 10);
+
+      if (counted === 0) return false;
+      void submitGraded(score, total, wrong, `Listening Test ${id}`);
+      return true;
+    };
+
+    if (tryScrape()) return;
+    const observer = new MutationObserver(() => {
+      if (tryScrape()) observer.disconnect();
+    });
+    observer.observe(doc.body, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ["style", "class"],
+    });
+  };
+
+  const sendTheme = () => {
+    const iframe = iframeRef.current;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({ theme }, "*");
+    }
+  };
+
+  useEffect(() => {
+    sendTheme();
+  }, [theme]);
+
+  const finishTest = () => {
+    router.push('/reading/R1');
+  };
+
+  const handleAnswerChange = (num: number, value: string) => {
+    setAnswers((prev) => ({ ...prev, [String(num)]: value }));
+  };
+
+  const submitTest = async () => {
+    setSubmitError(null);
+    const count = parseInt(correctCount, 10);
+    if (isNaN(count) || count < 0 || count > 40) {
+      setSubmitError("Enter a valid correct count (0-40).");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await apiPost<ListeningFeedback>("/api/listening/feedback", {
+        test_id: id,
+        test_title: `Listening Test ${id}`,
+        correct_count: count,
+        total: 40,
+        wrong_answers: [],
+      });
+      setFeedback(result);
+      // Save band for mock test mode
+      if (isMockTest) {
+        const mockData = JSON.parse(localStorage.getItem('mock_test_data') || '{}');
+        mockData.listening_band = result.band_score;
+        localStorage.setItem('mock_test_data', JSON.stringify(mockData));
+      }
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to get feedback.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Feedback view
+  if (feedback) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/listening"
+            className="inline-flex items-center gap-2 text-sm font-medium text-content-secondary hover:text-content-primary"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Link>
+        </div>
+
+        {/* Score Card */}
+        <Card className="flex flex-col items-center bg-gradient-to-b from-accent/15 to-bg-secondary py-8">
+          <Trophy className="mb-2 h-8 w-8 text-accent-yellow" />
+          <p className="text-sm text-content-secondary">Your Score</p>
+          <div className="text-5xl font-bold">
+            {feedback.correct_count}/{feedback.total_questions}
+          </div>
+          <div className="mt-2 text-3xl font-bold text-accent">
+            Band <AnimatedBand target={feedback.band_score} className="text-3xl" />
+          </div>
+        </Card>
+
+        {/* AI Feedback */}
+        <Card>
+          <CardTitle className="flex items-center gap-2">
+            <Headphones className="h-5 w-5 text-accent" /> AI Feedback
+          </CardTitle>
+          <p className="mt-2 text-sm leading-relaxed text-content-secondary">
+            {feedback.feedback}
+          </p>
+        </Card>
+
+        {/* Weak Areas */}
+        {feedback.weak_areas?.length > 0 && (
+          <Card className="border-accent-yellow/30">
+            <CardTitle className="flex items-center gap-2 text-accent-yellow">
+              <AlertTriangle className="h-5 w-5" /> Areas to Improve
+            </CardTitle>
+            <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-content-secondary">
+              {feedback.weak_areas.map((area, i) => (
+                <li key={i}>{area}</li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        {/* Improvement Tips */}
+        {feedback.improvement_tips?.length > 0 && (
+          <Card className="border-accent-green/30">
+            <CardTitle className="flex items-center gap-2 text-accent-green">
+              <Lightbulb className="h-5 w-5" /> Improvement Tips
+            </CardTitle>
+            <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-content-secondary">
+              {feedback.improvement_tips.map((tip, i) => (
+                <li key={i}>{tip}</li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        {/* Wrong Analysis */}
+        {feedback.wrong_analysis?.length > 0 && (
+          <Card>
+            <CardTitle>Wrong Answers Analysis</CardTitle>
+            <div className="mt-3 space-y-3">
+              {feedback.wrong_analysis.map((item, i) => (
+                <div
+                  key={i}
+                  className="rounded-[var(--radius)] border border-border/50 bg-bg-tertiary/50 p-3"
+                >
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-bold text-accent">Q{item.question_number}</span>
+                    <span className="text-accent-red">You: "{item.user_answer}"</span>
+                    <span className="text-accent-green">Correct: "{item.correct_answer}"</span>
+                  </div>
+                  <p className="mt-1 text-xs text-content-secondary">{item.why_wrong}</p>
+                  <p className="mt-1 text-xs text-accent">Tip: {item.tip}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button variant="outline" className="flex-1" onClick={() => setFeedback(null)}>
+            <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+          </Button>
+          {isMockTest ? (
+            <Button variant="gradient" className="flex-1" onClick={finishTest}>
+              Continue to Reading <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Link href="/listening" className="flex-1">
+              <Button variant="gradient" className="w-full">
+                More Listening Tests <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border bg-bg-secondary px-4 py-2">
+        <Link
+          href="/listening"
+          className="inline-flex items-center gap-2 text-sm font-medium text-content-secondary hover:text-content-primary"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Link>
+        <span className="text-sm font-semibold">Listening Test {id.replace(/^L/, "")}</span>
+        <div className="flex items-center gap-2">
+          {isMockTest && (
+            <Button variant="gradient" size="sm" onClick={finishTest} className="gap-1">
+              Skip <ArrowRight className="h-3 w-3" />
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPanel((s) => !s)}
+            className="gap-1"
+          >
+            {showPanel ? (
+              <>
+                Hide <ChevronDown className="h-3 w-3" />
+              </>
+            ) : (
+              <>
+                Submit <ChevronUp className="h-3 w-3" />
+              </>
+            )}
+          </Button>
+          <FullscreenToggle />
+        </div>
+      </div>
+
+      {isMockTest && (
+        <div className="bg-accent/10 px-4 py-1 text-center text-xs font-medium text-accent">
+          MOCK TEST MODE — Complete this test and submit your score, or click Skip to continue
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className={`flex-1 transition-all ${showPanel ? "w-2/3" : "w-full"}`}>
+          <iframe
+            ref={iframeRef}
+            key={id}
+            src={src}
+            title={`Listening Test ${id}`}
+            className="h-full w-full border-0"
+            allow="autoplay; fullscreen"
+            onLoad={handleIframeLoad}
+          />
+        </div>
+
+        {/* Submit Panel */}
+        {showPanel && (
+          <div className="w-80 overflow-y-auto border-l border-border bg-bg-secondary p-4">
+            <h3 className="mb-3 text-sm font-bold">Submit Answers</h3>
+            <p className="mb-3 text-xs text-content-secondary">
+              After completing the test in the iframe, enter how many you got correct (0-40).
+            </p>
+
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-medium">Correct Answers (0-40)</label>
+              <Input
+                type="number"
+                min={0}
+                max={40}
+                value={correctCount}
+                onChange={(e) => setCorrectCount(e.target.value)}
+                placeholder="e.g. 28"
+                className="text-sm"
+              />
+            </div>
+
+            {/* Optional: numbered answer grid */}
+            <details className="mb-4">
+              <summary className="cursor-pointer text-xs text-content-secondary">
+                Optional: enter individual answers
+              </summary>
+              <div className="mt-2 grid grid-cols-5 gap-1">
+                {Array.from({ length: 40 }, (_, i) => i + 1).map((num) => (
+                  <Input
+                    key={num}
+                    value={answers[String(num)] || ""}
+                    onChange={(e) => handleAnswerChange(num, e.target.value)}
+                    placeholder={`${num}`}
+                    className="h-8 text-center text-xs"
+                  />
+                ))}
+              </div>
+            </details>
+
+            {submitError && (
+              <p className="mb-2 text-xs text-accent-red">{submitError}</p>
+            )}
+
+            <Button
+              variant="gradient"
+              className="w-full"
+              onClick={submitTest}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" /> Get AI Feedback
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

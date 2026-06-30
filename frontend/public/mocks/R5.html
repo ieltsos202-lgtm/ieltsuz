@@ -1,0 +1,1238 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTSUZ вЂ“ Vol 9 Test 1</title>
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Arial,sans-serif;font-size:var(--font-size-base,16px);line-height:1.4;background:#fff;color:#000;transition:background-color .3s,color .3s}button,input,textarea,select{font-family:Arial,sans-serif}.hidden{display:none!important}.top-header{position:fixed;z-index:100;left:0;right:0;top:0;height:60px;background:#fff;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;transition:background-color .3s,color .3s,border-color .3s}
+.header-left{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.timer-container{display:flex;align-items:center;gap:0;color:#333;font-family:'Courier New',monospace;font-size:15px;font-weight:600}
+.timer-display{font-family:'Courier New',monospace;font-size:15px;font-weight:600;color:#333;min-width:62px}
+.timer-controls{display:flex;align-items:center;gap:5px;margin-left:8px}
+.circle-btn{width:28px;height:28px;border-radius:50%;background:#f0f0f0;border:1px solid #ccc;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#333;padding:0;transition:background .2s}
+.circle-btn:hover{background:#e0e0e0}
+.circle-btn svg{width:16px;height:16px;fill:currentColor}
+.zoom-controls{display:flex;align-items:center;gap:3px;background:#f0f0f0;border:1px solid #ccc;border-radius:16px;padding:2px 8px}
+.zoom-btn{background:none;border:none;cursor:pointer;color:#333;font-size:16px;font-weight:700;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .15s;line-height:1}
+.zoom-btn:hover{background:#ddd}
+.zoom-label{font-size:12px;font-weight:600;color:#666;min-width:36px;text-align:center;font-family:Arial,sans-serif}
+.header-btn{background:#f0f0f0;border:1px solid #ccc;border-radius:16px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;color:#333;display:flex;align-items:center;gap:4px;transition:all .2s;white-space:nowrap;font-family:Arial,sans-serif}
+.header-btn:hover{background:#e0e0e0}@keyframes timerBlink{0%,100%{opacity:1}50%{opacity:.3}}.main-area{position:fixed;top:60px;bottom:74px;left:0;right:0;background:#fff;display:flex;flex-direction:column}.part-banner{background:#f1f2ec;border:1px solid #e0e0e0;border-radius:5px;padding:12px 20px;margin:10px 20px 8px 20px;min-height:70px}.part-banner p{margin:0 0 5px}.panels{display:flex;flex:1;min-height:0}.passage-panel,.questions-panel{height:100%;overflow:auto;background:#fff;transition:background-color .3s,color .3s,border-color .3s}.passage-panel{width:50%;border-right:1px solid #e0e0e0}.questions-panel{width:calc(50% - 8px)}.divider{width:8px;cursor:col-resize;background:#f4f4f4;border-left:1px solid #e0e0e0;border-right:1px solid #e0e0e0}.divider:hover{background:#e8e8e8}.panel-inner{padding:18px 24px 60px}.passage-content h4{font-size:20px;font-weight:bold;text-align:center;margin:16px 0 8px}.subtitle{font-style:italic;color:#666;text-align:center;margin-bottom:15px}.source-note{color:#666;font-size:14px}.para{margin-bottom:1.2em;font-size:16px}.p-label{font-weight:700;margin-right:6px}.question-set h3{font-size:18px;margin:0 0 12px}.question-set h4{font-size:16px;margin:18px 0 8px}.instruction{font-weight:600;margin:10px 0;color:#111}.question-block{margin:14px 0 20px}.q-prompt{margin:10px 0 8px}.qno-badge,.multi-choice-option strong,.mg-qno{border:1px solid #d0d7e2;border-radius:6px;padding:2px 6px;background:#fff;font-weight:700}.tf-option,.multi-choice-option,.check-option{display:block;border:1px solid #d9d9d9;background:#fff;border-radius:4px;padding:8px 10px;margin:6px 0;cursor:pointer;transition:background-color .15s,border-color .15s}.tf-option:hover,.multi-choice-option:hover,.check-option:hover{background:#f1f7ff}.tf-option:has(input:checked),.multi-choice-option:has(input:checked),.check-option:has(input:checked){background:#cfe3f9;border-color:#7db3f5}.tf-option.correct,.multi-choice-option.correct,.check-option.correct{background:#d4edda!important;border-color:#28a745!important}.tf-option.incorrect,.multi-choice-option.incorrect,.check-option.incorrect{background:#f8d7da!important;border-color:#dc3545!important}.answer-input{border:1px solid #bfbfbf;border-radius:4px;background:#fff;padding:2px 8px;font-size:16px;font-weight:700;transition:border-color .2s ease;min-width:130px;height:28px}.answer-input:focus{border-color:#3581d8;border-width:2px;outline:none}.answer-input.correct{border-color:#28a745;background:#e9f7ef}.answer-input.incorrect{border-color:#dc3545;background:#f8d7da}.inline-summary{line-height:3.0;background:#fafafa;border:1px solid #ddd;border-radius:5px;padding:15px}.inline-summary .answer-input{width:120px;height:24px;font-size:14px;display:inline-block;vertical-align:middle}.notes-list{list-style:none;margin:8px 0 0 0;padding:0}.notes-list li{margin:7px 0}.correct-answer-display{color:#28a745;font-weight:bold;font-size:14px;margin-left:4px}.nav-arrows{position:fixed;bottom:90px;right:16px;display:flex;gap:4px;z-index:101}
+.nav-arrow{width:44px;height:44px;background:#333;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;border-radius:4px;transition:background .2s}
+.nav-arrow:hover{background:#555}
+.nav-row{position:fixed;z-index:100;left:0;right:0;bottom:0;height:74px;background:#fff;border-top:1px solid #e0e0e0;display:flex;align-items:center;transition:background-color .3s,border-color .3s;overflow-x:auto;font-family:Arial,sans-serif}
+.footer__questionWrapper___1tZ46{display:flex;align-items:center;margin-right:12px;flex-shrink:0}
+.footer__questionNo___3WNct{background:none;border:none;padding:8px 12px;font-size:14px;font-weight:700;color:#333;cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .2s;border-radius:4px;font-family:Arial,sans-serif}
+.footer__questionNo___3WNct:hover{background:#f8f9fa}
+.section-prefix{font-size:13px}
+.sectionNr{font-size:14px;font-weight:800}
+.attemptedCount{font-size:12px;color:#888;margin-left:4px;font-weight:400}
+.footer__subquestionWrapper___9GgoP{display:none;gap:2px;margin-left:6px;flex-wrap:wrap}
+.footer__questionWrapper___1tZ46.selected .footer__subquestionWrapper___9GgoP{display:flex}
+.footer__questionWrapper___1tZ46.selected .attemptedCount{display:none}
+.subQuestion{width:30px;height:30px;min-width:30px;border:1px solid #ccc;background:#fff;color:#333;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;border-radius:3px;font-family:Arial,sans-serif}
+.subQuestion:hover{background:#f0f0f0;border-color:#999}
+.subQuestion.active{background:#4a90e2;color:#fff;border-color:#4a90e2}
+.subQuestion.answered{background:#6c8ebf;color:#fff;border-color:#5a7aad}
+.subQuestion.correct{background:#28a745!important;color:#fff;border-color:#28a745!important}
+.subQuestion.incorrect{background:#dc3545!important;color:#fff;border-color:#dc3545!important}
+.footer__deliverButton___3FM07{margin-left:auto;margin-right:16px;flex-shrink:0;background:#4a90e2;color:#fff;border:none;padding:10px 18px;border-radius:5px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .2s;min-width:140px;justify-content:center;font-family:Arial,sans-serif}
+.footer__deliverButton___3FM07:hover{background:#357abd}
+.footer__deliverButton___3FM07:disabled{background:#e0e0e0;color:#999;cursor:not-allowed}.heading-box{background:#f9f9f9;border:1px solid #ddd;border-radius:5px;padding:15px;margin:12px 0 18px}.mh-heading-card{background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:10px 12px;margin-bottom:10px;font-size:16px;line-height:1.35;cursor:grab}.mh-heading-card.used{opacity:.45;cursor:not-allowed}.mh-heading-card.armed{border-color:#4a90e2;background:#eef5ff}.mh-drop-slot{display:inline-flex;align-items:center;justify-content:center;min-height:36px;min-width:220px;max-width:340px;padding:8px 12px;margin:0 0 12px 0;border:2px dashed #9e9e9e;border-radius:6px;background:#fff;color:#111;font-size:14px;font-weight:700;line-height:1.3;cursor:pointer;user-select:none}.mh-drop-slot:hover,.mh-drop-slot.dragover{border-color:#4a90e2;background:#f1f7ff}.mh-drop-slot.filled{justify-content:flex-start;border-style:solid;font-weight:500}.mh-drop-slot.correct{background:#d4edda!important;border-color:#28a745!important}.mh-drop-slot.incorrect{background:#f8d7da!important;border-color:#dc3545!important}.matching-grid-wrap{overflow-x:auto;margin:14px 0 16px}.matching-grid{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #d9dde3;background:#fff}.matching-grid th{background:#f8f9fb;border:1px solid #d9dde3;padding:10px 8px;font-size:14px;font-weight:700;text-align:center}.matching-grid td{border:1px solid #d9dde3;padding:12px 8px;vertical-align:middle}.matching-grid .statement-col{width:auto;min-width:320px;text-align:left;vertical-align:middle}.matching-grid .option-col{width:52px;text-align:center}.mg-cell{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;cursor:pointer;transition:background-color .15s ease}.mg-cell input[type=radio]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:50%;border:2px solid #9ca3af;background:#fff;position:relative;cursor:pointer}.mg-cell input[type=radio]:checked{border-color:#2563eb}.mg-cell input[type=radio]:checked::after{content:'';position:absolute;inset:4px;border-radius:50%;background:#2563eb}.mg-cell.selected{background:#dbeafe}.mg-cell.correct{background:#d4edda!important}.mg-cell.incorrect{background:#f8d7da!important}.mg-cell.correct input{border-color:#28a745!important}.mg-cell.correct input::after{background:#28a745!important}.mg-cell.incorrect input{border-color:#dc3545!important}.legend-box{border:1px solid #d9dde3;background:#fff;width:max-content;min-width:220px;margin-top:10px}.legend-box div{padding:7px 10px;border-bottom:1px solid #d9dde3}.legend-box div:last-child{border-bottom:0}.result-overlay,.note-modal-overlay,.notes-panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}.result-overlay.show,.note-modal-overlay.show,.notes-panel-overlay.show{display:flex}.result-modal,.note-modal,.notes-panel{background:#fff;border-radius:14px;padding:22px;width:90%;max-width:760px;max-height:85vh;overflow:auto;animation:slideUp .2s ease}.note-modal{max-width:440px}.notes-panel{max-width:480px;display:flex;flex-direction:column}.modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px}.close-btn{width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:20px}.score-card{border:1px solid #ddd;border-radius:10px;padding:14px;margin:12px 0;background:#f9f9f9}.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.score-mini{border:1px solid #ddd;background:#fff;border-radius:8px;padding:10px;text-align:center}.score-big{font-size:28px;font-weight:800}.results-table{width:100%;border-collapse:collapse;margin-top:12px}.results-table th,.results-table td{border:1px solid #ddd;padding:7px;text-align:left}.results-table th{background:#f8f9fb}.res-correct{color:#28a745;font-weight:700}.res-wrong{color:#dc3545;font-weight:700}.hl-floating-toolbar{position:fixed;z-index:9999;background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:10px 12px;display:none;flex-direction:column;gap:8px;min-width:150px;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:toolbarPop .15s cubic-bezier(.34,1.56,.64,1)}.hl-floating-toolbar.show{display:flex}@keyframes toolbarPop{from{opacity:0;transform:translateY(8px) scale(.93)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}.hl-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#999;opacity:.8;padding:0 2px}.hl-colors-row{display:flex;gap:7px;align-items:center}.hl-dot{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}.hl-dot:hover{transform:scale(1.25);border-color:#e0e0e0;box-shadow:0 2px 8px rgba(0,0,0,.15)}.cy{background:#FEF08A}.cg{background:#BBF7D0}.cp{background:#FBCFE8}.cb{background:#BFDBFE}.hl-divider{height:1px;background:#e0e0e0;margin:0 -2px}.hl-text-btn{display:flex;align-items:center;gap:7px;padding:6px 10px;border:none;border-radius:4px;background:none;color:#333;cursor:pointer;font-size:13px;font-weight:500;text-align:left;width:100%;transition:all .15s}.note-btn:hover{color:#4a90e2;background:#f1f7ff}.remove-btn:hover{color:#F59E0B;background:#fffbeb}.clear-btn:hover{color:#dc3545;background:#fff5f5}mark.hl-y{background:#FEF08A}mark.hl-g{background:#BBF7D0}mark.hl-p{background:#FBCFE8}mark.hl-b{background:#BFDBFE}mark.hl-y,mark.hl-g,mark.hl-p,mark.hl-b{border-radius:3px;padding:1px 0;cursor:pointer;color:#000}.note-excerpt{display:block;background:#FEF08A;border-radius:6px;padding:8px 12px;font-size:13px;font-style:italic;color:#333;margin-bottom:14px;max-height:60px;overflow:hidden}.note-modal textarea{width:100%;min-height:80px;resize:vertical;padding:10px;border:1.5px solid #bfbfbf;border-radius:8px}.note-modal textarea:focus{border-color:#3581d8;outline:none}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.save-btn{background:#4a90e2;color:#fff;border:none;border-radius:4px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer}.cancel-btn{background:#f3f4f6;color:#111827;border:1px solid #d1d5db;border-radius:4px;font-size:14px;padding:8px 14px;cursor:pointer}.notes-panel-list{overflow-y:auto;flex:1}.note-card{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:10px;padding:12px;margin-bottom:10px}.note-card .excerpt{display:block;background:#FEF08A;border-radius:4px;padding:3px 8px;font-size:12px;font-style:italic;color:#333;margin-bottom:7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.note-body{font-size:14px;color:#333;margin-bottom:8px;line-height:1.5}.delete-note{border:1px solid #ddd;border-radius:4px;background:none;color:#dc3545;cursor:pointer;font-size:13px;font-weight:600;padding:4px 10px}.delete-note:hover{background:#dc3545;color:#fff}.empty-notes{text-align:center;padding:28px;color:#999;font-size:14px;white-space:pre-line}.answer-highlight{background-color:#ffeb3b;font-weight:bold;border-radius:3px;padding:2px 4px;position:relative;color:#000}.answer-highlight .badge{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background-color:#1a73e8;color:white;font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:10;box-shadow:0 1px 3px rgba(0,0,0,.3);font-family:Arial,sans-serif}html[data-theme="dark"] body,html[data-theme="dark"] .main-area{background:#1a1a1a;color:#e0e0e0}html[data-theme="dark"] .top-header,html[data-theme="dark"] .nav-row,html[data-theme="dark"] .passage-panel,html[data-theme="dark"] .questions-panel,html[data-theme="dark"] .result-modal,html[data-theme="dark"] .note-modal,html[data-theme="dark"] .notes-panel{background:#2d2d2d;color:#e0e0e0;border-color:#444}
+html[data-theme="dark"] .footer__questionNo___3WNct{color:#e0e0e0}
+html[data-theme="dark"] .nav-arrow{background:#444}
+html[data-theme="dark"] .nav-arrow:hover{background:#555}
+html[data-theme="dark"] .timer-display{color:#e0e0e0}
+html[data-theme="dark"] .divider{background:#3a3a3a;border-color:#444}
+html[data-theme="dark"] .circle-btn,.header-btn{background:#444;color:#e0e0e0;border-color:#555}
+html[data-theme="dark"] .zoom-controls{background:#444;border-color:#555}
+html[data-theme="dark"] .zoom-btn,.zoom-label{color:#e0e0e0}
+html[data-theme="dark"] #fsBtn{background:#444;color:#e0e0e0;border-color:#555}
+#fsBtn{font-size:15px;letter-spacing:0}
+html[data-theme="dark"] .header-btn{background:#444;color:#e0e0e0;border-color:#555}
+html[data-theme="dark"] .circle-btn{background:#444;color:#e0e0e0;border-color:#555}
+html[data-theme="dark"] .part-banner{background:#3a3a3a;border-color:#444}
+html[data-theme="dark"] .tg-animated{box-shadow:0 4px 14px rgba(0,136,204,0.35)}html[data-theme="dark"] .passage-tab,html[data-theme="dark"] .part-tab-btn{color:#e0e0e0}html[data-theme="dark"] .passage-tab.active,html[data-theme="dark"] .part-tab-btn.active{color:#fff}html[data-theme="dark"] .subtitle,html[data-theme="dark"] .source-note{color:#bbb}html[data-theme="dark"] .tf-option,html[data-theme="dark"] .multi-choice-option,html[data-theme="dark"] .check-option,html[data-theme="dark"] .answer-input,html[data-theme="dark"] .mh-drop-slot,html[data-theme="dark"] .mh-heading-card,html[data-theme="dark"] .heading-box,html[data-theme="dark"] .inline-summary,html[data-theme="dark"] .legend-box,html[data-theme="dark"] .legend-box div,html[data-theme="dark"] .matching-grid,html[data-theme="dark"] .matching-grid th,html[data-theme="dark"] .matching-grid td{background:#3a3a3a;color:#e0e0e0;border-color:#555}html[data-theme="dark"] .mh-drop-slot.dragover,html[data-theme="dark"] .mh-heading-card.armed{background:#243447;border-color:#6ea8fe}html[data-theme="dark"] .matching-grid th{background:#2d2d2d}html[data-theme="dark"] .mg-cell.selected{background:#1f3b63}html[data-theme="dark"] .qno-badge,html[data-theme="dark"] .mg-qno{background:#2d2d2d;color:#e0e0e0;border-color:#555}html[data-theme="dark"] .hl-floating-toolbar{background:#2d2d2d;color:#e0e0e0;border-color:#555}html[data-theme="dark"] .hl-text-btn{color:#e0e0e0}html[data-theme="dark"] mark.hl-y{background:#854D0E;color:#fff}html[data-theme="dark"] mark.hl-g{background:#166534;color:#fff}html[data-theme="dark"] mark.hl-p{background:#9D174D;color:#fff}html[data-theme="dark"] mark.hl-b{background:#1E3A5F;color:#fff}@media(max-width:900px){.header-actions .tg-animated{display:none}.footer__deliverButton___3FM07{min-width:120px;padding:9px}.score-grid{grid-template-columns:repeat(2,1fr)}}
+/* в”Ђв”Ђ IELTSUZ branding в”Ђв”Ђ */
+.brand{color:#0088cc;font-weight:800;font-size:17px;letter-spacing:0.01em}
+.tg-animated{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#0088cc,#00aff0);color:#fff!important;border:none;border-radius:9999px;padding:7px 16px;font-size:14px;font-weight:700;text-decoration:none!important;white-space:nowrap;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,136,204,0.45);transition:transform .2s,box-shadow .2s}
+.tg-animated:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,136,204,0.65)}
+.tg-animated::before{content:'';position:absolute;top:0;left:-100%;width:55%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.32),transparent);animation:tgShimmer 2.4s ease-in-out infinite}
+@keyframes tgShimmer{0%{left:-100%}100%{left:220%}}
+.tg-plane{font-size:16px;display:inline-block;animation:tgWiggle 2.2s ease-in-out infinite}
+@keyframes tgWiggle{0%,100%{transform:rotate(0deg) translateY(0)}25%{transform:rotate(-14deg) translateY(-2px)}75%{transform:rotate(9deg) translateY(1px)}}
+html[data-theme="dark"] .brand{color:#64b5f6}
+html[data-theme="dark"] .tg-animated{box-shadow:0 4px 14px rgba(0,136,204,0.35)}
+
+/* в”Ђв”Ђ READING INTRO OVERLAY в”Ђв”Ђ */
+.intro-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:#e8eaf0;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  transition:opacity .4s ease, visibility .4s ease;
+}
+.intro-overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.intro-card{
+  background:#ffffff;
+  border-radius:14px;
+  padding:36px 48px 30px;
+  max-width:720px;width:100%;
+  box-shadow:0 8px 40px rgba(0,0,0,0.10);
+  font-family:Arial,sans-serif;
+  color:#1a1a2e;
+  max-height:96vh;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.intro-title{
+  font-size:24px;font-weight:700;
+  color:#1a1a2e;margin-bottom:4px;
+  font-family:Georgia,serif;
+}
+.intro-subtitle{font-size:14px;color:#555;margin-bottom:22px;}
+.intro-section{margin-bottom:16px;}
+.intro-section-title{
+  font-size:13px;font-weight:800;
+  letter-spacing:.04em;color:#1a1a2e;
+  margin-bottom:9px;text-transform:uppercase;
+}
+.intro-list{
+  list-style:disc;padding-left:20px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.intro-list li{font-size:14px;color:#222;line-height:1.5;}
+.intro-warning{
+  display:flex;align-items:center;gap:9px;
+  font-size:13.5px;color:#333;
+  margin:14px 0 20px;
+  padding-top:13px;
+  border-top:1px solid #e8e8e8;
+}
+.intro-warn-icon{font-size:18px;color:#555;flex-shrink:0;}
+.intro-start-btn{
+  display:block;margin:0 auto;
+  background:#1a2744;color:#fff;
+  border:none;border-radius:10px;
+  padding:14px 60px;
+  font-size:16px;font-weight:700;
+  cursor:pointer;font-family:Arial,sans-serif;
+  letter-spacing:.02em;
+  transition:background .2s,transform .15s,box-shadow .2s;
+  box-shadow:0 4px 16px rgba(26,39,68,.3);
+  flex-shrink:0;
+}
+.intro-start-btn:hover{background:#243563;transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,39,68,.4);}
+.intro-start-btn:active{transform:translateY(0);}
+/* Dark mode */
+html[data-theme="dark"] .intro-overlay{background:#111}
+html[data-theme="dark"] .intro-card{background:#1e1e1e;color:#e0e0e0;}
+html[data-theme="dark"] .intro-title{color:#e0e0e0}
+html[data-theme="dark"] .intro-section-title{color:#ccc}
+html[data-theme="dark"] .intro-subtitle{color:#aaa}
+html[data-theme="dark"] .intro-list li{color:#ccc}
+html[data-theme="dark"] .intro-warning{color:#aaa;border-top-color:#333}
+html[data-theme="dark"] .intro-start-btn{background:#2563eb}
+html[data-theme="dark"] .intro-start-btn:hover{background:#1d4ed8}
+
+
+/* === IELTSUZ THEME NORMALIZER === */
+:root {
+  --os-bg: #ffffff;
+  --os-fg: #0f172a;
+  --os-muted: #334155;
+  --os-border: #e2e8f0;
+  --os-input-bg: #ffffff;
+  --os-input-border: #94a3b8;
+  --os-nav-bg: #f8fafc;
+  --os-nav-border: #e2e8f0;
+  --os-accent: #6366f1;
+}
+html.dark, html[data-theme="dark"] {
+  --os-bg: #0a0a0f;
+  --os-fg: #f8fafc;
+  --os-muted: #94a3b8;
+  --os-border: #2d2d3a;
+  --os-input-bg: #1a1a24;
+  --os-input-border: #475569;
+  --os-nav-bg: #111118;
+  --os-nav-border: #2d2d3a;
+  --os-accent: #6366f1;
+}
+
+/* Base overrides */
+html, body {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* All major containers */
+.header, .main-container, .content, .test-content,
+.question-area, .passage, .container, .main-area,
+.section, .modal-content, .questions-panel, .intro-card {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Navigation bars */
+.nav-row, .nav-fixed, .bottom-nav, .nav-row-cdi,
+#top-nav, .floating-audio-bar, .audio-bar {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-nav-border) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Audio player shell */
+.audio-shell, .audio-shell-hdr {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"], .blank,
+.answer-input, .ldm-slot, .ldm-option,
+.multi-choice-option, .word-bank-box, select, textarea {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+  font-size: 16px !important;
+}
+
+/* Placeholders */
+input::placeholder, textarea::placeholder {
+  color: #999 !important;
+}
+html.dark input::placeholder, html[data-theme="dark"] input::placeholder {
+  color: #64748b !important;
+}
+
+/* Text elements */
+p, li, td, th, label, h1, h2, h3, h4, h5, h6,
+.question-text, .instruction, .subtitle, .hint,
+.test-info, .time-info, .section-prefix, .sectionNr {
+  color: var(--os-fg) !important;
+}
+
+/* Muted text */
+.test-info, .subtitle, .instruction, .hint,
+.attemptedCount, .time-text, .zoom-lbl-hdr {
+  color: var(--os-muted) !important;
+}
+
+/* Question number badges */
+.question-number, .inline-qno, .qbadge, .q-num,
+.flow-inline-qno {
+  background-color: #eef5ff !important;
+  border-color: #4a90e2 !important;
+  color: #2563eb !important;
+}
+html.dark .question-number, html[data-theme="dark"] .question-number,
+html.dark .inline-qno, html[data-theme="dark"] .inline-qno,
+html.dark .qbadge, html[data-theme="dark"] .qbadge,
+html.dark .q-num, html[data-theme="dark"] .q-num {
+  background-color: #1e3a5f !important;
+  border-color: #64b5f6 !important;
+  color: #90caf9 !important;
+}
+
+/* Sub-question buttons */
+.subQuestion, .fqsub-wrap .subQuestion {
+  background-color: #ffffff !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .subQuestion, html[data-theme="dark"] .subQuestion {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+}
+.subQuestion.answered {
+  background-color: #e6f7ff !important;
+  border-color: #1890ff !important;
+  color: #096dd9 !important;
+}
+html.dark .subQuestion.answered, html[data-theme="dark"] .subQuestion.answered {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+/* Section tabs */
+.section-tabs, .part-tabs, .part-tab, .nav-btn,
+.nav-button, .fqno-btn {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-border) !important;
+  color: var(--os-fg) !important;
+}
+.section-tabs .active, .part-tab.active, .nav-btn.active,
+.nav-button.active, .fqw.selected .fqno-btn {
+  background-color: var(--os-accent) !important;
+  color: #ffffff !important;
+}
+
+/* Navigation arrows */
+.nav-arrow, .nav-arrow-btn {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+html.dark .nav-arrow, html[data-theme="dark"] .nav-arrow,
+html.dark .nav-arrow-btn, html[data-theme="dark"] .nav-arrow-btn {
+  background-color: #3b3b4f !important;
+  color: #fff !important;
+}
+.nav-arrow:disabled, .nav-arrow-btn:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+}
+html.dark .nav-arrow:disabled, html[data-theme="dark"] .nav-arrow:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+}
+
+/* Intro overlay */
+#intro-overlay, #introOverlay {
+  background: #e8edf5 !important;
+}
+html.dark #intro-overlay, html[data-theme="dark"] #intro-overlay,
+html.dark #introOverlay, html[data-theme="dark"] #introOverlay {
+  background: rgba(0,0,0,0.7) !important;
+}
+#intro-overlay .intro-card, #introOverlay .intro-card {
+  background: #ffffff !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+html.dark #intro-overlay .intro-card, html[data-theme="dark"] #intro-overlay .intro-card,
+html.dark #introOverlay .intro-card, html[data-theme="dark"] #introOverlay .intro-card {
+  background: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Start test button */
+#start-test-btn, #startTestBtn, .start-btn {
+  background: #1a2340 !important;
+  color: #fff !important;
+}
+html.dark #start-test-btn, html[data-theme="dark"] #start-test-btn,
+html.dark #startTestBtn, html[data-theme="dark"] #startTestBtn {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+}
+
+/* Tables */
+table, .test-table, .mcq-table {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+.test-table td, .test-table th, .mcq-table td, .mcq-table th {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+  border-color: var(--os-border) !important;
+}
+.mcq-table tr:nth-child(even) td {
+  background-color: #f8faff !important;
+}
+html.dark .mcq-table tr:nth-child(even) td, html[data-theme="dark"] .mcq-table tr:nth-child(even) td {
+  background-color: var(--os-nav-bg) !important;
+}
+
+/* Timer display */
+.timer-display {
+  background: #f0f0f0 !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+html.dark .timer-display, html[data-theme="dark"] .timer-display {
+  background: #444 !important;
+  color: #e0e0e0 !important;
+  border-color: #555 !important;
+}
+
+/* Highlight marks */
+mark.hl-y { background: #FEF08A !important; color: #000 !important; }
+mark.hl-g { background: #BBF7D0 !important; color: #000 !important; }
+mark.hl-p { background: #FBCFE8 !important; color: #000 !important; }
+mark.hl-b { background: #BFDBFE !important; color: #000 !important; }
+html.dark mark.hl-y, html[data-theme="dark"] mark.hl-y { background: #854d0e !important; color: #fef08a !important; }
+html.dark mark.hl-g, html[data-theme="dark"] mark.hl-g { background: #14532d !important; color: #bbf7d0 !important; }
+html.dark mark.hl-p, html[data-theme="dark"] mark.hl-p { background: #831843 !important; color: #fbcfe8 !important; }
+html.dark mark.hl-b, html[data-theme="dark"] mark.hl-b { background: #1e3a5f !important; color: #bfdbfe !important; }
+
+/* Section banners */
+.section-banner, .test-table th {
+  background: #f0f4ff !important;
+  color: #1e3a5f !important;
+}
+html.dark .section-banner, html[data-theme="dark"] .section-banner {
+  background: #3a3a3a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--os-bg); }
+::-webkit-scrollbar-thumb { background: var(--os-border); border-radius: 4px; }
+
+/* L6 specific */
+.brand-tp { color: #0088cc !important; }
+html.dark .brand-tp, html[data-theme="dark"] .brand-tp { color: #64b5f6 !important; }
+.hdr-pill-btn, .circle-btn, .zoom-controls-hdr {
+  background: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .hdr-pill-btn, html[data-theme="dark"] .hdr-pill-btn,
+html.dark .circle-btn, html[data-theme="dark"] .circle-btn,
+html.dark .zoom-controls-hdr, html[data-theme="dark"] .zoom-controls-hdr {
+  background: #444 !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+.skip-btn, .skip-btn-hdr {
+  color: #4b5563 !important;
+}
+html.dark .skip-btn, html[data-theme="dark"] .skip-btn,
+html.dark .skip-btn-hdr, html[data-theme="dark"] .skip-btn-hdr {
+  color: #e0e0e0 !important;
+}
+
+
+/* === BRANDING === */
+.ielts-logo,[id*="ielts-logo"],[class*="ielts-logo"],img[src*="ielts"],img[alt*="IELTS"],.header img,.header .logo{display:none!important}
+.header::before{content:"IELTSUZ";font-size:20px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-family:Inter,Arial,sans-serif;letter-spacing:-0.02em;display:block}
+.header{background:var(--os-bg,#fff)!important;border-bottom:1px solid var(--os-border,#e2e8f0)!important;color:var(--os-fg,#0f172a)!important;height:60px!important;padding:12px 20px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;position:fixed!important;top:0;left:0;right:0;z-index:100!important}
+html.dark .header{background:var(--os-bg,#0a0a0f)!important;border-bottom-color:var(--os-border,#2d2d3a)!important}
+.audio-player-container,.audio-shell,.floating-audio-bar,.fab-inner{background:var(--os-bg,#fff)!important;border:1px solid var(--os-border,#e2e8f0)!important;border-radius:12px!important;padding:8px 16px!important;margin:8px!important}
+html.dark .audio-player-container,html.dark .audio-shell,html.dark .floating-audio-bar,html.dark .fab-inner{background:var(--os-nav-bg,#111118)!important;border-color:var(--os-nav-border,#2d2d3a)!important}
+.player-btn,.audio-play,.audio-play-hdr,.circle-btn{background:#6366f1!important;color:#fff!important;border:none!important;border-radius:50%!important;width:40px!important;height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important}
+.player-btn:hover,.audio-play:hover{background:#4f46e5!important}
+input[type="range"],#progress-bar,#progressSlider{accent-color:#6366f1!important}
+.timer-display,#timerDisplay{background:#f1f5f9!important;color:#0f172a!important;border:1px solid #e2e8f0!important;border-radius:18px!important;padding:5px 14px!important;font-size:15px!important;font-weight:500!important}
+html.dark .timer-display,html.dark #timerDisplay{background:#1a1a24!important;color:#f8fafc!important;border-color:#475569!important}
+.section-banner,.part-header{background:#f0f4ff!important;border-left:4px solid #6366f1!important;padding:16px 20px!important;margin:16px 0!important;border-radius:0 8px 8px 0!important}
+html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;border-left-color:#6366f1!important}
+.question-text,.question p,.passage p{font-size:17px!important;line-height:1.7!important}
+.answer-input,input[type="text"],.blank,.ldm-slot{background:var(--os-input-bg,#fff)!important;border:2px solid var(--os-input-border,#94a3b8)!important;color:var(--os-fg,#0f172a)!important;border-radius:6px!important;padding:6px 10px!important;font-size:16px!important;min-width:80px!important;text-align:center!important}
+.subQuestion.active{background:#6366f1!important;color:#fff!important;border-color:#6366f1!important}
+
+</style>
+
+<style data-theme-injected>
+/* Light mode defaults (already in files) */
+/* Dark mode overrides */
+[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .header,
+[data-theme="dark"] header {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .passage,
+[data-theme="dark"] .passage-container,
+[data-theme="dark"] .question-area,
+[data-theme="dark"] .questions-container,
+[data-theme="dark"] .main-container,
+[data-theme="dark"] .left-column,
+[data-theme="dark"] .right-column,
+[data-theme="dark"] .text-content,
+[data-theme="dark"] .reading-passage,
+[data-theme="dark"] .passage-text,
+[data-theme="dark"] .section-content,
+[data-theme="dark"] .container,
+[data-theme="dark"] .wrapper,
+[data-theme="dark"] .inner,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .question-card,
+[data-theme="dark"] .part-header,
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-container,
+[data-theme="dark"] .test-area,
+[data-theme="dark"] .test-content,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .test-panel,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-container,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .page-area,
+[data-theme="dark"] .page-panel,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .question-panel,
+[data-theme="dark"] .question-content,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .passage-panel,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .reading-panel,
+[data-theme="dark"] .reading-content,
+[data-theme="dark"] .reading-container,
+[data-theme="dark"] .listening-container,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .listening-panel,
+[data-theme="dark"] .listening-content,
+[data-theme="dark"] .ielts-container,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .ielts-panel,
+[data-theme="dark"] .ielts-content,
+[data-theme="dark"] .exam-container,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .exam-panel,
+[data-theme="dark"] .exam-content,
+[data-theme="dark"] .practice-container,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .practice-panel,
+[data-theme="dark"] .practice-content,
+[data-theme="dark"] .mock-container,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .mock-panel,
+[data-theme="dark"] .mock-content,
+[data-theme="dark"] .test-section,
+[data-theme="dark"] .reading-section,
+[data-theme="dark"] .listening-section,
+[data-theme="dark"] .ielts-section,
+[data-theme="dark"] .exam-section,
+[data-theme="dark"] .practice-section,
+[data-theme="dark"] .mock-section,
+[data-theme="dark"] .question-section,
+[data-theme="dark"] .passage-section,
+[data-theme="dark"] .content-section,
+[data-theme="dark"] .page-section,
+[data-theme="dark"] .area-section,
+[data-theme="dark"] .panel-section,
+[data-theme="dark"] .box-section,
+[data-theme="dark"] .wrapper-section,
+[data-theme="dark"] .container-section,
+[data-theme="dark"] .main-section,
+[data-theme="dark"] .sub-section,
+[data-theme="dark"] .inner-section,
+[data-theme="dark"] .outer-section,
+[data-theme="dark"] .top-section,
+[data-theme="dark"] .bottom-section,
+[data-theme="dark"] .left-section,
+[data-theme="dark"] .right-section,
+[data-theme="dark"] .center-section,
+[data-theme="dark"] .middle-section,
+[data-theme="dark"] .full-section,
+[data-theme="dark"] .half-section,
+[data-theme="dark"] .third-section,
+[data-theme="dark"] .quarter-section,
+[data-theme="dark"] .fifth-section,
+[data-theme="dark"] .sixth-section,
+[data-theme="dark"] .seventh-section,
+[data-theme="dark"] .eighth-section,
+[data-theme="dark"] .ninth-section,
+[data-theme="dark"] .tenth-section,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .answer-wrapper,
+[data-theme="dark"] .instruction-wrapper,
+[data-theme="dark"] .direction-wrapper,
+[data-theme="dark"] .title-wrapper,
+[data-theme="dark"] .section-wrapper,
+[data-theme="dark"] .part-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .inner-wrapper,
+[data-theme="dark"] .outer-wrapper,
+[data-theme="dark"] .top-wrapper,
+[data-theme="dark"] .bottom-wrapper,
+[data-theme="dark"] .left-wrapper,
+[data-theme="dark"] .right-wrapper,
+[data-theme="dark"] .center-wrapper,
+[data-theme="dark"] .middle-wrapper,
+[data-theme="dark"] .full-wrapper,
+[data-theme="dark"] .half-wrapper,
+[data-theme="dark"] .third-wrapper,
+[data-theme="dark"] .quarter-wrapper,
+[data-theme="dark"] .fifth-wrapper,
+[data-theme="dark"] .sixth-wrapper,
+[data-theme="dark"] .seventh-wrapper,
+[data-theme="dark"] .eighth-wrapper,
+[data-theme="dark"] .ninth-wrapper,
+[data-theme="dark"] .tenth-wrapper,
+[data-theme="dark"] div[style*="background-color: rgb(255, 255, 255)"],
+[data-theme="dark"] div[style*="background-color: #ffffff"],
+[data-theme="dark"] div[style*="background-color: #fff"] {
+  background-color: #1e293b !important;
+}
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] li,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] label,
+[data-theme="dark"] div {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .part-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .area-box,
+[data-theme="dark"] .panel-box,
+[data-theme="dark"] .wrapper-box,
+[data-theme="dark"] .container-box,
+[data-theme="dark"] .inner-box,
+[data-theme="dark"] .outer-box,
+[data-theme="dark"] .top-box,
+[data-theme="dark"] .bottom-box,
+[data-theme="dark"] .left-box,
+[data-theme="dark"] .right-box,
+[data-theme="dark"] .center-box,
+[data-theme="dark"] .middle-box,
+[data-theme="dark"] .full-box,
+[data-theme="dark"] .half-box,
+[data-theme="dark"] .third-box,
+[data-theme="dark"] .quarter-box,
+[data-theme="dark"] .fifth-box,
+[data-theme="dark"] .sixth-box,
+[data-theme="dark"] .seventh-box,
+[data-theme="dark"] .eighth-box,
+[data-theme="dark"] .ninth-box,
+[data-theme="dark"] .tenth-box {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .answer-input,
+[data-theme="dark"] .answer-select,
+[data-theme="dark"] input[type="text"] {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .subQuestion,
+[data-theme="dark"] .question-number,
+[data-theme="dark"] .question-btn,
+[data-theme="dark"] .footer__questionNo___3WNct {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .subQuestion:hover,
+[data-theme="dark"] .question-btn:hover,
+[data-theme="dark"] .footer__questionNo___3WNct:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .subQuestion.active,
+[data-theme="dark"] .question-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.correct,
+[data-theme="dark"] .question-btn.correct {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.incorrect,
+[data-theme="dark"] .question-btn.incorrect {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .drop-zone {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .drop-zone.drag-over {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .drop-zone.correct {
+  background-color: #14532d !important;
+  border-color: #22c55e !important;
+}
+[data-theme="dark"] .drop-zone.incorrect {
+  background-color: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+[data-theme="dark"] .highlight,
+[data-theme="dark"] .text-highlight {
+  background-color: #854d0e !important;
+  color: #fef3c7 !important;
+}
+[data-theme="dark"] .comment-highlight {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .resizer {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .context-menu {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-panel {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .timer-display,
+[data-theme="dark"] .timer-container {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07 {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07:hover {
+  background-color: #475569 !important;
+}
+[data-theme="dark"] #goto-btn,
+[data-theme="dark"] .goto-btn {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .tf-question-line {
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .tf-question.correct .tf-question-line {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .tf-question.incorrect .tf-question-line {
+  background-color: #7f1d1d !important;
+}
+[data-theme="dark"] .matching-question-container {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .matching-item,
+[data-theme="dark"] .matching-option {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .matching-item:hover,
+[data-theme="dark"] .matching-option:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .summary-blank,
+[data-theme="dark"] .gap-input {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .part-title,
+[data-theme="dark"] .test-title,
+[data-theme="dark"] .page-title {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .instruction-text,
+[data-theme="dark"] .direction-text,
+[data-theme="dark"] .note-text,
+[data-theme="dark"] .hint-text,
+[data-theme="dark"] .tip-text {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] a {
+  color: #60a5fa !important;
+}
+[data-theme="dark"] a:hover {
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .check-answers-btn,
+[data-theme="dark"] .submit-btn,
+[data-theme="dark"] .next-btn,
+[data-theme="dark"] .prev-btn {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+[data-theme="dark"] .check-answers-btn:hover,
+[data-theme="dark"] .submit-btn:hover,
+[data-theme="dark"] .next-btn:hover,
+[data-theme="dark"] .prev-btn:hover {
+  background-color: #2563eb !important;
+}
+[data-theme="dark"] .audio-player,
+[data-theme="dark"] .audio-controls,
+[data-theme="dark"] .player-controls {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .progress-bar,
+[data-theme="dark"] .volume-slider {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569 !important;
+  border-radius: 4px;
+}
+[data-theme="dark"] table {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] th {
+  background-color: #334155 !important;
+}
+</style>
+
+</head>
+<body>
+
+<!-- в”Ђв”Ђ READING INTRO OVERLAY в”Ђв”Ђ -->
+<div id="introOverlay" class="intro-overlay">
+  <div class="intro-card">
+    <h1 class="intro-title">IELTS Reading</h1>
+    <p class="intro-subtitle">Time: 60 minutes</p>
+
+    <div class="intro-section">
+      <h2 class="intro-section-title">INSTRUCTIONS TO CANDIDATES</h2>
+      <ul class="intro-list">
+        <li>Answer <strong>all</strong> the questions.</li>
+        <li>You can change your answers at any time during the test.</li>
+      </ul>
+    </div>
+
+    <div class="intro-section">
+      <h2 class="intro-section-title">INFORMATION FOR CANDIDATES</h2>
+      <ul class="intro-list">
+        <li>There are 40 questions in this test.</li>
+        <li>Each question carries one mark.</li>
+        <li>The test clock will show you when there are 10 minutes and 5 minutes remaining.</li>
+      </ul>
+    </div>
+
+    <p class="intro-warning">
+      <span class="intro-warn-icon">&#9432;</span>
+      Do not click 'Start test' until you are told to do so.
+    </p>
+
+    <button class="intro-start-btn" onclick="startTest()">Start Test</button>
+  </div>
+</div>
+
+<header class="top-header">
+  <div class="header-left">
+    <div class="timer-container">
+      <span id="timerDisplay" class="timer-display">60:00</span>
+      <div class="timer-controls">
+        <button id="timerToggle" class="circle-btn" title="Start/Pause">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button id="timerReset" class="circle-btn" title="Reset">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoomOutBtn" title="Zoom out">в€’</button>
+      <span class="zoom-label" id="zoomLabel">100%</span>
+      <button class="zoom-btn" id="zoomInBtn" title="Zoom in">+</button>
+    </div>
+    <button class="header-btn" id="fsBtn" title="Fullscreen">в›¶ Full</button>
+    <button class="header-btn" id="nightBtn">рџЊ™ Night</button>
+    <button class="header-btn" id="openNotesBtn">рџ“ќ Notes <span id="notesBadge" style="background:#f9a825;color:#1a1a1a;border-radius:10px;padding:1px 6px;font-size:11px;display:none;margin-left:2px;">0</span></button>
+  </div>
+  
+</header>
+<main class="main-area">
+  <div id="partBanner" class="part-banner"></div>
+  <div class="panels">
+    <section class="passage-panel" id="passagePanel">
+      <div class="panel-inner">
+        <article class="passage-content" data-part="1">
+          <h4>The Baobabs of Madagascar</h4>
+          <div class="subtitle">The ancient baobabs of Madagascar are some of the largest and most distinctive trees in the world, but they face an uncertain future.</div>
+          <p class="para">The island of Madagascar in the Indian Ocean is the best place in the world to see baobabs. These spectacular trees, with their massive trunks and distinctive horizontal root-like branches, can live over 800 years. Of the eight known species, six are found only there, while a seventh has made its way across the Mozambique Channel from mainland Africa with a certain amount of human help. Some of the most visited and photographed baobabs in Madagascar are at the Avenue des Baobabs in the western province of Menabe, close to the town of Morondava. There, a dozen trees straddle a narrow sandy road, soaring 30 metres into the sky. Known as renala вЂ“ "mother of the forest" вЂ“ in the local Malagasy* language, these trees belong to the tallest baobab species in the world: Adansonia grandidieri, named after two great 19th-century French botanists, Michel Adanson and Alfred Grandidier.</p>
+          <p class="para">Baobabs have religious and spiritual significance for many Malagasy tribes, although the majority of the island's population will probably never see one вЂ“ they only grow along the western margin of the island and not in the more populous central highlands. However, as the national tree and the national emblem, the trees are an ideal symbol for increasing awareness not only of the endangered forests, but also of the traditional beliefs of the people who live alongside them. But what does the future hold for the Malagasy baobabs?</p>
+          <p class="para">The Avenue des Baobabs is something of a contradiction; the "natural" scene that tourists visit is actually man-made. While the trees themselves are natural enough, the surrounding landscape was created by humans. Back in the early 20th century, much of the Morondava plain was cleared for rice and sugar-cane fields. However, many baobabs were spared because they are valuable as a food source and renewable building material, or they simply survived the fires that were set to clear the dry deciduous forest around them. These days many stand alone in fields, a reminder of where the forest once was. But now it seems that even the mighty baobabs are falling down. "Every year I see new trees that have fallen," says Jim Bond, an ethnobotanist who has studied Madagascar's baobabs for more than a decade. The exact cause of the falling baobabs is uncertain, but some people think that the water used to irrigate the nearby fields is partly to blame. Baobabs are adapted to the annual wet season, but their roots can't cope with constantly waterlogged soils. Lone trees separated from the surrounding forest are also susceptible to cyclones, which reach speeds of over 200 kph in the area, and can easily uproot even a 30-metre baobab.</p>
+          <p class="para">Baobabs elsewhere on the island are also facing a host of threats, with three of the six native species now listed as endangered by the World Conservation Union. David Baum from the University of Wisconsin has spent years researching Malagasy baobabs. "The main threat to their survival is land clearance for farming, which probably suppresses regeneration," he says. Burning is the usual method of clearing land, and while baobabs have some resistance to this, they will eventually succumb to repeated burning. Human disturbance in the forest, such as logging, is also a problem. This practice may be promoting the rapid spread of shrubby undergrowth, which quickly fills in the bright forest gaps needed for baobab germination. Another problem the trees face is the dispersal of their seeds. Baum suggests that dispersal is being limited by the absence of two large, now extinct animals вЂ“ a gorilla-sized lemur and the three-metre-tall elephant bird. Passage through the digestive tract of these giant fruit-eating animals probably once played a vital role in the distribution of the renala baobabs in particular.</p>
+          <p class="para">The Malagasy government is becoming increasingly concerned as the baobab is key to the local tourism industry, and thus to the economy of the island as a whole. But visiting and photographing the solitary trees in the dramatic open landscape at the Avenue des Baobabs isn't the only way to experience baobabs in Madagascar. Within a few hours' drive of Morondava, three species of baobab can be seen in largely intact, dry forest habitat. Jim Bond has led expeditions of Malagasy and foreign participants to the Mikea forest in the island's southwest, which is almost certainly one of the least studied and least damaged areas of baobab forest left in Madagascar. On his expeditions Bond works closely with local people to search for, and create maps of baobab distribution. He also plans to compile an illustrated children's book of the many local folk-tales about the tree, hoping that national and international versions will help to spread the word about how important baobabs are in Malagasy culture. But it's going to require some swift and coordinated action to ensure that the baobab becomes a symbol of conservation success, rather than a symbol of humanity's mistakes.</p>
+          <p class="source-note">* Malagasy: of Madagascar</p>
+        </article>
+        <article class="passage-content hidden" data-part="2">
+          <h4>Coins вЂ“ the first form of money</h4>
+          <div class="subtitle">Reading Passage 2 has seven paragraphs, AвЂ“G.</div>
+          <div class="mh-drop-slot" data-question="14" draggable="true">14</div><p class="para" data-para="A"><span class="p-label">A</span>Few people pay much attention to coins; we take them for granted. Since the advent of paper currency and the abandonment of a monetary system based on intrinsic or actual value, they have been demoted to the status of change: what is left when you have paid for something with "paper" money. There is even a belief that they will one day be obsolete, as will paper or plastic notes, and money will at last have achieved the pure status of a mathematical formulation, a system of electronic credits and debits.</p>
+          <div class="mh-drop-slot" data-question="15" draggable="true">15</div><p class="para" data-para="B"><span class="p-label">B</span>In the modern media environment, the sheer number of visual images is overwhelming, but it makes one stop to think that coins are among the most durable of our artefacts, and future archaeologists will scrutinise coins in order to learn about their distant ancestors. This is exactly the way ancient coins have informed us for over four millennia. There are thousands of different coins, each designed to carry meaning as well as value, tiny but rich sources of documentary evidence about events and cultural attitudes, frequently produced with exquisite craftsmanship.</p>
+          <div class="mh-drop-slot" data-question="16" draggable="true">16</div><p class="para" data-para="C"><span class="p-label">C</span>Coins in Europe date from 2,500 to 2,700 years ago, and seem to have originated in the ancient kingdom of Lydia, in what is now Turkey. Before coins, trade was based on barter: the direct trade of commodities. Barter required the physical presence of both commodities that were being traded. Metal coins were far more portable, and not subject to the same spoilage on long sea journeys as a commodity like grain might be if it became wet. However, they could also be accumulated, and these hoards could be stolen. Coins were therefore a temptation to criminals. The Greeks, however, were the first to realise the full potential of the new invention. They were a trading people of seafarers. Their civilisation, which was composed of dozens of city-states, was highly decentralised. Despite the potential for theft, the Greeks realised that they could benefit enormously from a system that used coins, because it meant that they no longer had to carry goods with them to barter.</p>
+          <div class="mh-drop-slot" data-question="17" draggable="true">17</div><p class="para" data-para="D"><span class="p-label">D</span>The value of coins was generally based on the intrinsic value of the metal they were made of. At first this was mostly silver, and this meant that the discovery of silver mines on Greek territory actually increased the quantity of money they could produce. Had the Greek mining been on a larger scale, it could have caused problems similar to those faced by the Spanish centuries later, when so much gold from the New World was brought into their economy that it resulted in serious inflation. One advantage of intrinsic value was that coins could be weighed to determine the amount of metal they contained, so that the only thing an issuing state had to guarantee was the purity of the metal to prevent accusations of fraud and cheating, which could cause fighting and unrest. This was quite difficult to do, especially with coins made of gold, until Archimedes realised that different metals have different weight-volume ratios, and that by measuring the amount of displacement when coins were immersed in water, it was possible to establish whether gold was alloyed with silver.</p>
+          <div class="mh-drop-slot" data-question="18" draggable="true">18</div><p class="para" data-para="E"><span class="p-label">E</span>All ancient coins were made by hand using engraved metal moulds. Many hundreds of coins were made, and as a result the moulds often cracked and new ones had to be engraved. This explains the endless variety encountered in coins with the same designs because the moulds had to be remade repeatedly, by many different artisans. One of the distinctive features of coins, in fact, is that they are the work of anonymous craftsmen, and yet each coin is an intimate reflection of the character of its city of origin. It was the Greeks who realised that coins could have a double function, as a unit of value and as a symbol of the identity of the city that issued them. The Greek view of life was deeply motivated by a spirit of competition, and coins, which circulated around the trading world, were a way of advertising the qualities of each particular city-state.</p>
+          <div class="mh-drop-slot" data-question="19" draggable="true">19</div><p class="para" data-para="F"><span class="p-label">F</span>Interestingly, Greek coins from the city of Athens, which was the home of the greatest sculptors of the classical period, seem to have been completely disconnected from the high sculptural tradition. The beautiful features of the city's patron, Athena (with her owl on the reverse of the coin), seem to have been repeated virtually unaltered for many years. Perhaps this was because the Athenian currency had grown increasingly to be the international standard and, like the US dollar today, a uniform design implied integrity.</p>
+          <div class="mh-drop-slot" data-question="20" draggable="true">20</div><p class="para" data-para="G"><span class="p-label">G</span>One side of a coin was always occupied by the head of a divinity, so it was a relatively small step, at around 323 BC, for Greek coins to replace that head with the portrait of the reigning monarch, a tradition that has continued in monarchies to the present day. Republics may have either symbolic heads вЂ“ going back to the older tradition of divinities вЂ“ or the features of a distinguished past head of state. The Romans adopted the Greek practice of coin design and as a result, the features of many great Romans have survived and are known to modern generations, despite the fact that the art of portrait painting was completely lost for more than a millennium following the fall of the Roman Empire.</p>
+        </article>
+        <article class="passage-content hidden" data-part="3">
+          <h4>Creating a Better Grapefruit</h4>
+          <div class="subtitle">By blocking the right taste receptors, biotech researchers turn bitter into sweet.</div>
+          <p class="para" data-para="A"><span class="p-label">A</span>There is a reason why grapefruit juice is served in little glasses. Most people don't want to drink more than a few ounces at a time. This is because a natural chemical compound found in grapefruit, naringin, has a bitter taste. Some people like that bitterness in small doses and believe it enhances the general flavour, but others would rather avoid it altogether. So juice packagers often select grapefruit with low naringin content, even though the compound has antioxidant properties that some nutritionists contend may help prevent many serious diseases.</p>
+          <p class="para" data-para="B"><span class="p-label">B</span>It is possible, however, to get the goodness of grapefruit without the bitter taste. In a test conducted by a biotechnology company, sets of two miniature white paper cups, labelled 304 and 305, were placed before five people seated around a conference table. Each person drank from one cup and then the other, cleansing their palates between tastes with water and a cracker. Even the smallest sip of 304 had grapefruit's unmistakeable bite. But 305 was smoother; there was the sour taste of citrus but none of the bitterness of naringin. This juice had been treated with AMP, a compound that blocks the bitterness in foods without making them less nutritious.</p>
+          <p class="para" data-para="C"><span class="p-label">C</span>Taste research is a booming business these days, with scientists delving into all five basics: sweet, bitter, sour, salty, and umami (the savory taste of protein). However, bitterness is of special interest to the food industry because it is present in so many different types of food. There are thousands of bitter-tasting compounds in nature. They defend plants by warning animals away and protect animals by letting them know when a plant may be poisonous. But the system isn't foolproof. Grapefruit and bitter green vegetables like Brussels sprouts and kale are nutritious despite вЂ“ and sometimes because of вЂ“ their bitter-tasting components.</p>
+          <p class="para" data-para="D"><span class="p-label">D</span>"Humans are the only species that enjoys a bitter taste," says Charles Zuker, a neuroscientist at the University of California School of Medicine at San Diego. "Every other species is averse to bitter because it means bad news. But we have learned to enjoy it. We drink coffee, which is bitter, and quinine (in tonic water) too. We enjoy having that spice in our lives." Because bitterness can be pleasant in small quantities but repellent when intense, bitter blockers like AMP could make a whole range of foods, drinks and medicines more palatable.</p>
+          <p class="para" data-para="E"><span class="p-label">E</span>People have varying capacities for tasting bitterness and the differences appear to be genetic. About 75% of people are sensitive to the taste of some well-identified bitter compounds. Those who are sensitive seem to be less likely than others to eat bitter vegetables, according to Stephen Wooding, a geneticist at the University of Utah. Some people who have an unusually high number of taste buds, and are known as "supertasters", are especially sensitive to these compounds. Supertasters tend to shun all kinds of bitter-tasting things, including vegetables, coffee, and dark chocolate.</p>
+          <p class="para" data-para="F"><span class="p-label">F</span>The tongue is covered with taste buds. Under the microscope each one looks like an onion, consisting of 50 to 100 elongated cells running from the top of the taste buds to the bottom. At the top is a group of receptors that captures the taste molecules, known as tastants, in food and drink. The receptors function much like those for sight and smell. Once a bitter signal has been received, it is relayed via proteins known as G proteins. The G protein involved in the perception of bitterness, sweetness and umami was identified in the early 1990s by Robert Margolskee, at Mount Sinai School of Medicine in New York. The protein triggers a cascade of chemical reactions that lead to ion concentrations within the cell. Ultimately, this delivers a signal to the brain that registers as bitter.</p>
+          <p class="para" data-para="G"><span class="p-label">G</span>Once they understood the taste mechanism, scientists began to think of ways to interfere with it. They tried AMP, an organic compound found in breast milk and other substances, that is created as cells break down food. AMP has no bitterness of its own, but when put in foods, as Margolskee and his colleagues discovered, it attaches to bitter-taste receptors. As effective as it is, AMP may not be able to dampen every type of bitter taste because it probably doesn't attach to all 30 bitter-taste receptors.</p>
+          <p class="para" data-para="H"><span class="p-label">H</span>Some taste researchers believe that, in time, compounds like AMP will help make processed foods less unhealthy. Consider, for example, that a single cup of canned chicken noodle soup contains 850 milligrams of sodium chloride, or table salt вЂ“ more than a third of the recommended daily allowance. The salt masks the bitterness created by the high temperatures used in the canning process, which cause sugars and amino acids to react. Part of the table salt could be replaced by another type of salt, potassium chloride, which tends to be scarce in some people's diets because of its bitter taste. But that bitter taste could be eliminated with a dose of AMP. Bitter blockers could also be used in place of sugary cherry and grape flavourings in children's cough syrups, and they could dampen the bitterness of drugs like antihistamines, antibiotics and other similar products.</p>
+          <p class="para" data-para="I"><span class="p-label">I</span>A number of foodmakers have already begun to experiment with AMP in their products, and other bitter blockers are being developed. In a few years, perhaps, after food companies have taken the bitterness from canned soup and improved the taste of medicines, they can set their sights on something more useful: a bitter blocker in a bottle that any of us can sprinkle on our Brussels sprouts or stir into our grapefruit juice.</p>
+        </article>
+      </div>
+    </section>
+    <div class="divider" id="divider" title="Drag to resize"></div>
+    <section class="questions-panel" id="questionsPanel">
+      <div class="panel-inner">
+        <div class="question-set" data-part="1">
+          <h3>Questions 1вЂ“13</h3>
+          <h4>Questions 1вЂ“6</h4>
+          <p class="instruction">Choose TRUE if the statement agrees with the information given in the text, choose FALSE if the statement contradicts the information, or choose NOT GIVEN if there is no information on this.</p>
+          <div id="qblock1" class="question-block"><p class="q-prompt"><span class="qno-badge">1</span> All of the baobab species found on Madagascar are unique to the island.</p><div class="tf-group" data-q="1"></div></div>
+          <div id="qblock2" class="question-block"><p class="q-prompt"><span class="qno-badge">2</span> Adanson and Grandidier were the first foreign botanists to visit Madagascar.</p><div class="tf-group" data-q="2"></div></div>
+          <div id="qblock3" class="question-block"><p class="q-prompt"><span class="qno-badge">3</span> The baobab can be found in most areas of Madagascar.</p><div class="tf-group" data-q="3"></div></div>
+          <div id="qblock4" class="question-block"><p class="q-prompt"><span class="qno-badge">4</span> The landscape around the Avenue des Baobabs is the result of agricultural development.</p><div class="tf-group" data-q="4"></div></div>
+          <div id="qblock5" class="question-block"><p class="q-prompt"><span class="qno-badge">5</span> Jim Bond is certain about what is causing baobabs in the Morondava area to fall.</p><div class="tf-group" data-q="5"></div></div>
+          <div id="qblock6" class="question-block"><p class="q-prompt"><span class="qno-badge">6</span> There is general agreement about the reasons for baobabs falling down.</p><div class="tf-group" data-q="6"></div></div>
+          <h4>Questions 7вЂ“13</h4>
+          <p class="instruction">Complete the notes below. Write ONE WORD ONLY from the passage for each answer.</p>
+          <div class="question-block inline-summary">
+            <h4>Baobabs under threat</h4>
+            <p><strong>Reasons why Madagascar's baobabs are declining in number:</strong></p>
+            <p><strong>Morondava area</strong><br>вЂ“ trees may be falling down because of <span class="qno-badge">7</span> <input id="q7" class="answer-input" type="text"> from nearby fields<br>вЂ“ lone trees are at risk from <span class="qno-badge">8</span> <input id="q8" class="answer-input" type="text"></p>
+            <p><strong>Forest areas</strong><br>вЂ“ land clearance: mainly by burning carried out to create space for <span class="qno-badge">9</span> <input id="q9" class="answer-input" type="text"> activity<br>вЂ“ practice of <span class="qno-badge">10</span> <input id="q10" class="answer-input" type="text"> makes seed germination difficult<br>вЂ“ disappearance of certain <span class="qno-badge">11</span> <input id="q11" class="answer-input" type="text"> which dispersed baobab seeds</p>
+            <p><strong>Jim Bond's efforts to record information about the baobab:</strong><br>вЂ“ making <span class="qno-badge">12</span> <input id="q12" class="answer-input" type="text"> of areas of relatively undamaged baobab forest<br>вЂ“ producing a <span class="qno-badge">13</span> <input id="q13" class="answer-input" type="text"> showing importance of baobab in local culture</p>
+          </div>
+        </div>
+        <div class="question-set hidden" data-part="2">
+          <h3>Questions 14вЂ“26</h3>
+          <h4>Questions 14вЂ“20</h4>
+          <p class="instruction">Reading Passage 2 has seven paragraphs. Choose the correct heading for each paragraph from the list of headings below. Drag a heading from the list and drop it into the box above the correct paragraph in the passage panel. Click a filled box to remove it.</p>
+          <div class="heading-box" id="headingBank">
+            <h4>List of Headings</h4>
+            <div class="mh-heading-card" draggable="true" data-code="i" data-label="i. Training coin makers"><strong>i</strong> Training coin makers</div>
+            <div class="mh-heading-card" draggable="true" data-code="ii" data-label="ii. A form of regional promotion"><strong>ii</strong> A form of regional promotion</div>
+            <div class="mh-heading-card" draggable="true" data-code="iii" data-label="iii. More gold than silver in Greece"><strong>iii</strong> More gold than silver in Greece</div>
+            <div class="mh-heading-card" draggable="true" data-code="iv" data-label="iv. Calculating what a coin was worth"><strong>iv</strong> Calculating what a coin was worth</div>
+            <div class="mh-heading-card" draggable="true" data-code="v" data-label="v. A simpler, more efficient way of trading"><strong>v</strong> A simpler, more efficient way of trading</div>
+            <div class="mh-heading-card" draggable="true" data-code="vi" data-label="vi. Putting a face to famous historical names"><strong>vi</strong> Putting a face to famous historical names</div>
+            <div class="mh-heading-card" draggable="true" data-code="vii" data-label="vii. An uncertain future"><strong>vii</strong> An uncertain future</div>
+            <div class="mh-heading-card" draggable="true" data-code="viii" data-label="viii. Careless workmanship caused breakages"><strong>viii</strong> Careless workmanship caused breakages</div>
+            <div class="mh-heading-card" draggable="true" data-code="ix" data-label="ix. Unchanging coins signalled trustworthiness"><strong>ix</strong> Unchanging coins signalled trustworthiness</div>
+            <div class="mh-heading-card" draggable="true" data-code="x" data-label="x. Reading the writing on coins"><strong>x</strong> Reading the writing on coins</div>
+            <div class="mh-heading-card" draggable="true" data-code="xi" data-label="xi. Significant records of past societies"><strong>xi</strong> Significant records of past societies</div>
+          </div>
+          <div class="question-block" id="qblock14"><p><span class="qno-badge">14</span> Paragraph A</p></div>
+          <div class="question-block" id="qblock15"><p><span class="qno-badge">15</span> Paragraph B</p></div>
+          <div class="question-block" id="qblock16"><p><span class="qno-badge">16</span> Paragraph C</p></div>
+          <div class="question-block" id="qblock17"><p><span class="qno-badge">17</span> Paragraph D</p></div>
+          <div class="question-block" id="qblock18"><p><span class="qno-badge">18</span> Paragraph E</p></div>
+          <div class="question-block" id="qblock19"><p><span class="qno-badge">19</span> Paragraph F</p></div>
+          <div class="question-block" id="qblock20"><p><span class="qno-badge">20</span> Paragraph G</p></div>
+          <h4>Questions 21вЂ“22</h4>
+          <p class="instruction">Choose TWO correct answers. Select no more than TWO options.</p>
+          <div class="question-block" id="qblock21"><p class="q-prompt"><span class="qno-badge">21вЂ“22</span> Which TWO of these comments about ancient coins are made by the writer of the text?</p>
+            <label class="check-option" data-q="21-22" data-value="A"><input type="checkbox" name="q21_22" value="A"> A There is no record of the names of the coin makers.</label>
+            <label class="check-option" data-q="21-22" data-value="B"><input type="checkbox" name="q21_22" value="B"> B Coins were not popular as payment for traded objects.</label>
+            <label class="check-option" data-q="21-22" data-value="C"><input type="checkbox" name="q21_22" value="C"> C Coins with the same design often looked quite different.</label>
+            <label class="check-option" data-q="21-22" data-value="D"><input type="checkbox" name="q21_22" value="D"> D Greek coins were more beautiful in design than Roman coins.</label>
+            <label class="check-option" data-q="21-22" data-value="E"><input type="checkbox" name="q21_22" value="E"> E At times, too many coins were produced in Greece.</label>
+          </div>
+          <h4>Questions 23вЂ“26</h4>
+          <p class="instruction">Complete the summary below. Write ONE WORD ONLY from the passage for each answer.</p>
+          <div class="question-block inline-summary">
+            <h4>Greek traders and coins</h4>
+            <p>The ancient Greek <span class="qno-badge">23</span> <input id="q23" class="answer-input" type="text"> was made up of many city-states which were spread over a large area. Many Greeks were seafarers who travelled the seas trading. Before coins, they had to do this through <span class="qno-badge">24</span> <input id="q24" class="answer-input" type="text">. This meant that, whenever they set out, they had to carry a lot of goods, which could get damaged on the voyages. The Greeks liked coins; they were made of metal, and the weather and sea had little effect on them. The Greeks had a plentiful supply of <span class="qno-badge">25</span> <input id="q25" class="answer-input" type="text"> which they mined themselves, but were able to avoid the problem of <span class="qno-badge">26</span> <input id="q26" class="answer-input" type="text"> which the Spanish encountered much later, after they allowed too much gold from the New World to enter their economy.</p>
+          </div>
+        </div>
+        <div class="question-set hidden" data-part="3">
+          <h3>Questions 27вЂ“40</h3>
+          <h4>Questions 27вЂ“33</h4>
+          <p class="instruction">Reading Passage 3 has nine paragraphs, AвЂ“I. Which paragraph contains the following information? Choose the correct letter, AвЂ“I. You may use any letter more than once.</p>
+          <div id="qblock27" class="matching-grid-wrap">
+            <table class="matching-grid">
+              <thead><tr><th class="statement-col">Statement</th><th class="option-col">A</th><th class="option-col">B</th><th class="option-col">C</th><th class="option-col">D</th><th class="option-col">E</th><th class="option-col">F</th><th class="option-col">G</th><th class="option-col">H</th><th class="option-col">I</th></tr></thead>
+              <tbody id="paragraphGridBody"></tbody>
+            </table>
+          </div>
+          <h4>Questions 34вЂ“38</h4>
+          <p class="instruction">Complete the sentences below. Write NO MORE THAN TWO WORDS from the passage for each answer.</p>
+          <div class="question-block" id="qblock34"><p><span class="qno-badge">34</span> The grapefruit used to make drinks is chosen because it contains a smaller amount of a substance called <input id="q34" class="answer-input" type="text">.</p></div>
+          <div class="question-block" id="qblock35"><p><span class="qno-badge">35</span> Animals associate a bitter taste with <input id="q35" class="answer-input" type="text"> plants.</p></div>
+          <div class="question-block" id="qblock36"><p><span class="qno-badge">36</span> Our varying degree of sensitivity to bitter tastes is thought to be <input id="q36" class="answer-input" type="text">.</p></div>
+          <div class="question-block" id="qblock37"><p><span class="qno-badge">37</span> People who are extremely aware of bitter tastes are called <input id="q37" class="answer-input" type="text">.</p></div>
+          <div class="question-block" id="qblock38"><p><span class="qno-badge">38</span> Receptors inside the <input id="q38" class="answer-input" type="text"> on the tongue detect the taste of food and drink.</p></div>
+          <h4>Questions 39вЂ“40</h4>
+          <p class="instruction">Choose the correct answer.</p>
+          <div class="question-block" id="qblock39"><p class="q-prompt"><span class="qno-badge">39</span> The G protein identified by Robert Margolskee</p><div class="mc-group" data-q="39" data-options='{"A":"is responsible for transmitting bitter tastes.","B":"causes dangerous reactions in the cells of the tongue.","C":"has a similar function to sight and smell receptors.","D":"can be found only in sweetness and umami."}'></div></div>
+          <div class="question-block" id="qblock40"><p class="q-prompt"><span class="qno-badge">40</span> AMP is an organic compound which is</p><div class="mc-group" data-q="40" data-options='{"A":"found only in breast milk.","B":"bitter-tasting when added to food.","C":"able to reduce some bitter tastes.","D":"found in bitter taste receptors."}'></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="nav-arrows">
+  <button class="nav-arrow" id="prevBtn">вЂ№</button>
+  <button class="nav-arrow" id="nextBtn">вЂє</button>
+</div>
+<nav class="nav-row">
+  <div class="footer__questionWrapper___1tZ46 selected" id="partWrapper1">
+    <button class="footer__questionNo___3WNct" onclick="switchToPart(1)">
+      <span class="section-prefix">Part </span><span class="sectionNr">1</span>
+      <span class="attemptedCount" id="attemptedCount1">0 of 13</span>
+    </button>
+    <div class="footer__subquestionWrapper___9GgoP" id="subWrapper1"></div>
+  </div>
+  <div class="footer__questionWrapper___1tZ46" id="partWrapper2">
+    <button class="footer__questionNo___3WNct" onclick="switchToPart(2)">
+      <span class="section-prefix">Part </span><span class="sectionNr">2</span>
+      <span class="attemptedCount" id="attemptedCount2">0 of 13</span>
+    </button>
+    <div class="footer__subquestionWrapper___9GgoP" id="subWrapper2"></div>
+  </div>
+  <div class="footer__questionWrapper___1tZ46" id="partWrapper3">
+    <button class="footer__questionNo___3WNct" onclick="switchToPart(3)">
+      <span class="section-prefix">Part </span><span class="sectionNr">3</span>
+      <span class="attemptedCount" id="attemptedCount3">0 of 14</span>
+    </button>
+    <div class="footer__subquestionWrapper___9GgoP" id="subWrapper3"></div>
+  </div>
+  <button id="checkBtn" class="footer__deliverButton___3FM07">вњ“ Check Answers</button>
+</nav>
+<div class="hl-floating-toolbar" id="hlToolbar">
+  <div class="hl-section-label">Highlight</div>
+  <div class="hl-colors-row"><button class="hl-dot cy" data-hl="y" title="Yellow"></button><button class="hl-dot cg" data-hl="g" title="Green"></button><button class="hl-dot cp" data-hl="p" title="Pink"></button><button class="hl-dot cb" data-hl="b" title="Blue"></button></div>
+  <div class="hl-divider"></div>
+  <button class="hl-text-btn note-btn" id="addNoteBtn">вњЏ Note</button>
+  <button class="hl-text-btn remove-btn" id="removeHLBtn">рџ—‘ Remove</button>
+  <button class="hl-text-btn clear-btn" id="clearHLBtn">вњ• Clear all</button>
+</div>
+<div class="note-modal-overlay" id="noteModalOverlay"><div class="note-modal"><h3>вњЏпёЏ Add Note</h3><div class="note-excerpt" id="noteExcerpt"></div><textarea id="noteText" placeholder="Write your note..."></textarea><div class="modal-actions"><button class="cancel-btn" id="cancelNoteBtn">Cancel</button><button class="save-btn" id="saveNoteBtn">Save</button></div></div></div>
+<div class="notes-panel-overlay" id="notesPanelOverlay"><div class="notes-panel"><div class="modal-header"><h3>рџ“ќ My Notes</h3><button class="close-btn" id="closeNotesPanel">Г—</button></div><div id="notesList" class="notes-panel-list"></div></div></div>
+<div class="result-overlay" id="resultOverlay"><div class="result-modal"><div class="modal-header"><h2>My Result</h2><button class="close-btn" id="closeResultBtn">Г—</button></div><div id="resultContent"></div></div></div>
+<script>
+const correctAnswers={1:'FALSE',2:'NOT GIVEN',3:'FALSE',4:'TRUE',5:'FALSE',6:'FALSE',7:'irrigation',8:'cyclones',9:'farming',10:'logging',11:'animals',12:'maps',13:'book',14:'vii',15:'xi',16:'v',17:'iv',18:'ii',19:'ix',20:'vi',21:'A',22:'C',23:['civilisation','civilization'],24:'barter',25:'silver',26:'inflation',27:'B',28:'H',29:'E',30:'F',31:'C',32:'H',33:'D',34:'naringin',35:'poisonous',36:'genetic',37:'supertasters',38:'taste buds',39:'A',40:'C'};
+const partRanges={1:[1,13],2:[14,26],3:[27,40]};
+const partBanners={1:'<p><strong>Part 1</strong></p><p>Read the text and answer questions 1вЂ“13.</p>',2:'<p><strong>Part 2</strong></p><p>Read the text and answer questions 14вЂ“26.</p>',3:'<p><strong>Part 3</strong></p><p>Read the text and answer questions 27вЂ“40.</p>'};
+const paragraphStatements={27:'details of an experiment in taste comparison',28:'examples of medications that could be improved using compounds that remove bitterness',29:'a biological reason why some people don\'t like bitter-tasting foods',30:'an explanation of how the taste process works',31:'why bitterness is more interesting commercially than other tastes',32:'an example of how compounds that remove bitterness could indirectly benefit health',33:'a reason why people have different taste preferences from animals'};
+const headingLabels={i:'i. Training coin makers',ii:'ii. A form of regional promotion',iii:'iii. More gold than silver in Greece',iv:'iv. Calculating what a coin was worth',v:'v. A simpler, more efficient way of trading',vi:'vi. Putting a face to famous historical names',vii:'vii. An uncertain future',viii:'viii. Careless workmanship caused breakages',ix:'ix. Unchanging coins signalled trustworthiness',x:'x. Reading the writing on coins',xi:'xi. Significant records of past societies'};
+let currentPart=1,currentQuestion=1,timerRunning=false,timerSeconds=3600,timerInterval=null,checked=false,savedRange=null,activeHLMark=null,noteIdCounter=0,notesData=[],armedHeading=null;
+const passagePanel=document.getElementById('passagePanel'),questionsPanel=document.getElementById('questionsPanel'),checkBtn=document.getElementById('checkBtn'),timerDisplay=document.getElementById('timerDisplay'),timerToggle=document.getElementById('timerToggle'),timerReset=document.getElementById('timerReset'),hlToolbar=document.getElementById('hlToolbar');
+function init(){buildTF();buildMC();buildGrid();buildQNav();bindEvents();initMatchingHeadingDnD();switchToPart(1);updateAllIndicators();}
+function buildTF(){document.querySelectorAll('.tf-group').forEach(group=>{const q=group.dataset.q;['TRUE','FALSE','NOT GIVEN'].forEach(v=>{const lab=document.createElement('label');lab.className='tf-option';lab.dataset.q=q;lab.dataset.value=v;lab.innerHTML=`<input type="radio" name="q${q}" value="${v}"> ${v}`;group.appendChild(lab);});});}
+function buildMC(){document.querySelectorAll('.mc-group').forEach(group=>{const q=group.dataset.q,opts=JSON.parse(group.dataset.options);Object.entries(opts).forEach(([code,text])=>{const div=document.createElement('div');div.className='multi-choice-option';div.dataset.q=q;div.dataset.value=code;div.innerHTML=`<label><input type="radio" name="q${q}" value="${code}"> <strong>${code}</strong> ${text}</label>`;group.appendChild(div);});});}
+function buildGrid(){const body=document.getElementById('paragraphGridBody');Object.entries(paragraphStatements).forEach(([q,st])=>{const tr=document.createElement('tr');tr.dataset.question=q;let html=`<td class="statement-col"><strong class="mg-qno">${q}</strong> ${st}</td>`;['A','B','C','D','E','F','G','H','I'].forEach(code=>{html+=`<td><label class="mg-cell" data-q="${q}" data-value="${code}"><input type="radio" name="q${q}" value="${code}" aria-label="Question ${q} ${code}"></label></td>`});tr.innerHTML=html;body.appendChild(tr);});}
+function buildQNav(){const ranges={1:[1,13],2:[14,26],3:[27,40]};Object.entries(ranges).forEach(([part,[s,e]])=>{const wrapper=document.getElementById('subWrapper'+part);for(let i=s;i<=e;i++){const b=document.createElement('button');b.className='subQuestion';b.textContent=i;b.dataset.q=i;b.addEventListener('click',()=>goToQuestion(i));wrapper.appendChild(b);}});}
+function bindEvents(){document.querySelectorAll('input').forEach(i=>i.addEventListener('change',()=>{updateAllIndicators();}));document.querySelectorAll('input[type="text"]').forEach(i=>i.addEventListener('input',updateAllIndicators));document.querySelectorAll('input[name="q21_22"]').forEach(cb=>cb.addEventListener('change',limitChooseTwo));document.querySelectorAll('.mg-cell').forEach(cell=>{cell.addEventListener('click',()=>{if(checked)return;const input=cell.querySelector('input');input.checked=true;input.dispatchEvent(new Event('change',{bubbles:true}));syncGridCells();});cell.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cell.click();}})});document.querySelectorAll('.part-tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchToPart(Number(btn.dataset.part))));document.getElementById('prevBtn').addEventListener('click',previousQuestion);document.getElementById('nextBtn').addEventListener('click',nextQuestion);checkBtn.addEventListener('click',()=>checked?showResultsModal():checkAnswers());timerToggle.addEventListener('click',toggleTimer);timerReset.addEventListener('click',resetTimer);document.getElementById('nightBtn').addEventListener('click',toggleNight);document.getElementById('closeResultBtn').addEventListener('click',closeResultsModal);document.getElementById('openNotesBtn').addEventListener('click',openNotesPanel);document.getElementById('closeNotesPanel').addEventListener('click',()=>document.getElementById('notesPanelOverlay').classList.remove('show'));document.getElementById('cancelNoteBtn').addEventListener('click',closeNoteInput);document.getElementById('saveNoteBtn').addEventListener('click',saveNote);document.getElementById('noteModalOverlay').addEventListener('click',e=>{if(e.target.id==='noteModalOverlay')closeNoteInput();});document.getElementById('notesPanelOverlay').addEventListener('click',e=>{if(e.target.id==='notesPanelOverlay')e.currentTarget.classList.remove('show');});document.getElementById('resultOverlay').addEventListener('click',e=>{if(e.target.id==='resultOverlay')closeResultsModal();});document.getElementById('zoomInBtn').addEventListener('click',()=>adjustZoom(10));document.getElementById('zoomOutBtn').addEventListener('click',()=>adjustZoom(-10));document.getElementById('fsBtn').addEventListener('click',toggleFullscreen);initDivider();initHighlightToolbar();document.addEventListener('keydown',keyboardShortcuts);}
+let zoomLevel=100;
+function adjustZoom(delta){
+  zoomLevel=Math.min(200,Math.max(70,zoomLevel+delta));
+  document.documentElement.style.setProperty('--font-size-base',( zoomLevel/100*16)+'px');
+  document.getElementById('zoomLabel').textContent=zoomLevel+'%';
+  document.getElementById('zoomOutBtn').disabled=zoomLevel<=70;
+  document.getElementById('zoomInBtn').disabled=zoomLevel>=200;
+}
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }else{
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange',()=>{
+  const btn=document.getElementById('fsBtn');
+  if(!btn)return;
+  if(document.fullscreenElement){btn.textContent='вЉ  Exit';btn.title='Exit Fullscreen';}
+  else{btn.textContent='в›¶ Full';btn.title='Fullscreen';}
+});
+function limitChooseTwo(e){const selected=[...document.querySelectorAll('input[name="q21_22"]:checked')];if(selected.length>2){e.target.checked=false;}updateAllIndicators();}
+function syncGridCells(){document.querySelectorAll('.mg-cell').forEach(c=>c.classList.toggle('selected',c.querySelector('input').checked));}
+function switchToPart(part){currentPart=part;document.getElementById('partBanner').innerHTML=partBanners[part];document.querySelectorAll('.passage-content,.question-set').forEach(el=>el.classList.toggle('hidden',Number(el.dataset.part)!==part));document.querySelectorAll('.footer__questionWrapper___1tZ46').forEach((w,i)=>w.classList.toggle('selected',(i+1)===part));const [s,e]=partRanges[part];if(currentQuestion<s||currentQuestion>e)currentQuestion=s;updateAllIndicators();}
+function partForQuestion(q){if(q<=13)return 1;if(q<=26)return 2;return 3;}
+function goToQuestion(q){currentQuestion=q;switchToPart(partForQuestion(q));setTimeout(()=>{let target=document.getElementById('qblock'+q);if(q>=14&&q<=20)target=document.querySelector(`.mh-drop-slot[data-question="${q}"]`);if(q>=27&&q<=33)target=document.querySelector(`tr[data-question="${q}"]`);if(target){const panel=(q>=14&&q<=20)?passagePanel:questionsPanel;target.scrollIntoView({behavior:'smooth',block:'center'});}updateAllIndicators();},50);}
+function previousQuestion(){if(currentQuestion>1)goToQuestion(currentQuestion-1);}
+function nextQuestion(){if(currentQuestion<40)goToQuestion(currentQuestion+1);}
+function isQuestionAnswered(q){if(q>=14&&q<=20)return !!document.querySelector(`.mh-drop-slot[data-question="${q}"]`)?.dataset.answer;if(q===21)return document.querySelectorAll('input[name="q21_22"]:checked').length>=1;if(q===22)return document.querySelectorAll('input[name="q21_22"]:checked').length>=2;const inp=document.querySelector(`#q${q}`);if(inp)return inp.value.trim().length>0;return !!document.querySelector(`input[name="q${q}"]:checked`);}
+function updateAllIndicators(){const counts={1:0,2:0,3:0},totals={1:13,2:13,3:14};for(let q=1;q<=40;q++){const p=partForQuestion(q);if(isQuestionAnswered(q))counts[p]++;const btn=document.querySelector(`.subQuestion[data-q="${q}"]`);if(!btn)continue;btn.classList.toggle('answered',isQuestionAnswered(q)&&!btn.classList.contains('correct')&&!btn.classList.contains('incorrect'));btn.classList.toggle('active',q===currentQuestion&&!checked);}[1,2,3].forEach(p=>{const el=document.getElementById('attemptedCount'+p);if(el)el.textContent=`${counts[p]} of ${totals[p]}`;});syncGridCells();}
+function getQuestionAnswer(q){if(q>=14&&q<=20)return document.querySelector(`.mh-drop-slot[data-question="${q}"]`)?.dataset.answer||'';if(q===21||q===22)return [...document.querySelectorAll('input[name="q21_22"]:checked')].map(x=>x.value);const text=document.getElementById('q'+q);if(text)return text.value;return document.querySelector(`input[name="q${q}"]:checked`)?.value||'';}
+function normalize(s){return String(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();}
+function isCorrect(q){const corr=correctAnswers[q],user=getQuestionAnswer(q);if(q===21||q===22)return Array.isArray(user)&&user.includes(corr);if(Array.isArray(corr))return corr.some(a=>normalize(a)===normalize(user));if(document.getElementById('q'+q))return normalize(user)===normalize(corr);return user===corr;}
+function checkAnswers(){if(checked)return showResultsModal();checked=true;stopTimer();document.querySelectorAll('.correct,.incorrect').forEach(el=>el.classList.remove('correct','incorrect'));document.querySelectorAll('.correct-answer-display').forEach(el=>el.remove());let rows='',total=0;for(let q=1;q<=40;q++){const ok=isCorrect(q);if(ok)total++;applyGradeUI(q,ok);rows+=`<tr id="res-row-${q}" data-correct="${ok?1:0}"><td>${q}</td><td>${formatUserAnswer(q)}</td><td>${formatCorrectAnswer(q)}</td><td class="${ok?'res-correct':'res-wrong'}">${ok?'вњ“ Correct':'вњ— Wrong'}</td></tr>`;}document.querySelectorAll('.passage-panel input,.passage-panel select,.questions-panel input,.questions-panel select,.questions-panel textarea').forEach(el=>el.disabled=true);checkBtn.textContent='My Result';checkBtn.onclick=showResultsModal;document.getElementById('resultContent').innerHTML=`<div class="score-card"><div class="score-grid" style="grid-template-columns:repeat(2,1fr)"><div class="score-mini"><div class="score-big">${total}/40</div><div>Correct answers</div></div><div class="score-mini"><div class="score-big">${calculateBandScore(total)}</div><div>IELTS Band</div></div></div></div><div style="text-align:center;margin:16px 0 12px;padding-top:14px;border-top:1px solid #e0e0e0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button onclick="retakeTest()" style="background:#4a90e2;color:#fff;border:none;border-radius:6px;padding:10px 26px;font-size:15px;font-weight:700;cursor:pointer;">рџ”„ Retake Test</button><button onclick="closeResultsModal()" style="background:#f3f4f6;color:#111;border:1px solid #d1d5db;border-radius:6px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;">Review Answers</button></div><table class="results-table"><thead><tr><th>#</th><th>Your answer</th><th>Correct answer</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>`;document.querySelectorAll('.subQuestion').forEach(btn=>{const q=Number(btn.dataset.q);btn.classList.remove('active','answered');btn.classList.add(isCorrect(q)?'correct':'incorrect');});highlightCorrectAnswersInPassage();showResultsModal();}
+function retakeTest(){location.reload();}
+function applyGradeUI(q,ok){const btn=document.querySelector(`.subQuestion[data-q="${q}"]`);if(btn)btn.classList.add(ok?'correct':'incorrect');if(q>=14&&q<=20){const slot=document.querySelector(`.mh-drop-slot[data-question="${q}"]`);slot.classList.add(ok?'correct':'incorrect');if(!ok)addCorrectDisplay(slot,formatCorrectAnswer(q));return;}if(q===21||q===22){document.querySelectorAll('.check-option').forEach(lab=>{if(['A','C'].includes(lab.dataset.value))lab.classList.add('correct');if(lab.querySelector('input').checked&&!['A','C'].includes(lab.dataset.value))lab.classList.add('incorrect');});return;}const input=document.getElementById('q'+q);if(input){input.classList.add(ok?'correct':'incorrect');if(!ok)addCorrectDisplay(input,formatCorrectAnswer(q));return;}const checkedInput=document.querySelector(`input[name="q${q}"]:checked`);const correct=correctAnswers[q];let correctEl=document.querySelector(`.tf-option[data-q="${q}"][data-value="${correct}"],.multi-choice-option[data-q="${q}"][data-value="${correct}"],.mg-cell[data-q="${q}"][data-value="${correct}"]`);if(correctEl)correctEl.classList.add('correct');if(checkedInput){const selectedEl=checkedInput.closest('.tf-option,.multi-choice-option,.mg-cell');if(selectedEl&&!ok)selectedEl.classList.add('incorrect');}if(!ok&&q>=27&&q<=33){const row=document.querySelector(`tr[data-question="${q}"] .statement-col`);addCorrectDisplay(row,formatCorrectAnswer(q));}else if(!ok&&q>=39){const block=document.getElementById('qblock'+q);addCorrectDisplay(block.querySelector('.q-prompt'),formatCorrectAnswer(q));}}
+function addCorrectDisplay(afterEl,text){const span=document.createElement('span');span.className='correct-answer-display';span.innerHTML=`&nbsp;вћњ&nbsp;<span>${text}</span>`;afterEl.insertAdjacentElement('afterend',span);}
+function formatCorrectAnswer(q){const c=correctAnswers[q];if(q>=14&&q<=20)return headingLabels[c]||c;if(Array.isArray(c))return c[0];return c;}
+function formatUserAnswer(q){const u=getQuestionAnswer(q);if(Array.isArray(u))return u.length?u.join(', '):'вЂ”';return String(u||'вЂ”').trim()||'вЂ”';}
+function calculateBandScore(n){if(n>=39)return'9.0';if(n>=37)return'8.5';if(n>=35)return'8.0';if(n>=33)return'7.5';if(n>=30)return'7.0';if(n>=27)return'6.5';if(n>=23)return'6.0';if(n>=19)return'5.5';if(n>=15)return'5.0';if(n>=13)return'4.5';if(n>=10)return'4.0';if(n>=8)return'3.5';if(n>=6)return'3.0';if(n>=4)return'2.5';return'2.0';}
+function showResultsModal(){document.getElementById('resultOverlay').classList.add('show');}
+function closeResultsModal(){document.getElementById('resultOverlay').classList.remove('show');}
+function renderTimer(){const m=String(Math.floor(timerSeconds/60)).padStart(2,'0'),s=String(timerSeconds%60).padStart(2,'0');timerDisplay.textContent=`${m}:${s}`;timerDisplay.style.color=timerSeconds<=300?'#dc3545':'#333';timerDisplay.style.animation=timerSeconds<=300?'timerBlink 1s steps(1) infinite':'none';}
+function toggleTimer(){timerRunning?stopTimer():startTimer();}
+function startTimer(){if(timerRunning||checked)return;timerRunning=true;timerToggle.textContent='вЏё';timerInterval=setInterval(()=>{timerSeconds--;renderTimer();if(timerSeconds<=0){timerSeconds=0;renderTimer();stopTimer();if(!checked)checkAnswers();}},1000);}
+function stopTimer(){timerRunning=false;timerToggle.textContent='в–¶';clearInterval(timerInterval);}
+function resetTimer(){stopTimer();timerSeconds=3600;renderTimer();}
+function toggleNight(){const root=document.documentElement;const dark=root.getAttribute('data-theme')==='dark';if(dark){root.removeAttribute('data-theme');document.getElementById('nightBtn').textContent='рџЊ™ Night';}else{root.setAttribute('data-theme','dark');document.getElementById('nightBtn').textContent='вЂпёЏ Day';}}
+function initDivider(){const divider=document.getElementById('divider');let dragging=false;divider.addEventListener('mousedown',()=>{dragging=true;document.body.style.cursor='col-resize';});document.addEventListener('mousemove',e=>{if(!dragging)return;const rect=document.querySelector('.panels').getBoundingClientRect();let left=e.clientX-rect.left;left=Math.max(180,Math.min(rect.width-188,left));passagePanel.style.width=left+'px';questionsPanel.style.width=(rect.width-left-8)+'px';});document.addEventListener('mouseup',()=>{dragging=false;document.body.style.cursor='';});}
+function initMatchingHeadingDnD(){document.querySelectorAll('.mh-heading-card').forEach(card=>{card.addEventListener('dragstart',e=>{if(checked||card.classList.contains('used')){e.preventDefault();return;}e.dataTransfer.setData('text/plain',JSON.stringify({type:'mh',code:card.dataset.code,label:card.dataset.label}));});card.addEventListener('click',()=>{if(checked||card.classList.contains('used'))return;armedHeading={code:card.dataset.code,label:card.dataset.label};syncMatchingHeadingUI();});});document.querySelectorAll('.mh-drop-slot').forEach(slot=>{slot.addEventListener('dragstart',e=>{if(checked||!slot.dataset.answer){e.preventDefault();return;}e.dataTransfer.setData('text/plain',JSON.stringify({type:'mh',code:slot.dataset.answer,label:slot.textContent.trim(),from:slot.dataset.question}));});slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('dragover');});slot.addEventListener('dragleave',()=>slot.classList.remove('dragover'));slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('dragover');if(checked)return;try{const data=JSON.parse(e.dataTransfer.getData('text/plain'));if(data.type==='mh')assignMatchingHeading(slot.dataset.question,data.code,data.label);}catch(err){}});slot.addEventListener('click',()=>{if(checked)return;if(armedHeading){assignMatchingHeading(slot.dataset.question,armedHeading.code,armedHeading.label);armedHeading=null;}else if(slot.dataset.answer){clearMatchingHeading(slot.dataset.question);}});});}
+function assignMatchingHeading(q,code,label){document.querySelectorAll('.mh-drop-slot').forEach(s=>{if(s.dataset.answer===code){delete s.dataset.answer;s.textContent=s.dataset.question;s.classList.remove('filled');}});const slot=document.querySelector(`.mh-drop-slot[data-question="${q}"]`);slot.dataset.answer=code;slot.textContent=label;slot.classList.add('filled');syncMatchingHeadingUI();updateAllIndicators();}
+function clearMatchingHeading(q){const slot=document.querySelector(`.mh-drop-slot[data-question="${q}"]`);delete slot.dataset.answer;slot.textContent=q;slot.classList.remove('filled');syncMatchingHeadingUI();updateAllIndicators();}
+function syncMatchingHeadingUI(){const used=[...document.querySelectorAll('.mh-drop-slot')].map(s=>s.dataset.answer).filter(Boolean);document.querySelectorAll('.mh-heading-card').forEach(c=>{c.classList.toggle('used',used.includes(c.dataset.code));c.classList.toggle('armed',armedHeading&&armedHeading.code===c.dataset.code);});}
+function keyboardShortcuts(e){const tag=document.activeElement.tagName;if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;if(e.altKey&&['1','2','3'].includes(e.key)){switchToPart(Number(e.key));}else if(e.key==='ArrowLeft'){previousQuestion();}else if(e.key==='ArrowRight'){nextQuestion();}}
+function initHighlightToolbar(){document.addEventListener('mouseup',e=>{setTimeout(()=>{const sel=window.getSelection();if(!sel||!sel.toString().trim())return;const node=sel.anchorNode;const root=node.nodeType===3?node.parentElement:node;if(root&&root.closest&&(root.closest('#passagePanel')||root.closest('#questionsPanel'))){savedRange=sel.getRangeAt(0).cloneRange();activeHLMark=null;positionToolbar(e.clientX,e.clientY);}},10);});document.addEventListener('click',e=>{if(e.target.tagName==='MARK'){activeHLMark=e.target;savedRange=null;positionToolbar(e.clientX,e.clientY);}else if(!hlToolbar.contains(e.target)){hlToolbar.classList.remove('show');}});document.querySelectorAll('.hl-dot').forEach(b=>b.addEventListener('click',()=>applyHL(b.dataset.hl)));document.getElementById('removeHLBtn').addEventListener('click',removeCurrentHL);document.getElementById('clearHLBtn').addEventListener('click',clearAllHL);document.getElementById('addNoteBtn').addEventListener('click',()=>openNoteInput());}
+function positionToolbar(x,y){hlToolbar.classList.add('show');const r=hlToolbar.getBoundingClientRect();let lx=Math.max(8,Math.min(window.innerWidth-r.width-8,x));let ly=y-r.height-14;if(ly<8)ly=y+20;hlToolbar.style.left=lx+'px';hlToolbar.style.top=ly+'px';}
+function applyHL(color){if(activeHLMark){activeHLMark.className='hl-'+color;}else if(savedRange){const mark=document.createElement('mark');mark.className='hl-'+color;try{savedRange.surroundContents(mark);}catch(e){const frag=savedRange.extractContents();mark.appendChild(frag);savedRange.insertNode(mark);}}window.getSelection().removeAllRanges();savedRange=null;hlToolbar.classList.remove('show');}
+function unwrap(el){const p=el.parentNode;while(el.firstChild)p.insertBefore(el.firstChild,el);p.removeChild(el);p.normalize();}
+function removeCurrentHL(){if(activeHLMark)unwrap(activeHLMark);activeHLMark=null;hlToolbar.classList.remove('show');}
+function clearAllHL(){document.querySelectorAll('mark.hl-y,mark.hl-g,mark.hl-p,mark.hl-b').forEach(unwrap);notesData=[];renderNotesList();hlToolbar.classList.remove('show');}
+function openNoteInput(){const excerpt=activeHLMark?activeHLMark.textContent:(savedRange?savedRange.toString():'');document.getElementById('noteExcerpt').textContent=excerpt.trim().slice(0,180);document.getElementById('noteText').value='';document.getElementById('noteModalOverlay').classList.add('show');}
+function closeNoteInput(){document.getElementById('noteModalOverlay').classList.remove('show');}
+function saveNote(){const text=document.getElementById('noteText').value.trim();const excerpt=document.getElementById('noteExcerpt').textContent;if(text){notesData.push({id:++noteIdCounter,text,excerpt});renderNotesList();}closeNoteInput();}
+function openNotesPanel(){renderNotesList();document.getElementById('notesPanelOverlay').classList.add('show');}
+function renderNotesList(){const list=document.getElementById('notesList');if(!notesData.length){list.innerHTML='<div class="empty-notes">рџ“ќ No notes yet.\nSelect text and click вњЏ Note</div>';return;}list.innerHTML=notesData.map(n=>`<div class="note-card"><span class="excerpt">${escapeHTML(n.excerpt)}</span><div class="note-body">${escapeHTML(n.text)}</div><button class="delete-note" onclick="deleteNote(${n.id})">рџ—‘ Delete</button></div>`).join('');}
+function deleteNote(id){notesData=notesData.filter(n=>n.id!==id);renderNotesList();}
+function escapeHTML(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const highlightData={1:[{q:1,t:'six are found only there, while a seventh has made its way'},{q:2,t:'named after two great 19th-century French botanists'},{q:3,t:'they only grow along the western margin of the island and not in the more populous central highlands'},{q:4,t:'much of the Morondava plain was cleared for rice and sugar-cane fields'},{q:5,t:'The exact cause of the falling baobabs is uncertain'},{q:6,t:'some people think that the water used to irrigate the nearby fields is partly to blame'},{q:7,t:'water used to irrigate the nearby fields'},{q:8,t:'susceptible to cyclones'},{q:9,t:'land clearance for farming'},{q:10,t:'such as logging, is also a problem'},{q:11,t:'absence of two large, now extinct animals'},{q:12,t:'create maps of baobab distribution'},{q:13,t:'illustrated children\'s book'}],2:[{q:14,t:'one day be obsolete'},{q:15,t:'tiny but rich sources of documentary evidence'},{q:16,t:'no longer had to carry goods with them to barter'},{q:17,t:'coins could be weighed to determine the amount of metal'},{q:18,t:'advertising the qualities of each particular city-state'},{q:19,t:'a uniform design implied integrity'},{q:20,t:'features of many great Romans have survived'},{q:21,t:'work of anonymous craftsmen'},{q:22,t:'endless variety encountered in coins with the same designs'},{q:23,t:'Their civilisation'},{q:24,t:'trade was based on barter'},{q:25,t:'At first this was mostly silver'},{q:26,t:'resulted in serious inflation'}],3:[{q:27,t:'sets of two miniature white paper cups, labelled 304 and 305'},{q:28,t:'antihistamines, antibiotics and other similar products'},{q:29,t:'unusually high number of taste buds, and are known as "supertasters"'},{q:30,t:'Once a bitter signal has been received, it is relayed via proteins known as G proteins'},{q:31,t:'bitterness is of special interest to the food industry'},{q:32,t:'potassium chloride, which tends to be scarce in some people\'s diets'},{q:33,t:'Humans are the only species that enjoys a bitter taste'},{q:34,t:'naringin, has a bitter taste'},{q:35,t:'a plant may be poisonous'},{q:36,t:'differences appear to be genetic'},{q:37,t:'known as "supertasters"'},{q:38,t:'The tongue is covered with taste buds'},{q:39,t:'Once a bitter signal has been received, it is relayed via proteins known as G proteins'},{q:40,t:'may not be able to dampen every type of bitter taste'}]};
+function highlightCorrectAnswersInPassage(){Object.entries(highlightData).forEach(([part,arr])=>{const art=document.querySelector(`.passage-content[data-part="${part}"]`);arr.forEach(h=>highlightPhrase(art,h.t,h.q));});}
+function highlightPhrase(root,phrase,q){if(root.querySelector(`.answer-highlight[data-q="${q}"]`))return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){if(!node.nodeValue.trim())return NodeFilter.FILTER_REJECT;if(node.parentElement.closest('.mh-drop-slot,.answer-highlight,mark'))return NodeFilter.FILTER_REJECT;return node.nodeValue.includes(phrase)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP;}});const node=walker.nextNode();if(!node)return;const idx=node.nodeValue.indexOf(phrase);const range=document.createRange();range.setStart(node,idx);range.setEnd(node,idx+phrase.length);const span=document.createElement('span');span.className='answer-highlight';span.dataset.q=q;span.innerHTML=`${phrase}<span class="badge">${q}</span>`;range.deleteContents();range.insertNode(span);}
+
+function startTest(){
+  const overlay = document.getElementById('introOverlay');
+  overlay.classList.add('hidden');
+  // Auto-start the timer after overlay fades
+  setTimeout(function(){
+    if(!timerRunning && !checked){
+      startTimer();
+    }
+  }, 350);
+}
+
+init();
+</script>
+
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

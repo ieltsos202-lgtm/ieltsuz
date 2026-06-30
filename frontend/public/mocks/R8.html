@@ -1,0 +1,1473 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic IELTS Reading Test</title>
+<style>
+:root{--navy:#1a3560;--navy-dark:#10233f;--accent:#2a6c96;--accent-hover:#245e82;--accent-soft:#bbd8f0;--bg:#fff;--surface:#fff;--surface-alt:#f5f7fa;--text:#1f2937;--muted:#667085;--border:#d7dce5;--border-light:#e4e7ec;--qnum-border:#2a6c96;--ok:#3a8a17;--ok-soft:#e6f4ea;--bad:#b42318;--bad-soft:#fdecea;--warn:#f59e0b;--hl:#FFE066;--hlb:#c8a800;--font-scale:1;--line-scale:1;--topbar-h:58px;--footer-h:60px}
+body.theme-dark{--bg:#13182a;--surface:#1b2235;--surface-alt:#222b42;--text:#e6e8ee;--muted:#a7adba;--border:#39415a;--border-light:#39415a;--accent:#6fa8d6;--accent-hover:#8abce0;--accent-soft:#1f3a59;--qnum-border:#6fa8d6;--ok:#7fce8f;--ok-soft:#1d3a26;--bad:#f0928a;--bad-soft:#3a1f1d;--hl:#6b5c10;--hlb:#8a7414}
+body.theme-sepia{--bg:#f4ece0;--surface:#faf6ef;--surface-alt:#efe7da;--text:#3c3226;--muted:#6b5e50;--border:#d8cab6;--border-light:#e2d7c5;--accent:#8b6914;--accent-hover:#75590f;--accent-soft:#efe4cb;--qnum-border:#8b6914}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:Arial,Helvetica,sans-serif;font-size:calc(16px*var(--font-scale));line-height:calc(1.5*var(--line-scale));color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+button,input,select{font-family:inherit}button{cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:2px;padding:10px 18px;font-size:14px;font-weight:700;transition:.12s}
+.btn:hover{background:var(--surface-alt)}.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}.btn.primary:hover{background:var(--navy-dark)}
+.btn.danger{color:#fff;background:var(--bad);border-color:var(--bad)}.btn.danger:hover{filter:brightness(.92)}
+.screen{display:none}.screen.active{display:block}
+#screen-test.active{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;background:linear-gradient(180deg,#f7f9fc,#e9edf4)}
+body.theme-dark .center{background:linear-gradient(180deg,#13182a,#0d1120)}body.theme-sepia .center{background:linear-gradient(180deg,#f4ece0,#e9dcc7)}
+.card{width:100%;max-width:880px;background:var(--surface);border:1px solid var(--border);border-radius:2px;box-shadow:0 12px 24px rgba(17,24,39,.1);padding:34px}
+.brand-row{display:inline-flex;align-items:center;gap:9px;color:var(--navy);font-weight:800;margin-bottom:14px}
+.tg-dot{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}
+.landing-title{font-size:34px;color:var(--navy);margin-bottom:10px;letter-spacing:-.5px}
+.landing-desc{color:var(--muted);font-size:17px;max-width:760px;margin-bottom:22px}
+.type-row{display:flex;gap:10px;margin-bottom:22px}
+.type-btn{padding:10px 22px;border:1.5px solid var(--border);border-radius:2px;font-size:14px;font-weight:700;background:var(--surface);color:var(--muted);transition:.15s}
+.type-btn.active{border-color:var(--navy);background:var(--navy);color:#fff}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+.info-box{background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;padding:16px;text-align:center}
+.info-box strong{display:block;color:var(--navy);font-size:22px;margin-bottom:3px}
+.rules{margin:16px 0 26px;padding-left:20px}.rules li{margin:9px 0}
+.action-row{display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+.topbar{height:var(--topbar-h);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--border-light);position:relative;z-index:40}
+.tb-left{display:flex;align-items:center;gap:11px}.tb-logo{font-size:21px;font-weight:900;color:var(--navy);letter-spacing:.5px}.tb-id{font-size:14px;font-weight:700;color:var(--muted)}
+.tb-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.tg-pill{display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:var(--accent);color:#fff;font-weight:800;font-size:14px;padding:8px 18px;border-radius:22px;transition:.2s;white-space:nowrap}
+.tg-pill:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18)}.tg-pill svg{width:18px;height:18px;fill:#fff;flex-shrink:0}
+.tb-right{display:flex;align-items:center;gap:6px}
+.timer{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.5px;padding:6px 12px;border-radius:20px;background:var(--surface-alt);border:1px solid var(--border);color:var(--text);margin-right:4px}
+.timer.warn{color:#fff;background:var(--warn);border-color:var(--warn)}.timer.danger{color:#fff;background:var(--bad);border-color:var(--bad);animation:flash 1s infinite}
+@keyframes flash{50%{opacity:.45}}
+.icon-btn{width:42px;height:42px;border:none;background:transparent;color:var(--text);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{background:var(--surface-alt)}.icon-btn svg{width:22px;height:22px;fill:currentColor}
+.tmain{flex:1;display:flex;overflow:hidden;min-height:0}
+.pp{flex:1;display:flex;flex-direction:column;background:var(--surface);overflow:hidden;min-width:260px}
+.pphdr{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface-alt)}
+.pptitle{font-size:13px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.5px}.ppql{font-size:12px;color:var(--muted)}
+.pbody{flex:1;overflow-y:auto;padding:24px 26px 36px;font-size:calc(15.5px*var(--font-scale));line-height:calc(1.8*var(--line-scale))}
+.pbody h2{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:18px;line-height:1.3}.pbody p{margin-bottom:14px}
+.pl{font-weight:800;color:var(--navy);margin-right:6px}
+mark.uhl{background:var(--hl);padding:0;border-radius:1px;cursor:pointer;color:inherit}
+.hl-pop{position:fixed;z-index:120;display:none;align-items:center;gap:6px;border:1px solid var(--border);border-radius:2px;background:var(--surface);box-shadow:0 8px 24px rgba(15,23,42,.2);padding:5px}
+.hl-pop.show{display:flex}
+.hl-pop button{border:none;border-radius:2px;background:var(--hl);color:#3d2c00;font-size:12px;font-weight:800;padding:7px 10px;white-space:nowrap}
+.hl-pop button.remove{background:var(--bad);color:#fff}
+.rszr{width:14px;background:var(--border-light);cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;touch-action:none}
+.rszr::before{content:'';position:absolute;top:50%;left:50%;width:4px;height:46px;border-radius:2px;background:var(--accent);opacity:.5;transform:translate(-50%,-50%)}
+.rszr:hover,.rszr.dragging{background:var(--accent-soft)}.rszr:hover::before,.rszr.dragging::before{opacity:1}
+.qp{flex:1;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;min-width:260px}
+.qphdr{padding:9px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.qphdr h3{font-size:calc(13px*var(--font-scale));font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.5px}.qphdr p{font-size:calc(12px*var(--font-scale));color:var(--muted)}
+.qbody{flex:1;overflow-y:auto;padding:16px;font-size:calc(15px*var(--font-scale));line-height:calc(1.55*var(--line-scale))}
+.qgrp{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:18px;margin-bottom:14px}
+.qtbadge{display:inline-block;font-size:calc(10px*var(--font-scale));font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);background:var(--accent-soft);border-radius:1px;padding:3px 9px;margin-bottom:9px}
+.qinstr{font-size:calc(14px*var(--font-scale));line-height:calc(1.55*var(--line-scale));color:var(--text);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border-light)}
+.qinstr strong{color:var(--navy)}.qinstr em{color:var(--muted)}
+.qi{padding:11px 0;border-bottom:1px solid var(--border-light)}.qi:last-child{border-bottom:none}
+.qrow{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.qbdg{width:24px;height:24px;min-width:24px;border:1.6px solid var(--qnum-border);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:calc(13px*var(--font-scale));font-weight:800;color:var(--text);flex-shrink:0}
+.qtxt{font-size:calc(15px*var(--font-scale));line-height:calc(1.6*var(--line-scale));color:var(--text);flex:1;padding-top:2px}
+.opts{display:flex;flex-direction:column;gap:6px;padding-left:34px}
+.olbl{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1.5px solid var(--border);border-radius:2px;font-size:calc(14px*var(--font-scale));color:var(--text);background:var(--surface);transition:.12s}
+.olbl:hover{border-color:var(--accent);background:var(--surface-alt)}
+.olbl input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+.olbl.sel{border-color:var(--accent);background:var(--accent-soft)}
+.olbl.good{border-color:var(--ok);background:var(--ok-soft)}.olbl.bad{border-color:var(--bad);background:var(--bad-soft)}
+.cbnote{font-size:calc(12px*var(--font-scale));color:var(--accent);font-weight:700;padding-left:34px;margin-bottom:6px}
+.ainput{display:block;width:calc(100% - 34px);margin-left:34px;padding:8px 12px;border:1.5px solid var(--border);border-radius:2px;font-size:calc(15px*var(--font-scale));outline:none;background:var(--surface);color:var(--text);transition:.12s}
+.ainput:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ainput.good{border-color:var(--ok);background:var(--ok-soft)}.ainput.bad{border-color:var(--bad);background:var(--bad-soft)}
+.gap-input{display:inline-block;vertical-align:baseline;min-width:120px;width:clamp(110px,16vw,200px);padding:2px 6px;margin:0 4px;border:0;border-bottom:2px solid var(--accent);border-radius:0;font-size:inherit;line-height:1.25;outline:none;background:transparent;color:var(--text);text-align:center}
+.gap-input:focus{background:var(--accent-soft)}
+.gap-input.good{border-bottom-color:var(--ok);background:var(--ok-soft)}.gap-input.bad{border-bottom-color:var(--bad);background:var(--bad-soft)}
+.ahint{font-size:calc(12px*var(--font-scale));color:var(--muted);padding-left:34px;margin-top:4px}
+.hsel{display:block;width:calc(100% - 34px);margin-left:34px;padding:8px 11px;border:1.5px solid var(--border);border-radius:2px;font-size:calc(14px*var(--font-scale));background:var(--surface);color:var(--text);outline:none;transition:.12s}
+.hsel:focus{border-color:var(--accent)}
+.hsel.good{border-color:var(--ok);background:var(--ok-soft)}.hsel.bad{border-color:var(--bad);background:var(--bad-soft)}
+.hsel-inline{display:inline-block;width:auto;min-width:210px;margin:6px 0 0 0}
+.listbox{background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;padding:13px;margin-bottom:14px}
+.listbox-l{font-size:calc(10px*var(--font-scale));font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px}
+.listbox-i{font-size:calc(13px*var(--font-scale));color:var(--text);padding:3px 0;line-height:calc(1.45*var(--line-scale))}.listbox-i b{color:var(--navy)}
+.ends-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.ends-row:last-child{border-bottom:none}
+.ends-stem{flex:1;font-size:calc(15px*var(--font-scale));line-height:calc(1.5*var(--line-scale))}
+.wbank{display:flex;flex-wrap:wrap;gap:8px;padding:11px 13px;background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;margin-bottom:14px}
+.wbl{width:100%;font-size:calc(10px*var(--font-scale));font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.wtile{padding:6px 13px;border:1.5px solid var(--accent);border-radius:2px;font-size:calc(13px*var(--font-scale));font-weight:600;color:var(--accent);background:var(--surface);transition:.12s;user-select:none;cursor:grab}
+.wtile:active{cursor:grabbing}.wtile:hover{background:var(--accent);color:#fff}.wtile.dragging{opacity:.55;background:var(--accent);color:#fff}
+.wtile.wsel{background:var(--accent);color:#fff}.wtile.wused{opacity:.3;pointer-events:none}
+.sumtxt{font-size:calc(15px*var(--font-scale));line-height:calc(2.3*var(--line-scale));color:var(--text)}
+.blank{display:inline-flex;align-items:center;justify-content:center;min-width:96px;height:28px;border:1.5px dashed var(--accent);margin:0 4px;padding:0 9px;transition:.12s;font-size:calc(14px*var(--font-scale));font-weight:700;color:var(--text);vertical-align:middle;border-radius:2px;cursor:pointer}
+.blank:hover,.blank.dragover{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-soft)}
+.blank.filled{border-style:solid;background:var(--accent-soft)}
+.blank .bn{font-size:11px;color:var(--muted);font-weight:700;margin-right:5px}
+.blank.good{border-color:var(--ok);background:var(--ok-soft)}.blank.bad{border-color:var(--bad);background:var(--bad-soft)}
+.corr{display:inline-block;margin-left:6px;padding:1px 7px;border:1px solid var(--ok);border-radius:2px;background:var(--ok-soft);color:var(--ok);font-size:calc(12px*var(--font-scale));font-weight:700;vertical-align:middle}
+.footer{height:var(--footer-h);flex-shrink:0;display:flex;align-items:stretch;background:var(--surface);border-top:1px solid var(--border);z-index:40}
+.parts-bar{flex:1;display:flex;align-items:stretch;overflow:hidden}
+.part-cell{display:flex;align-items:center;border-right:1px solid var(--border);background:var(--surface);transition:.12s;position:relative}
+.part-cell.collapsed{flex:1;justify-content:center;gap:7px;padding:0 14px;font-size:14px;min-width:120px;cursor:pointer}
+.part-cell.collapsed:hover{background:var(--surface-alt)}.part-cell.collapsed .pc-label{font-weight:700;color:var(--text)}.part-cell.collapsed .pc-count{color:var(--muted)}
+.part-cell.active-part{flex:none;padding:0 12px;gap:4px}
+.pc-active-label{font-weight:800;color:var(--text);padding:0 10px 0 4px;white-space:nowrap}
+.qnav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;height:100%}.qnav::-webkit-scrollbar{display:none}
+.qbtn{min-width:30px;height:38px;border:1.6px solid transparent;background:transparent;color:var(--text);border-radius:2px;font-size:14px;font-weight:500;flex-shrink:0;position:relative;padding:0 7px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px}
+.qbtn::before{content:'';position:absolute;top:0;left:-1px;right:-1px;height:3px;background:#d7dbe2}
+.qbtn.answered::before{background:var(--ok)}.qbtn.answered{color:var(--accent)}
+.qbtn.active{border-color:var(--qnum-border);font-weight:800}.qbtn.active::before{background:var(--accent)}
+.qbtn.res-correct::before{background:var(--ok)}.qbtn.res-correct{color:var(--ok)}
+.qbtn.res-wrong::before{background:var(--bad)}.qbtn.res-wrong{color:var(--bad)}
+.footer-tools{display:flex;align-items:stretch;flex-shrink:0}
+.nav-arrow{width:54px;border:none;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;transition:.12s}
+.nav-arrow:hover{background:var(--navy-dark)}.nav-arrow:disabled{opacity:.35;cursor:not-allowed}.nav-arrow svg{width:24px;height:24px;fill:#fff}
+.check-btn{width:72px;border:none;background:var(--surface-alt);color:var(--accent);display:flex;align-items:center;justify-content:center;transition:.12s;border-left:1px solid var(--border)}
+.check-btn:hover{background:var(--accent);color:#fff}.check-btn svg{width:24px;height:24px;fill:currentColor}
+.settings{position:fixed;top:var(--topbar-h);right:0;width:min(300px,100vw);max-height:calc(100vh - var(--topbar-h));overflow-y:auto;background:var(--surface);border-left:1px solid var(--border);box-shadow:-4px 0 16px rgba(0,0,0,.1);padding:18px;z-index:60;display:none}
+.settings.open{display:block}
+.settings h3{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:16px}
+.set-group{margin-bottom:16px}.set-group label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.set-group input[type=range]{width:100%;accent-color:var(--accent)}
+.swatches{display:flex;gap:9px}.swatch{width:38px;height:38px;border-radius:2px;border:2px solid var(--border);transition:.15s}
+.swatch:hover,.swatch.active{border-color:var(--accent)}.sw-light{background:#fff}.sw-sepia{background:#f4ece0}.sw-dark{background:#13182a}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100}
+.modal.show{display:flex}
+.modal-card{background:var(--surface);border-radius:2px;padding:28px 30px;max-width:440px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,.3);text-align:center}
+.modal-card h2{color:var(--navy);margin-bottom:10px}.modal-card p{color:var(--muted);margin-bottom:22px}.modal-actions{display:flex;gap:10px;justify-content:center}
+.scroll-body{min-height:100vh;padding:80px 24px 32px;background:var(--bg);overflow-y:auto}
+.wide{max-width:1100px;margin:0 auto;background:var(--surface);border:1px solid var(--border);border-radius:2px;box-shadow:0 10px 24px rgba(17,24,39,.08);padding:26px}
+.rev-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 22px}
+.rev-stat{background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;padding:16px;text-align:center}
+.rev-stat strong{display:block;font-size:26px;margin-bottom:3px}
+.rev-stat.g strong{color:var(--ok)}.rev-stat.o strong{color:var(--warn)}.rev-stat.n strong{color:var(--navy)}
+.rev-stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.rev-sec{margin-bottom:18px}.rev-plbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px}
+.rev-grid{display:flex;flex-wrap:wrap;gap:6px}
+.rqt{width:36px;height:36px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;transition:.12s}
+.rqt.ans{background:var(--navy);border:2px solid var(--navy);color:#fff}.rqt.unans{background:var(--surface);border:2px solid #fca5a5;color:var(--bad)}
+.score-hero{display:grid;grid-template-columns:240px 1fr;gap:18px;margin-bottom:20px}
+.band-card{background:var(--navy);color:#fff;border-radius:2px;padding:24px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.band-card .band{font-size:64px;font-weight:900;line-height:1}.band-card span{font-size:13px;opacity:.85;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;padding:16px}.stat strong{display:block;font-size:22px;color:var(--navy);margin-top:3px}
+.pcards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.pcard{background:var(--surface-alt);border:1px solid var(--border);border-radius:2px;padding:16px;text-align:center}
+.pcardn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px}.pcard strong{font-size:24px;color:var(--navy)}.pcard .of{font-size:13px;color:var(--muted)}
+.ans-review{display:grid;gap:8px;margin-top:14px}
+.ans-row{display:grid;grid-template-columns:54px 1fr 1fr 50px;gap:10px;align-items:center;border:1px solid var(--border);border-radius:2px;padding:10px;background:var(--surface)}
+.ans-row.correct{background:var(--ok-soft);border-color:#bbf7d0}.ans-row.wrong{background:var(--bad-soft);border-color:#fecdd3}.ans-row .muted{color:var(--muted);font-style:italic}
+.tick{font-weight:900;text-align:center;font-size:20px}.tick.g{color:var(--ok)}.tick.b{color:var(--bad)}
+@media(max-width:900px){.tmain{flex-direction:column}.pp,.qp{flex:none;height:50%}.rszr{display:none}.info-grid,.score-hero,.stats,.pcards,.rev-stats{grid-template-columns:1fr}.ans-row{grid-template-columns:1fr}.part-cell.collapsed{min-width:90px;padding:0 8px}}
+::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+
+/* === IELTSUZ THEME NORMALIZER === */
+:root {
+  --os-bg: #ffffff;
+  --os-fg: #0f172a;
+  --os-muted: #334155;
+  --os-border: #e2e8f0;
+  --os-input-bg: #ffffff;
+  --os-input-border: #94a3b8;
+  --os-nav-bg: #f8fafc;
+  --os-nav-border: #e2e8f0;
+  --os-accent: #6366f1;
+}
+html.dark, html[data-theme="dark"] {
+  --os-bg: #0a0a0f;
+  --os-fg: #f8fafc;
+  --os-muted: #94a3b8;
+  --os-border: #2d2d3a;
+  --os-input-bg: #1a1a24;
+  --os-input-border: #475569;
+  --os-nav-bg: #111118;
+  --os-nav-border: #2d2d3a;
+  --os-accent: #6366f1;
+}
+
+/* Base overrides */
+html, body {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* All major containers */
+.header, .main-container, .content, .test-content,
+.question-area, .passage, .container, .main-area,
+.section, .modal-content, .questions-panel, .intro-card {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Navigation bars */
+.nav-row, .nav-fixed, .bottom-nav, .nav-row-cdi,
+#top-nav, .floating-audio-bar, .audio-bar {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-nav-border) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Audio player shell */
+.audio-shell, .audio-shell-hdr {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"], .blank,
+.answer-input, .ldm-slot, .ldm-option,
+.multi-choice-option, .word-bank-box, select, textarea {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+  font-size: 16px !important;
+}
+
+/* Placeholders */
+input::placeholder, textarea::placeholder {
+  color: #999 !important;
+}
+html.dark input::placeholder, html[data-theme="dark"] input::placeholder {
+  color: #64748b !important;
+}
+
+/* Text elements */
+p, li, td, th, label, h1, h2, h3, h4, h5, h6,
+.question-text, .instruction, .subtitle, .hint,
+.test-info, .time-info, .section-prefix, .sectionNr {
+  color: var(--os-fg) !important;
+}
+
+/* Muted text */
+.test-info, .subtitle, .instruction, .hint,
+.attemptedCount, .time-text, .zoom-lbl-hdr {
+  color: var(--os-muted) !important;
+}
+
+/* Question number badges */
+.question-number, .inline-qno, .qbadge, .q-num,
+.flow-inline-qno {
+  background-color: #eef5ff !important;
+  border-color: #4a90e2 !important;
+  color: #2563eb !important;
+}
+html.dark .question-number, html[data-theme="dark"] .question-number,
+html.dark .inline-qno, html[data-theme="dark"] .inline-qno,
+html.dark .qbadge, html[data-theme="dark"] .qbadge,
+html.dark .q-num, html[data-theme="dark"] .q-num {
+  background-color: #1e3a5f !important;
+  border-color: #64b5f6 !important;
+  color: #90caf9 !important;
+}
+
+/* Sub-question buttons */
+.subQuestion, .fqsub-wrap .subQuestion {
+  background-color: #ffffff !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .subQuestion, html[data-theme="dark"] .subQuestion {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+}
+.subQuestion.answered {
+  background-color: #e6f7ff !important;
+  border-color: #1890ff !important;
+  color: #096dd9 !important;
+}
+html.dark .subQuestion.answered, html[data-theme="dark"] .subQuestion.answered {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+/* Section tabs */
+.section-tabs, .part-tabs, .part-tab, .nav-btn,
+.nav-button, .fqno-btn {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-border) !important;
+  color: var(--os-fg) !important;
+}
+.section-tabs .active, .part-tab.active, .nav-btn.active,
+.nav-button.active, .fqw.selected .fqno-btn {
+  background-color: var(--os-accent) !important;
+  color: #ffffff !important;
+}
+
+/* Navigation arrows */
+.nav-arrow, .nav-arrow-btn {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+html.dark .nav-arrow, html[data-theme="dark"] .nav-arrow,
+html.dark .nav-arrow-btn, html[data-theme="dark"] .nav-arrow-btn {
+  background-color: #3b3b4f !important;
+  color: #fff !important;
+}
+.nav-arrow:disabled, .nav-arrow-btn:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+}
+html.dark .nav-arrow:disabled, html[data-theme="dark"] .nav-arrow:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+}
+
+/* Intro overlay */
+#intro-overlay, #introOverlay {
+  background: #e8edf5 !important;
+}
+html.dark #intro-overlay, html[data-theme="dark"] #intro-overlay,
+html.dark #introOverlay, html[data-theme="dark"] #introOverlay {
+  background: rgba(0,0,0,0.7) !important;
+}
+#intro-overlay .intro-card, #introOverlay .intro-card {
+  background: #ffffff !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+html.dark #intro-overlay .intro-card, html[data-theme="dark"] #intro-overlay .intro-card,
+html.dark #introOverlay .intro-card, html[data-theme="dark"] #introOverlay .intro-card {
+  background: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Start test button */
+#start-test-btn, #startTestBtn, .start-btn {
+  background: #1a2340 !important;
+  color: #fff !important;
+}
+html.dark #start-test-btn, html[data-theme="dark"] #start-test-btn,
+html.dark #startTestBtn, html[data-theme="dark"] #startTestBtn {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+}
+
+/* Tables */
+table, .test-table, .mcq-table {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+.test-table td, .test-table th, .mcq-table td, .mcq-table th {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+  border-color: var(--os-border) !important;
+}
+.mcq-table tr:nth-child(even) td {
+  background-color: #f8faff !important;
+}
+html.dark .mcq-table tr:nth-child(even) td, html[data-theme="dark"] .mcq-table tr:nth-child(even) td {
+  background-color: var(--os-nav-bg) !important;
+}
+
+/* Timer display */
+.timer-display {
+  background: #f0f0f0 !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+html.dark .timer-display, html[data-theme="dark"] .timer-display {
+  background: #444 !important;
+  color: #e0e0e0 !important;
+  border-color: #555 !important;
+}
+
+/* Highlight marks */
+mark.hl-y { background: #FEF08A !important; color: #000 !important; }
+mark.hl-g { background: #BBF7D0 !important; color: #000 !important; }
+mark.hl-p { background: #FBCFE8 !important; color: #000 !important; }
+mark.hl-b { background: #BFDBFE !important; color: #000 !important; }
+html.dark mark.hl-y, html[data-theme="dark"] mark.hl-y { background: #854d0e !important; color: #fef08a !important; }
+html.dark mark.hl-g, html[data-theme="dark"] mark.hl-g { background: #14532d !important; color: #bbf7d0 !important; }
+html.dark mark.hl-p, html[data-theme="dark"] mark.hl-p { background: #831843 !important; color: #fbcfe8 !important; }
+html.dark mark.hl-b, html[data-theme="dark"] mark.hl-b { background: #1e3a5f !important; color: #bfdbfe !important; }
+
+/* Section banners */
+.section-banner, .test-table th {
+  background: #f0f4ff !important;
+  color: #1e3a5f !important;
+}
+html.dark .section-banner, html[data-theme="dark"] .section-banner {
+  background: #3a3a3a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--os-bg); }
+::-webkit-scrollbar-thumb { background: var(--os-border); border-radius: 4px; }
+
+/* L6 specific */
+.brand-tp { color: #0088cc !important; }
+html.dark .brand-tp, html[data-theme="dark"] .brand-tp { color: #64b5f6 !important; }
+.hdr-pill-btn, .circle-btn, .zoom-controls-hdr {
+  background: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .hdr-pill-btn, html[data-theme="dark"] .hdr-pill-btn,
+html.dark .circle-btn, html[data-theme="dark"] .circle-btn,
+html.dark .zoom-controls-hdr, html[data-theme="dark"] .zoom-controls-hdr {
+  background: #444 !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+.skip-btn, .skip-btn-hdr {
+  color: #4b5563 !important;
+}
+html.dark .skip-btn, html[data-theme="dark"] .skip-btn,
+html.dark .skip-btn-hdr, html[data-theme="dark"] .skip-btn-hdr {
+  color: #e0e0e0 !important;
+}
+
+
+/* === BRANDING === */
+.ielts-logo,[id*="ielts-logo"],[class*="ielts-logo"],img[src*="ielts"],img[alt*="IELTS"],.header img,.header .logo{display:none!important}
+.header::before{content:"IELTSUZ";font-size:20px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-family:Inter,Arial,sans-serif;letter-spacing:-0.02em;display:block}
+.header{background:var(--os-bg,#fff)!important;border-bottom:1px solid var(--os-border,#e2e8f0)!important;color:var(--os-fg,#0f172a)!important;height:60px!important;padding:12px 20px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;position:fixed!important;top:0;left:0;right:0;z-index:100!important}
+html.dark .header{background:var(--os-bg,#0a0a0f)!important;border-bottom-color:var(--os-border,#2d2d3a)!important}
+.audio-player-container,.audio-shell,.floating-audio-bar,.fab-inner{background:var(--os-bg,#fff)!important;border:1px solid var(--os-border,#e2e8f0)!important;border-radius:12px!important;padding:8px 16px!important;margin:8px!important}
+html.dark .audio-player-container,html.dark .audio-shell,html.dark .floating-audio-bar,html.dark .fab-inner{background:var(--os-nav-bg,#111118)!important;border-color:var(--os-nav-border,#2d2d3a)!important}
+.player-btn,.audio-play,.audio-play-hdr,.circle-btn{background:#6366f1!important;color:#fff!important;border:none!important;border-radius:50%!important;width:40px!important;height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important}
+.player-btn:hover,.audio-play:hover{background:#4f46e5!important}
+input[type="range"],#progress-bar,#progressSlider{accent-color:#6366f1!important}
+.timer-display,#timerDisplay{background:#f1f5f9!important;color:#0f172a!important;border:1px solid #e2e8f0!important;border-radius:18px!important;padding:5px 14px!important;font-size:15px!important;font-weight:500!important}
+html.dark .timer-display,html.dark #timerDisplay{background:#1a1a24!important;color:#f8fafc!important;border-color:#475569!important}
+.section-banner,.part-header{background:#f0f4ff!important;border-left:4px solid #6366f1!important;padding:16px 20px!important;margin:16px 0!important;border-radius:0 8px 8px 0!important}
+html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;border-left-color:#6366f1!important}
+.question-text,.question p,.passage p{font-size:17px!important;line-height:1.7!important}
+.answer-input,input[type="text"],.blank,.ldm-slot{background:var(--os-input-bg,#fff)!important;border:2px solid var(--os-input-border,#94a3b8)!important;color:var(--os-fg,#0f172a)!important;border-radius:6px!important;padding:6px 10px!important;font-size:16px!important;min-width:80px!important;text-align:center!important}
+.subQuestion.active{background:#6366f1!important;color:#fff!important;border-color:#6366f1!important}
+
+</style>
+
+<style data-theme-injected>
+/* Light mode defaults (already in files) */
+/* Dark mode overrides */
+[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .header,
+[data-theme="dark"] header {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .passage,
+[data-theme="dark"] .passage-container,
+[data-theme="dark"] .question-area,
+[data-theme="dark"] .questions-container,
+[data-theme="dark"] .main-container,
+[data-theme="dark"] .left-column,
+[data-theme="dark"] .right-column,
+[data-theme="dark"] .text-content,
+[data-theme="dark"] .reading-passage,
+[data-theme="dark"] .passage-text,
+[data-theme="dark"] .section-content,
+[data-theme="dark"] .container,
+[data-theme="dark"] .wrapper,
+[data-theme="dark"] .inner,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .question-card,
+[data-theme="dark"] .part-header,
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-container,
+[data-theme="dark"] .test-area,
+[data-theme="dark"] .test-content,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .test-panel,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-container,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .page-area,
+[data-theme="dark"] .page-panel,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .question-panel,
+[data-theme="dark"] .question-content,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .passage-panel,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .reading-panel,
+[data-theme="dark"] .reading-content,
+[data-theme="dark"] .reading-container,
+[data-theme="dark"] .listening-container,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .listening-panel,
+[data-theme="dark"] .listening-content,
+[data-theme="dark"] .ielts-container,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .ielts-panel,
+[data-theme="dark"] .ielts-content,
+[data-theme="dark"] .exam-container,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .exam-panel,
+[data-theme="dark"] .exam-content,
+[data-theme="dark"] .practice-container,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .practice-panel,
+[data-theme="dark"] .practice-content,
+[data-theme="dark"] .mock-container,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .mock-panel,
+[data-theme="dark"] .mock-content,
+[data-theme="dark"] .test-section,
+[data-theme="dark"] .reading-section,
+[data-theme="dark"] .listening-section,
+[data-theme="dark"] .ielts-section,
+[data-theme="dark"] .exam-section,
+[data-theme="dark"] .practice-section,
+[data-theme="dark"] .mock-section,
+[data-theme="dark"] .question-section,
+[data-theme="dark"] .passage-section,
+[data-theme="dark"] .content-section,
+[data-theme="dark"] .page-section,
+[data-theme="dark"] .area-section,
+[data-theme="dark"] .panel-section,
+[data-theme="dark"] .box-section,
+[data-theme="dark"] .wrapper-section,
+[data-theme="dark"] .container-section,
+[data-theme="dark"] .main-section,
+[data-theme="dark"] .sub-section,
+[data-theme="dark"] .inner-section,
+[data-theme="dark"] .outer-section,
+[data-theme="dark"] .top-section,
+[data-theme="dark"] .bottom-section,
+[data-theme="dark"] .left-section,
+[data-theme="dark"] .right-section,
+[data-theme="dark"] .center-section,
+[data-theme="dark"] .middle-section,
+[data-theme="dark"] .full-section,
+[data-theme="dark"] .half-section,
+[data-theme="dark"] .third-section,
+[data-theme="dark"] .quarter-section,
+[data-theme="dark"] .fifth-section,
+[data-theme="dark"] .sixth-section,
+[data-theme="dark"] .seventh-section,
+[data-theme="dark"] .eighth-section,
+[data-theme="dark"] .ninth-section,
+[data-theme="dark"] .tenth-section,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .answer-wrapper,
+[data-theme="dark"] .instruction-wrapper,
+[data-theme="dark"] .direction-wrapper,
+[data-theme="dark"] .title-wrapper,
+[data-theme="dark"] .section-wrapper,
+[data-theme="dark"] .part-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .inner-wrapper,
+[data-theme="dark"] .outer-wrapper,
+[data-theme="dark"] .top-wrapper,
+[data-theme="dark"] .bottom-wrapper,
+[data-theme="dark"] .left-wrapper,
+[data-theme="dark"] .right-wrapper,
+[data-theme="dark"] .center-wrapper,
+[data-theme="dark"] .middle-wrapper,
+[data-theme="dark"] .full-wrapper,
+[data-theme="dark"] .half-wrapper,
+[data-theme="dark"] .third-wrapper,
+[data-theme="dark"] .quarter-wrapper,
+[data-theme="dark"] .fifth-wrapper,
+[data-theme="dark"] .sixth-wrapper,
+[data-theme="dark"] .seventh-wrapper,
+[data-theme="dark"] .eighth-wrapper,
+[data-theme="dark"] .ninth-wrapper,
+[data-theme="dark"] .tenth-wrapper,
+[data-theme="dark"] div[style*="background-color: rgb(255, 255, 255)"],
+[data-theme="dark"] div[style*="background-color: #ffffff"],
+[data-theme="dark"] div[style*="background-color: #fff"] {
+  background-color: #1e293b !important;
+}
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] li,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] label,
+[data-theme="dark"] div {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .part-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .area-box,
+[data-theme="dark"] .panel-box,
+[data-theme="dark"] .wrapper-box,
+[data-theme="dark"] .container-box,
+[data-theme="dark"] .inner-box,
+[data-theme="dark"] .outer-box,
+[data-theme="dark"] .top-box,
+[data-theme="dark"] .bottom-box,
+[data-theme="dark"] .left-box,
+[data-theme="dark"] .right-box,
+[data-theme="dark"] .center-box,
+[data-theme="dark"] .middle-box,
+[data-theme="dark"] .full-box,
+[data-theme="dark"] .half-box,
+[data-theme="dark"] .third-box,
+[data-theme="dark"] .quarter-box,
+[data-theme="dark"] .fifth-box,
+[data-theme="dark"] .sixth-box,
+[data-theme="dark"] .seventh-box,
+[data-theme="dark"] .eighth-box,
+[data-theme="dark"] .ninth-box,
+[data-theme="dark"] .tenth-box {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .answer-input,
+[data-theme="dark"] .answer-select,
+[data-theme="dark"] input[type="text"] {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .subQuestion,
+[data-theme="dark"] .question-number,
+[data-theme="dark"] .question-btn,
+[data-theme="dark"] .footer__questionNo___3WNct {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .subQuestion:hover,
+[data-theme="dark"] .question-btn:hover,
+[data-theme="dark"] .footer__questionNo___3WNct:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .subQuestion.active,
+[data-theme="dark"] .question-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.correct,
+[data-theme="dark"] .question-btn.correct {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.incorrect,
+[data-theme="dark"] .question-btn.incorrect {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .drop-zone {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .drop-zone.drag-over {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .drop-zone.correct {
+  background-color: #14532d !important;
+  border-color: #22c55e !important;
+}
+[data-theme="dark"] .drop-zone.incorrect {
+  background-color: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+[data-theme="dark"] .highlight,
+[data-theme="dark"] .text-highlight {
+  background-color: #854d0e !important;
+  color: #fef3c7 !important;
+}
+[data-theme="dark"] .comment-highlight {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .resizer {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .context-menu {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-panel {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .timer-display,
+[data-theme="dark"] .timer-container {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07 {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07:hover {
+  background-color: #475569 !important;
+}
+[data-theme="dark"] #goto-btn,
+[data-theme="dark"] .goto-btn {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .tf-question-line {
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .tf-question.correct .tf-question-line {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .tf-question.incorrect .tf-question-line {
+  background-color: #7f1d1d !important;
+}
+[data-theme="dark"] .matching-question-container {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .matching-item,
+[data-theme="dark"] .matching-option {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .matching-item:hover,
+[data-theme="dark"] .matching-option:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .summary-blank,
+[data-theme="dark"] .gap-input {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .part-title,
+[data-theme="dark"] .test-title,
+[data-theme="dark"] .page-title {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .instruction-text,
+[data-theme="dark"] .direction-text,
+[data-theme="dark"] .note-text,
+[data-theme="dark"] .hint-text,
+[data-theme="dark"] .tip-text {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] a {
+  color: #60a5fa !important;
+}
+[data-theme="dark"] a:hover {
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .check-answers-btn,
+[data-theme="dark"] .submit-btn,
+[data-theme="dark"] .next-btn,
+[data-theme="dark"] .prev-btn {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+[data-theme="dark"] .check-answers-btn:hover,
+[data-theme="dark"] .submit-btn:hover,
+[data-theme="dark"] .next-btn:hover,
+[data-theme="dark"] .prev-btn:hover {
+  background-color: #2563eb !important;
+}
+[data-theme="dark"] .audio-player,
+[data-theme="dark"] .audio-controls,
+[data-theme="dark"] .player-controls {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .progress-bar,
+[data-theme="dark"] .volume-slider {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569 !important;
+  border-radius: 4px;
+}
+[data-theme="dark"] table {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] th {
+  background-color: #334155 !important;
+}
+</style>
+
+</head>
+<body>
+<div id="screen-landing" class="screen active"><div class="center"><div class="card">
+  
+  <h1 class="landing-title">Academic IELTS Reading Mock Test</h1>
+  <p class="landing-desc">A computer-delivered IELTS Reading platform: three passages, forty questions, answer review and band-score results.</p>
+  <div class="type-row"><button class="type-btn active" id="btn-acad" onclick="setType('academic')">Academic</button><button class="type-btn" id="btn-gen" onclick="setType('general')">General Training</button></div>
+  <button class="btn primary" onclick="goInstr()">Start Test</button>
+  <div class="info-grid"><div class="info-box"><strong>60</strong> minutes</div><div class="info-box"><strong>40</strong> questions</div><div class="info-box"><strong>3</strong> passages</div></div>
+</div></div></div>
+<div id="screen-instructions" class="screen"><div class="center"><div class="card">
+  <div class="brand-row"><span class="tg-dot">&#9654;</span> IELTSUZ</div>
+  <h1 class="landing-title">Reading Test Instructions</h1>
+  <p class="landing-desc">Read carefully before you begin. The 60-minute timer starts when you click <strong>Begin Test</strong>.</p>
+  <ul class="rules">
+    <li>Read <strong>3 passages</strong> and answer <strong>40 questions</strong> in <strong>60 minutes</strong>.</li>
+    <li>The passage is on the <strong>left</strong>; questions on the <strong>right</strong>. Drag the centre divider to resize.</li>
+    <li>Select text, then click the floating <strong>Highlight</strong> button. Click a highlight to remove it.</li>
+    <li>Use the <strong>Next &rarr;</strong> arrow or a question number in the footer to move. Switch passages with the passage cells.</li>
+    <li>Spell-check is <strong>disabled</strong> on inputs, as in the real exam.</li>
+    <li>The timer turns <strong style="color:var(--warn)">orange at 10 min</strong> and <strong style="color:var(--bad)">flashes red at 5 min</strong>. Auto-submits at 0:00.</li>
+    <li>After the last question, a <strong>Review screen</strong> lets you return before final submission.</li>
+  </ul>
+  <div class="action-row"><button class="btn" onclick="showScreen('screen-landing')">Back</button><button class="btn primary" onclick="startTest()">Begin Test</button></div>
+</div></div></div>
+<div id="screen-test" class="screen">
+  <header class="topbar">
+    <div class="tb-left"><span class="tb-logo">IELTS</span><span class="tb-id" id="hdr-type">Academic Reading</span></div>
+    <div class="tb-center"></div>
+    <div class="tb-right">
+      <span class="timer" id="timer">60:00</span>
+      <button id="fsBtn" class="icon-btn" title="Fullscreen"><svg id="fsIcon" viewBox="0 0 16 16"><path id="fsPath" d="M1.5 1h4a.5.5 0 0 1 0 1H2v3.5a.5.5 0 0 1-1 0v-4a.5.5 0 0 1 .5-.5zm9 0h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V2h-3.5a.5.5 0 0 1 0-1zm-9 9a.5.5 0 0 1 .5.5V14h3.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5zm13 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1 0-1H14v-3.5a.5.5 0 0 1 .5-.5z"/></svg></button>
+      <button id="setToggle" class="icon-btn" title="Display settings"><svg viewBox="0 0 16 16"><path d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg></button>
+    </div>
+  </header>
+  <div class="tmain">
+    <div class="pp" id="pp"><div class="pphdr"><div><div class="pptitle" id="pp-title">Passage 1</div><div class="ppql" id="pp-qr">Questions 1&ndash;13</div></div></div><div class="pbody" id="pbody"></div></div>
+    <div class="rszr" id="rszr"></div>
+    <div class="qp" id="qp"><div class="qphdr"><h3 id="qp-title">Questions 1&ndash;13</h3><p id="qp-pname">Passage 1</p></div><div class="qbody" id="qbody"></div></div>
+  </div>
+  <footer class="footer">
+    <div class="parts-bar" id="partsBar"></div>
+    <div class="footer-tools">
+      <button class="nav-arrow" id="nextBtn" onclick="nextQ()"><svg viewBox="0 0 16 16"><path d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/></svg></button>
+      <button class="check-btn" id="checkBtn" onclick="showReview()"><svg viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg></button>
+    </div>
+  </footer>
+</div>
+<div class="hl-pop" id="hlPop"><button type="button" id="hlApply">Highlight</button><button type="button" class="remove" id="hlRemove">Remove</button></div>
+<aside class="settings" id="settings">
+  <h3>Display Settings</h3>
+  <div class="set-group"><label>Font Size</label><input type="range" id="fontScale" min="0.85" max="1.3" step="0.05" value="1"></div>
+  <div class="set-group"><label>Line Spacing</label><input type="range" id="lineScale" min="1" max="1.5" step="0.05" value="1"></div>
+  <div class="set-group"><label>Background</label><div class="swatches"><button class="swatch sw-light active" data-theme="light"></button><button class="swatch sw-sepia" data-theme="sepia"></button><button class="swatch sw-dark" data-theme="dark"></button></div></div>
+  <div class="set-group"><button class="btn danger" id="resetAnswers" style="width:100%">Reset Answers</button></div>
+  <div class="set-group" style="display:flex;gap:8px"><button class="btn" id="setReset">Reset</button><button class="btn" id="setClose">Close</button></div>
+</aside>
+<div id="screen-review" class="screen"><div class="scroll-body"><div class="wide">
+  <h1 style="color:var(--navy);margin-bottom:8px">Review Your Answers</h1>
+  <p style="color:var(--muted)">Click any question number to return and change it.</p>
+  <div class="rev-stats" id="rev-stats"></div><div id="rev-passes"></div>
+  <div class="action-row" style="margin-top:8px"><button class="btn" onclick="backToTest()">Back to Test</button><button class="btn primary" onclick="showSubModal()">Submit Final Answers</button></div>
+</div></div></div>
+<div id="screen-results" class="screen"><div class="scroll-body"><div class="wide" id="resultsContent"></div></div></div>
+<div class="modal" id="modal"><div class="modal-card"><h2>Submit your answers?</h2><p id="modal-p"></p><div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitTest()">Submit</button></div></div></div>
+<script>
+/* ================================================================
+   AUTHORING AREA вЂ” edit ONLY below, in this order:
+     1) PASSAGES   2) QUESTIONS   3) ANSWERS
+   ================================================================ */
+
+
+/* ---------- 1) PASSAGES ----------
+   title, qr (the "Questions x-y" label), html.
+   Begin a paragraph with <span class="pl">A</span> to show its letter. */
+const PASSAGES = {
+1:{title:"William Kamkwamba",qr:"Questions 1вЂ“13",html:`
+  <h2>William Kamkwamba</h2>
+  <p>At only 14 years old, William Kamkwamba built a series of windmills that could generate electricity in his African village, Masitala, in Malawi, south-eastern Africa.</p>
+  <p>In 2002, William Kamkwamba had to drop out of school, as his father, a maize and tobacco farmer, could no longer afford his school fees. But despite this setback, William was determined to get his education. He began visiting a local library that had just opened in his old primary school, where he discovered a tattered science book. With only a rudimentary grasp of English, he taught himself basic physics вЂ“ mainly by studying photos and diagrams. Another book he found there featured windmills on the cover and inspired him to try and build his own.</p>
+  <p>He started by constructing a small model. Then, with the help of a cousin and friend, he spent many weeks searching scrap yards and found old tractor fans, shock absorbers, plastic pipe and bicycle parts, which he used to build the real thing.</p>
+  <p>For windmill blades, William cut some bath pipe in two lengthwise, then heated the pieces over hot coals to press the curved edges flat. To bore holes into the blades, he stuck a nail through half a corncob, heated the metal red and twisted it through the blades. It took three hours to repeatedly heat the nail and bore the holes. He attached the blades to a tractor fan using proper nuts and bolts and then to the back axle of a bicycle. Electricity was generated through the bicycle dynamo. When the wind blew the blades, the bike chain spun the bike wheel, which charged the dynamo and sent a current through wire to his house.</p>
+  <p>What he had built was a crude machine that produced 12 volts and powered four lights. When it was all done, the windmillвЂ™s wingspan measured more than eight feet and sat on top of a rickety tower 15 feet tall that swayed violently in strong gales. He eventually replaced the tower with a sturdier one that stands 39 feet, and built a second machine that watered a family garden.</p>
+  <p>The windmill brought William Kamkwamba instant local fame, but despite his accomplishment, he was still unable to return to school. However, news of his <em>magetsi a mphepo</em> вЂ“ electric wind вЂ“ spread beyond Malawi, and eventually things began to change. An educational official, who had heard news of the windmill, came to visit his village and was amazed to learn that William had been out of school for five years. He arranged for him to attend secondary school at the governmentвЂ™s expense and brought journalists to the farm to see the windmill. Then a story published in the Malawi Daily Mail caught the attention of bloggers, which in turn caught the attention of organisers for the Technology Entertainment and Design conference.</p>
+  <p>In 2007, William spoke at the TED Global conference in Tanzania and got a standing ovation. Businessmen stepped forward with offers to fund his education and projects, and with money donated by them, he was able to put his cousin and several friends back into school and pay for some medical needs of his family. With the donation, he also drilled a borehole for a well and water pump in his village and installed drip irrigation in his fatherвЂ™s fields.</p>
+  <p>The water pump has allowed his family to expand its crops. They have abandoned tobacco and now grow maize, beans, soybeans, potatoes and peanuts. The windmills have also brought big lifestyle and health changes to the other villagers. вЂThe village has changed a lot,вЂ™ William says. вЂNow, the time that they would have spent going to fetch water, they are using for doing other things. And also the water they are drinking is clean water, so there is less disease.вЂ™ The villagers have also stopped using kerosene and can use the money previously spent on fuel to buy other things.</p>
+  <p>William KamkwambaвЂ™s example has inspired other children in the village to pursue science. William says they now see that if they put their mind to something, they can achieve it. вЂIt has changed the way people think,вЂ™ he says.</p>`},
+
+2:{title:"White mountain, green tourism",qr:"Questions 14вЂ“26",html:`
+  <h2>White mountain, green tourism</h2>
+  <p><em>The French Alpine town of Chamonix has been a magnet for tourists since the 18th century. But today, tourism and climate change are putting pressure on the surrounding environment. Marc Grainger reports.</em></p>
+  <p><span class="pl">A</span>The town of Chamonix-Mont-Blanc sits in a valley at 1,035 metres above sea level in the Haute-Savoie department in south-eastern France. To the northwest are the red peaks of the Aiguilles Rouges massif; to the south-east are the permanently white peaks of Mont Blanc, which at 4,810 metres is the highest mountain in the Alps. ItвЂ™s a typical Alpine environment, but one that is under increasing strain from the hustle and bustle of human activity.</p>
+  <p><span class="pl">B</span>Tourism is ChamonixвЂ™s lifeblood. Visitors have been encouraged to visit the valley ever since it was discovered by explorers in 1741. Over 40 years later, in 1786, Mont BlancвЂ™s summit was finally reached by a French doctor and his guide, and this gave birth to the sport of alpinism, with Chamonix at its centre. In 1924, it hosted the first Winter Olympics, and the cable cars and lifts that were built in the years that followed gave everyone access to the ski slopes.</p>
+  <p><span class="pl">C</span>Today, Chamonix is a modern town, connected to the outside world via the Mont Blanc Road Tunnel and a busy highway network. It receives up to 60,000 visitors at a time during the ski season, and climbers, hikers and extreme-sports enthusiasts swarm there in the summer in even greater numbers, swelling the townвЂ™s population to 100,000. It is the third most visited natural site in the world, according to ChamonixвЂ™s Tourism Office and, last year, it had 5.2 million visitor bed nights вЂ“ all this in a town with fewer than 10,000 permanent inhabitants.</p>
+  <p><span class="pl">D</span>This influx of tourists has put the local environment under severe pressure, and the authorities in the valley have decided to take action. Educating visitors is vital. Tourists are warned not to drop rubbish, and there are now recycling points dotted all around the valley, from the town centre to halfway up the mountains. An internet blog reports environmental news in the town, and the вЂgreenвЂ™ message is delivered with all the tourist officeвЂ™s activities.</p>
+  <p><span class="pl">E</span>Low-carbon initiatives are also important for the region. France is committed to reducing its carbon emissions by a factor of four by 2050. Central to achieving this aim is a strategy that encourages communities to identify their carbon emissions on a local level and make plans to reduce them. Studies have identified that accommodation accounts for half of all carbon emissions in the Chamonix valley. Hotels are known to be inefficient operations, but those around Chamonix are now cleaning up their act. Some are using low-energy lighting, restricting water use and making recycling bins available for guests; others have invested in huge projects such as furnishing and decorating using locally sourced materials, using geothermal energy for heating and installing solar panels.</p>
+  <p><span class="pl">F</span>ChamonixвЂ™s council is encouraging the use of renewable energy in private properties too, by making funds available for green renovations and new constructions. At the same time, public sector buildings have also undergone improvements to make them more energy efficient and less wasteful. For example, the local ice rink has reduced its annual water consumption from 140,000 cubic metres to 10,000 cubic metres in the space of three years.</p>
+  <p><span class="pl">G</span>Improving public transport is another feature of the new policy, as 80 percent of carbon emissions from transport used to come from private vehicles. While the Mont Blanc Express is an ideal way to travel within the valley вЂ“ and see some incredible scenery along the route вЂ“ it is much more difficult to arrive in Chamonix from outside by rail. There is no direct line from the closest airport in Geneva, so tourists arriving by air normally transfer by car or bus. However, at a cost of 3.3 million euros a year, Chamonix has introduced a free shuttle service in order to get people out of their cars and into buses fitted with particle filters.</p>
+  <p><span class="pl">H</span>If the valleyвЂ™s visitors and residents want to know why they need to reduce their environmental impact, they just have to look up; the effects of climate change are there for everyone to see in the melting glaciers that cling to the mountains. The fragility of the Alpine environment has long been a concern among local people. Today, 70 percent of the 805 square kilometres that comprise Chamonix-Mont-Blanc is protected in some way. But now, the impact of tourism has led the authorities to recognise that more must be done if the valley is to remain prosperous: that they must not only protect the natural environment better, but also manage the numbers of visitors better, so that its residents can happily remain there.</p>`},
+
+3:{title:"READING IN A WHOLE NEW WAY",qr:"Questions 27вЂ“40",html:`
+  <h2>READING IN A WHOLE NEW WAY</h2>
+  <p><em>As technology improves, how does the act of reading change?</em></p>
+  <p>Reading and writing, like all technologies, are constantly changing. In ancient times, authors often dictated their books. Dictation sounded like an uninterrupted series of words, so scribes wrote these down in one long continuous string, just as they occur in speech. For this reason, text was written without spaces between words until the 11th century. This continuous script made books hard to read, so only a few people were accomplished at reading them aloud to others. Being able to read silently to yourself was considered an amazing talent; writing was an even rarer skill. In fact, in 15th century Europe, only one in 20 adult males could write.</p>
+  <p>After GutenbergвЂ™s invention of the printing press in about 1440, mass-produced books changed the way people read and wrote. The technology of printing increased the number of words available, and more types of media, such as newspapers and magazines, broadened what was written about. Authors no longer had to produce scholarly works, as was common until then, but could write, for example, inexpensive, entertaining love stories or publish autobiographies, even if they were unknown.</p>
+  <p>In time, the power of the written word gave birth to the idea of authority and expertise. Laws were compiled into official documents, contracts were written down and nothing was valid unless it was in this form. Painting, music, architecture, dance were all important, but the heartbeat of many cultures was the turning pages of a book. By the early 19th century, public libraries had been built in many cities.</p>
+  <p>Today, words are migrating from paper to computers, phones, laptops and game consoles. Some 4.5 billion digital screens illuminate our lives. Letters are no longer fixed in black ink on paper, but flitter on a glass surface in a rainbow of colors as fast as our eyes can blink. Screens fill our pockets, briefcases, cars, living-room walls and the sides of buildings. They sit in front of us when we work вЂ“ regardless of what we do. And of course, these newly ubiquitous screens have changed how we read and write.</p>
+  <p>The first screens that overtook culture, several decades ago вЂ“ the big, fat, warm tubes of television вЂ“ reduced the time we spent reading to such an extent that it seemed as if reading and writing were over. Educators and parents worried deeply that the TV generation would be unable to write. But the interconnected, cool, thin displays of computer screens launched an epidemic of writing that continues to swell. As a consequence, the amount of time people spend reading has almost tripled since 1980. By 2008, the World Wide Web contained more than a trillion pages, and that total grows rapidly every day.</p>
+  <p>But it is not book reading or newspaper reading, it is screen reading. Screens are always on, and, unlike books, we never stop staring at them. This new platform is very visual, and it is gradually merging words with moving images. You might think of this new medium as books we watch, or television we read. We also use screens to present data, and this encourages numeracy: visualising data and reading charts, looking at pictures and symbols are all part of this new literacy.</p>
+  <p>Screens engage our bodies, too. The most we may do while reading a book is to flip the pages or turn over a corner, but when we use a screen, we interact with what we see. In the futuristic movie Minority Report, the main character stands in front of a screen and hunts through huge amounts of information as if conducting an orchestra. Just as it seemed strange five centuries ago to see someone read silently, in the future it will seem strange to read without moving your body.</p>
+  <p>In addition, screens encourage more utilitarian (practical) thinking. A new idea or unfamiliar fact will cause a reflex to do something: to research a word, to question your screen вЂfriendsвЂ™ for their opinions or to find alternative views. Book reading strengthened our analytical skills, encouraging us to think carefully about how we feel. Screenreading, on the other hand, encourages quick responses, associating this idea with another, equipping us to deal with the thousands of new thoughts expressed every day. For example, we review a movie for our friends while we watch it; we read the ownerвЂ™s manual of a device we see in a shop before we purchase it, rather than after we get home and discover that it canвЂ™t do what we need it to do.</p>
+  <p>Screens provoke action instead of persuasion. Propaganda is less effective, and false information is hard deliver in a world of screens because while misinformation travels fast, corrections do, too. On a screen, it is often easier to correct a falsehood than to tell one in the first place. Wikipedia works so well because it removes an error in a single click. In books, we find a revealed truth; on the screen, we assemble our own truth from pieces. What is more, a screen can reveal the inner nature of things. Waving the camera eye of a smartphone over the bar code of a manufactured product reveals its price, origins and even relevant comments by other owners. It is as if the screen displays the objectвЂ™s intangible essence. A popular childrenвЂ™s toy (Webkinz) instills stuffed animals with a virtual character that is вЂhiddenвЂ™ inside; a screen enables children to play with this inner character online in a virtual world.</p>
+  <p>In the near future, screens will be the first place weвЂ™ll look for answers, for friends, for news, for our sense of who we are and who we can be.</p>`}
+};
+
+/* ---------- 2) QUESTIONS ----------
+   GROUPS = instruction text per group.  HEADINGS = i-viii list. ENDINGS = A-F list.
+   Question types: mcq, multi(+multi-child), tfng, ynng, info, heads, ends, gap, short, sumgap, sumdrag.
+   In gap/summary text, write the blank as ___ (gap) or [n] (summary). */
+const GROUPS = {
+  g1:{type:"Flow-chart Completion",instr:"Complete the flow-chart below. Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer."},
+  g2:{type:"True / False / Not Given",instr:"Do the following statements agree with the information in Reading Passage 1? Write <strong>TRUE</strong>, <strong>FALSE</strong> or <strong>NOT GIVEN</strong>."},
+  g3:{type:"Short-Answer Questions",instr:"Answer the questions below. Use <strong>NO MORE THAN ONE WORD AND/OR A NUMBER</strong> from the passage for each answer."},
+  g4:{type:"Matching Information",instr:"Reading Passage 2 has eight paragraphs <strong>AвЂ“H</strong>. Which paragraph contains the following information? Write the correct letter <strong>AвЂ“H</strong>. <em>You may use any letter more than once.</em>"},
+  g5:{type:"Multiple Choice вЂ” Choose TWO",instr:"The writer mentions several ways that the authorities aim to educate tourists in Chamonix. Which <strong>TWO</strong> of the following ways are mentioned? Choose <strong>TWO</strong> letters, <strong>AвЂ“E</strong>."},
+  g6:{type:"Multiple Choice вЂ” Choose TWO",instr:"The writer mentions several ways that hotels are reducing their carbon emissions. Which <strong>TWO</strong> of the following ways are mentioned? Choose <strong>TWO</strong> letters, <strong>AвЂ“E</strong>."},
+  g7:{type:"Sentence Completion",instr:"Complete the sentences below. Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer."},
+  g9:{type:"Multiple Choice",instr:"Choose the correct letter, <strong>A, B, C</strong> or <strong>D</strong>."},
+  g10:{type:"Yes / No / Not Given",instr:"Do the following statements agree with the views of the writer in Reading Passage 3? Write <strong>YES</strong>, <strong>NO</strong> or <strong>NOT GIVEN</strong>."},
+  g11:{type:"Matching Sentence Endings",instr:"Complete each sentence with the correct ending, <strong>AвЂ“F</strong>, from the box. Each ending may be used <strong>once only</strong>."}
+};
+
+const HEADINGS = []; // none in this sample
+
+const ENDINGS = [
+  {n:'A',t:"the accuracy of its information."},
+  {n:'B',t:"peopleвЂ™s ability to concentrate."},
+  {n:'C',t:"the global use of the Internet."},
+  {n:'D',t:"how people behave physically when they read screens."},
+  {n:'E',t:"the screenвЂ™s ability to make an object seem real."},
+  {n:'F',t:"how rapidly opinions can be communicated."}
+];
+
+const QUESTIONS = [
+  {id:1,p:1,g:'g1',type:'gap',text:"William learned some ___ from a library book."},
+  {id:2,p:1,g:'g1',type:'gap',text:"First, he built a ___ of the windmill."},
+  {id:3,p:1,g:'g1',type:'gap',text:"Then he collected materials from ___ with a relative."},
+  {id:4,p:1,g:'g1',type:'gap',text:"He made the windmill blades from pieces of ___."},
+  {id:5,p:1,g:'g1',type:'gap',text:"He fixed the blades to a ___ and then to part of a bicycle."},
+
+  {id:6,p:1,g:'g2',type:'tfng',text:"William used the electricity he created for village transport."},
+  {id:7,p:1,g:'g2',type:'tfng',text:"At first, WilliamвЂ™s achievement was ignored by local people."},
+  {id:8,p:1,g:'g2',type:'tfng',text:"Journalists from other countries visited WilliamвЂ™s farm."},
+  {id:9,p:1,g:'g2',type:'tfng',text:"William used money he received to improve water supplies in his village."},
+  {id:10,p:1,g:'g2',type:'tfng',text:"The health of the villagers has improved since the windmill was built."},
+
+  {id:11,p:1,g:'g3',type:'short',text:"How tall was the final tower that William built?"},
+  {id:12,p:1,g:'g3',type:'short',text:"What did the villagers use for fuel before the windmill was built?"},
+  {id:13,p:1,g:'g3',type:'short',text:"What school subject has become more popular in WilliamвЂ™s village?"},
+
+  {id:14,p:2,g:'g4',type:'info',text:"a list of the type of people who enjoy going to Chamonix",opts:['A','B','C','D','E','F','G','H']},
+  {id:15,p:2,g:'g4',type:'info',text:"reference to a system that is changing the way visitors reach Chamonix",opts:['A','B','C','D','E','F','G','H']},
+  {id:16,p:2,g:'g4',type:'info',text:"the geographical location of Chamonix",opts:['A','B','C','D','E','F','G','H']},
+  {id:17,p:2,g:'g4',type:'info',text:"mention of the need to control the large tourist population in Chamonix",opts:['A','B','C','D','E','F','G','H']},
+  {id:18,p:2,g:'g4',type:'info',text:"reference to a national environmental target",opts:['A','B','C','D','E','F','G','H']},
+
+  {id:19,p:2,g:'g5',type:'multi',from:19,to:20,pick:2,prompt:"Which TWO of the following ways are mentioned?",opts:['A) giving instructions about litter','B) imposing fines on people who drop litter','C) handing out leaflets in the town','D) operating a web-based information service','E) having a paper-free tourist office']},
+  {id:20,p:2,g:'g5',type:'multi-child',from:19,to:20},
+
+  {id:21,p:2,g:'g6',type:'multi',from:21,to:22,pick:2,prompt:"Which TWO of the following ways are mentioned?",opts:['A) using natural cleaning materials','B) recycling water','C) limiting guest numbers','D) providing places for rubbish','E) harnessing energy from the sun']},
+  {id:22,p:2,g:'g6',type:'multi-child',from:21,to:22},
+
+  {id:23,p:2,g:'g7',type:'gap',text:"The first people to discover the Chamonix valley were ___."},
+  {id:24,p:2,g:'g7',type:'gap',text:"ChamonixвЂ™s busiest tourist season is the ___."},
+  {id:25,p:2,g:'g7',type:'gap',text:"Public areas, such as the ___ in Chamonix, are using fewer resources."},
+  {id:26,p:2,g:'g7',type:'gap',text:"The ___ on the mountains around Chamonix provide visual evidence of global warming."},
+
+  {id:27,p:3,g:'g9',type:'mcq',text:"What does the writer say about dictation?",opts:['A) It helped people learn to read.','B) It affected the way people wrote.','C) It was not used until the 11th century.','D) It was used mainly for correspondence.']},
+  {id:28,p:3,g:'g9',type:'mcq',text:"According to the writer, what changed after the invention of the printing press?",opts:['A) Romance became more popular than serious fiction.','B) Newspapers became more popular than books.','C) Readers asked for more autobiographies.','D) Authors had a wider choice of topics.']},
+  {id:29,p:3,g:'g9',type:'mcq',text:"In the third paragraph, the writer focuses on the",opts:['A) legal concerns of authors.','B) rapid changes in public libraries.','C) growing status of the written word.','D) recognition of the book as an art form.']},
+  {id:30,p:3,g:'g9',type:'mcq',text:"What does the writer say about screens in the fourth paragraph?",opts:['A) They are hard to read.','B) They are bad for our health.','C) They can improve our work.','D) They can be found everywhere.']},
+  {id:31,p:3,g:'g9',type:'mcq',text:"According to the writer, computers differ from television because they",opts:['A) encourage more reading.','B) attract more criticism.','C) take up more of our leisure time.','D) include more educational content.']},
+
+  {id:32,p:3,g:'g10',type:'ynng',text:"Screen reading has reduced the number of books and newspapers people read."},
+  {id:33,p:3,g:'g10',type:'ynng',text:"Screen literacy requires a wider range of visual skills than book-based literacy."},
+  {id:34,p:3,g:'g10',type:'ynng',text:"Screen reading is more active than book reading."},
+  {id:35,p:3,g:'g10',type:'ynng',text:"Screens and books produce similar thought patterns in their readers."},
+  {id:36,p:3,g:'g10',type:'ynng',text:"People are easily persuaded to believe lies on the screen."},
+
+  {id:37,p:3,g:'g11',type:'ends',stem:"The film Minority Report illustrates"},
+  {id:38,p:3,g:'g11',type:'ends',stem:"Our behaviour when we watch a film shows"},
+  {id:39,p:3,g:'g11',type:'ends',stem:"WikipediaвЂ™s success relies on"},
+  {id:40,p:3,g:'g11',type:'ends',stem:"Webkinz is an example of"}
+];
+
+/* ---------- 3) ANSWERS ----------
+   gap/short/summary: the word/number; use "/" for alternatives (June/July).
+     Spelling variants (colour/color, -ise/-ize, centre/center, travelling/traveling) auto-accepted.
+   mcq/info/heads/ends: the LETTER.  multi: a letter per id (order ignored).
+   tfng: True/False/Not Given.  ynng: Yes/No/Not Given. */
+const ANSWERS = {
+  1:"physics",
+  2:"model",
+  3:"scrapyards/scrap yards",
+  4:"pipe",
+  5:"tractor fan",
+
+  6:"False",
+  7:"False",
+  8:"Not Given",
+  9:"True",
+  10:"True",
+
+  11:"39 feet",
+  12:"kerosene",
+  13:"science",
+
+  14:"C",
+  15:"G",
+  16:"A",
+  17:"H",
+  18:"E",
+
+  19:"A",
+  20:"D",
+  21:"D",
+  22:"E",
+
+  23:"explorers",
+  24:"summer",
+  25:"ice rink",
+  26:"glaciers",
+
+  27:"B",
+  28:"D",
+  29:"C",
+  30:"D",
+  31:"A",
+
+  32:"Not Given",
+  33:"Yes",
+  34:"Yes",
+  35:"No",
+  36:"No",
+
+  37:"D",
+  38:"F",
+  39:"A",
+  40:"E"
+};
+
+
+
+/* ================================================================
+   END OF AUTHORING AREA вЂ” engine below (do not edit)
+   ================================================================ */
+const S={testType:'academic',passage:1,question:1,answers:{},phtml:{},timerSecs:3600,timerInt:null,startTime:null,endTime:null,deadline:null,selWord:null,submitted:false,hlRange:null,hlMark:null};
+
+function $(i){return document.getElementById(i)}
+function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function PD(id){return PASSAGES[id]}
+function getQsP(p){return QUESTIONS.filter(q=>q.p===p)}
+function allIds(){const ids=[];QUESTIONS.forEach(q=>{if(q.type==='multi'||q.type==='sumgap'||q.type==='sumdrag'){for(let n=q.from;n<=q.to;n++)ids.push(n)}else if(q.type==='multi-child'){}else ids.push(q.id)});return [...new Set(ids)].sort((a,b)=>a-b)}
+function pOf(n){for(const q of QUESTIONS){if(q.type==='multi'||q.type==='sumgap'||q.type==='sumdrag'){if(n>=q.from&&n<=q.to)return q.p}else if(q.id===n)return q.p}return 1}
+function multiBlockFor(n){return QUESTIONS.find(q=>q.type==='multi'&&n>=q.from&&n<=q.to)}
+function isAns(id){const a=S.answers[id];if(a===undefined||a===null||a==='')return false;if(Array.isArray(a))return a.length>0;return true}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
+function setType(t){S.testType=t;$('btn-acad').classList.toggle('active',t==='academic');$('btn-gen').classList.toggle('active',t==='general')}
+function goInstr(){showScreen('screen-instructions')}
+
+function startTest(){showScreen('screen-test');$('hdr-type').textContent=(S.testType==='academic'?'Academic':'General Training')+' Reading';S.timerSecs=3600;S.startTime=Date.now();S.deadline=S.startTime+3600000;S.passage=1;S.question=allIds()[0];renderP(1);renderQs(1);renderPartsBar();updateNav();startTimer();window.addEventListener('beforeunload',warnL)}
+function warnL(e){e.preventDefault();e.returnValue=''}
+function syncTimer(){
+  if(S.submitted||!S.deadline)return;
+  S.timerSecs=Math.max(0,Math.ceil((S.deadline-Date.now())/1000));
+  renderTimer();
+  if(S.timerSecs<=0){
+    clearInterval(S.timerInt);
+    S.endTime=S.deadline;
+    window.removeEventListener('beforeunload',warnL);
+    showResults();
+  }
+}
+function startTimer(){clearInterval(S.timerInt);S.timerInt=setInterval(syncTimer,1000);syncTimer()}
+function renderTimer(){const m=String(Math.floor(Math.abs(S.timerSecs)/60)).padStart(2,'0'),s=String(Math.abs(S.timerSecs)%60).padStart(2,'0'),el=$('timer');el.textContent=m+':'+s;el.className='timer';if(S.timerSecs<=300)el.classList.add('danger');else if(S.timerSecs<=600)el.classList.add('warn')}
+document.addEventListener('visibilitychange',syncTimer);
+window.addEventListener('focus',syncTimer);
+
+function saveP(){S.phtml[S.passage]=$('pbody').innerHTML}
+function renderP(id){$('pbody').innerHTML=S.phtml[id]||PD(id).html;$('pp-title').textContent='Passage '+id;$('pp-qr').textContent=PD(id).qr}
+
+function renderQs(pid){
+  $('qp-title').textContent=PD(pid).qr;
+  $('qp-pname').textContent='Passage '+pid+': '+PD(pid).title;
+  const qs=getQsP(pid),grps={},order=[];
+  qs.forEach(q=>{if(!grps[q.g]){grps[q.g]=[];order.push(q.g)}grps[q.g].push(q)});
+  let html='';
+  order.forEach(gk=>{
+    const grp=grps[gk],meta=GROUPS[gk];
+    html+='<div class="qgrp" id="grp-'+gk+'"><div class="qtbadge">'+esc(meta.type)+'</div><div class="qinstr">'+meta.instr+'</div>';
+    if(grp.some(q=>q.type==='heads')&&HEADINGS.length){html+='<div class="listbox"><div class="listbox-l">List of Headings</div>';HEADINGS.forEach(h=>{html+='<div class="listbox-i"><b>'+h.n+'.</b> '+esc(h.t)+'</div>'});html+='</div>'}
+    if(grp.some(q=>q.type==='ends')){html+='<div class="listbox"><div class="listbox-l">Endings</div>';ENDINGS.forEach(e=>{html+='<div class="listbox-i"><b>'+e.n+'.</b> '+esc(e.t)+'</div>'});html+='</div>'}
+    grp.forEach(q=>{html+=renderQI(q)});
+    html+='</div>';
+  });
+  $('qbody').innerHTML=html;
+  attachListeners();
+  if(S.submitted)markReviewColours();
+}
+
+function renderQI(q){
+  if(q.type==='multi-child')return '';
+  if(q.type==='multi')return renderMulti(q);
+  if(q.type==='sumgap'||q.type==='sumdrag')return renderSummary(q);
+  if(q.type==='gap')return renderGap(q);
+  if(q.type==='ends')return renderEnds(q);
+  let html='<div class="qi" id="qi-'+q.id+'"><div class="qrow"><div class="qbdg">'+q.id+'</div><div class="qtxt">'+esc(q.text)+'</div></div>';
+  if(q.type==='tfng')html+=renderRadio(q.id,['True','False','Not Given']);
+  else if(q.type==='ynng')html+=renderRadio(q.id,['Yes','No','Not Given']);
+  else if(q.type==='mcq')html+=renderRadio(q.id,q.opts);
+  else if(q.type==='info'){const v=S.answers[q.id]||'';html+='<div class="opts"><select class="hsel" data-q="'+q.id+'" onchange="saveA('+q.id+',this.value)"><option value="">\u2014 Select paragraph \u2014</option>';q.opts.forEach(o=>{html+='<option value="'+o+'"'+(v===o?' selected':'')+'>'+o+'</option>'});html+='</select></div>'}
+  else if(q.type==='heads'){const v=S.answers[q.id]||'';html+='<div class="opts"><select class="hsel" data-q="'+q.id+'" onchange="saveA('+q.id+',this.value)"><option value="">\u2014 Select heading \u2014</option>';HEADINGS.forEach(h=>{html+='<option value="'+h.n+'"'+(v===h.n?' selected':'')+'>'+h.n+'. '+esc(h.t)+'</option>'});html+='</select></div>'}
+  else if(q.type==='short'){const v=S.answers[q.id]||'';html+='<input class="ainput" type="text" value="'+esc(v)+'" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-q="'+q.id+'" oninput="saveA('+q.id+',this.value)" />';if(q.hint)html+='<div class="ahint">'+esc(q.hint)+'</div>'}
+  html+='</div>';return html;
+}
+
+function renderGap(q){
+  const v=S.answers[q.id]||'';
+  const input='<input class="gap-input" type="text" value="'+esc(v)+'" aria-label="Question '+q.id+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-q="'+q.id+'" oninput="saveA('+q.id+',this.value)" />';
+  const body=esc(q.text).replace(/_{2,}/,input);
+  return '<div class="qi" id="qi-'+q.id+'"><div class="qrow"><div class="qbdg">'+q.id+'</div><div class="qtxt">'+body+'</div></div></div>';
+}
+function renderRadio(qId,opts){let html='<div class="opts">';opts.forEach(o=>{const val=/^[A-E]\)/.test(o)?o[0]:o;const sel=S.answers[qId]===val;html+='<label class="olbl'+(sel?' sel':'')+'"><input type="radio" name="q'+qId+'" value="'+val+'" '+(sel?'checked':'')+' onchange="saveA('+qId+',\''+val+'\')" />'+esc(o)+'</label>'});return html+'</div>'}
+function renderMulti(q){
+  const ids=[];for(let n=q.from;n<=q.to;n++)ids.push(n);
+  const chosen=ids.map(n=>S.answers[n]).filter(Boolean);
+  let html='<div class="qi" id="qi-'+q.from+'"><div class="qrow"><div class="qbdg">'+q.from+'\u2013'+q.to+'</div><div class="qtxt">'+esc(q.prompt)+'</div></div>';
+  html+='<div class="cbnote">Choose '+(q.pick||2)+' answers</div><div class="opts">';
+  q.opts.forEach(o=>{const letter=o[0];const sel=chosen.includes(letter);html+='<label class="olbl'+(sel?' sel':'')+'"><input type="checkbox" name="m'+q.from+'-'+q.to+'" value="'+letter+'" '+(sel?'checked':'')+' onchange="saveMulti('+q.from+','+q.to+',\''+letter+'\',this.checked)" />'+esc(o)+'</label>'});
+  html+='</div></div>';return html;
+}
+function renderEnds(q){
+  const v=S.answers[q.id]||'';
+  const usedElsewhere=new Set(QUESTIONS.filter(x=>x.type==='ends'&&x.id!==q.id).map(x=>S.answers[x.id]).filter(Boolean));
+  let opts='<option value="">\u2014 Select ending \u2014</option>';
+  ENDINGS.forEach(e=>{const dis=usedElsewhere.has(e.n)&&v!==e.n;opts+='<option value="'+e.n+'"'+(v===e.n?' selected':'')+(dis?' disabled':'')+'>'+e.n+'. '+esc(e.t)+'</option>'});
+  return '<div class="ends-row" id="qi-'+q.id+'"><div class="qbdg">'+q.id+'</div><div class="ends-stem">'+esc(q.stem)+'<br><select class="hsel hsel-inline" data-q="'+q.id+'" onchange="saveEnd('+q.id+',this.value)">'+opts+'</select></div></div>';
+}
+function renderSummary(q){
+  const ids=[];for(let n=q.from;n<=q.to;n++)ids.push(n);
+  let html='<div class="qi" id="qi-'+q.from+'">';
+  if(q.type==='sumdrag'){
+    html+='<div class="wbank" id="wbank-'+q.from+'"><div class="wbl">Word Bank \u2014 drag a word to a gap (or click a word, then a gap)</div>';
+    (q.words||[]).forEach(w=>{const used=ids.some(n=>S.answers[n]===w);html+='<span class="wtile'+(used?' wused':'')+'" draggable="'+(!used)+'" data-word="'+esc(w)+'" data-block="'+q.from+'" onclick="selWord('+q.from+',this.dataset.word)" ondragstart="dragWord(event)" ondragend="dragEnd(event)">'+esc(w)+'</span>'});
+    html+='</div>';
+  }
+  let body=esc(q.text);
+  ids.forEach(n=>{
+    const v=S.answers[n]||'';
+    let cell;
+    if(q.type==='sumdrag'){
+      cell='<span class="blank'+(v?' filled':'')+'" data-blk="'+n+'" data-block="'+q.from+'" onclick="clickBlank('+n+','+q.from+')" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="dropWord(event,'+n+','+q.from+')"><span class="bn">'+n+'</span>'+(v?esc(v):'')+'</span>';
+    }else{
+      cell='<input class="gap-input" type="text" value="'+esc(v)+'" aria-label="Question '+n+'" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-q="'+n+'" oninput="saveA('+n+',this.value)" />';
+    }
+    body=body.split('['+n+']').join(cell);
+  });
+  html+='<div class="sumtxt">'+body+'</div>';
+  if(q.hint)html+='<div class="ahint" style="padding-left:0;margin-top:8px">'+esc(q.hint)+'</div>';
+  html+='</div>';return html;
+}
+
+function attachListeners(){
+  document.querySelectorAll('.olbl input[type=radio]').forEach(inp=>{inp.addEventListener('change',function(){document.querySelectorAll('input[name="'+this.name+'"]').forEach(r=>r.closest('.olbl').classList.toggle('sel',r.checked));refreshFooter()})});
+}
+function saveA(qId,val){if(S.submitted)return;S.answers[qId]=val;refreshFooter()}
+function saveEnd(qId,val){if(S.submitted)return;S.answers[qId]=val;renderQs(S.passage);refreshFooter();const el=$('qi-'+qId);if(el)el.scrollIntoView({block:'nearest'})}
+function saveMulti(from,to,letter,checked){
+  if(S.submitted)return;
+  const blk=QUESTIONS.find(q=>q.type==='multi'&&q.from===from);const pick=(blk&&blk.pick)||2;
+  const ids=[];for(let n=from;n<=to;n++)ids.push(n);
+  let chosen=ids.map(n=>S.answers[n]).filter(Boolean);
+  if(checked){
+    if(chosen.length>=pick){const inp=document.querySelector('input[name="m'+from+'-'+to+'"][value="'+letter+'"]');if(inp){inp.checked=false;inp.closest('.olbl').classList.remove('sel')}return}
+    chosen.push(letter);
+  }else{chosen=chosen.filter(l=>l!==letter)}
+  chosen.sort();
+  ids.forEach((n,i)=>{S.answers[n]=chosen[i]||''});
+  document.querySelectorAll('input[name="m'+from+'-'+to+'"]').forEach(c=>c.closest('.olbl').classList.toggle('sel',c.checked));
+  refreshFooter();
+}
+
+/* summary drag/click */
+function selWord(block,w){if(S.submitted)return;S.selWord={block:Number(block),word:w};document.querySelectorAll('#wbank-'+block+' .wtile').forEach(t=>t.classList.toggle('wsel',t.dataset.word===w&&!t.classList.contains('wused')))}
+function clickBlank(n,block){if(S.submitted)return;if(S.answers[n]){S.answers[n]='';S.selWord=null;renderQs(S.passage);refreshFooter();return}if(S.selWord&&S.selWord.block===Number(block)){placeWord(n,S.selWord.word);S.selWord=null}}
+function placeWord(n,w){const blk=QUESTIONS.find(q=>q.type==='sumdrag'&&n>=q.from&&n<=q.to);if(!blk)return;for(let k=blk.from;k<=blk.to;k++){if(S.answers[k]===w)S.answers[k]=''}S.answers[n]=w;renderQs(S.passage);refreshFooter()}
+function dragWord(e){if(S.submitted){e.preventDefault();return}const t=e.currentTarget;e.dataTransfer.setData('text/plain',JSON.stringify({block:t.dataset.block,word:t.dataset.word}));e.dataTransfer.effectAllowed='move';t.classList.add('dragging')}
+function dragEnd(e){e.currentTarget.classList.remove('dragging')}
+function allowDrop(e){if(S.submitted)return;e.preventDefault();e.currentTarget.classList.add('dragover');e.dataTransfer.dropEffect='move'}
+function leaveDrop(e){e.currentTarget.classList.remove('dragover')}
+function dropWord(e,n,block){e.preventDefault();e.currentTarget.classList.remove('dragover');try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));if(String(d.block)===String(block))placeWord(n,d.word)}catch(_){}}
+
+/* footer */
+function renderPartsBar(){
+  const bar=$('partsBar');bar.innerHTML='';
+  [1,2,3].forEach(p=>{
+    if(p===S.passage){const cell=document.createElement('div');cell.className='part-cell active-part';cell.innerHTML='<span class="pc-active-label">Passage '+p+'</span><div class="qnav" id="qnav"></div>';bar.appendChild(cell)}
+    else{const ids=allIds().filter(n=>pOf(n)===p),ans=ids.filter(isAns).length;const cell=document.createElement('button');cell.className='part-cell collapsed';cell.innerHTML='<span class="pc-label">Passage '+p+'</span><span class="pc-count">'+ans+' of '+ids.length+'</span>';cell.addEventListener('click',()=>switchP(p));bar.appendChild(cell)}
+  });
+  renderQnav();
+}
+function renderQnav(){const nav=$('qnav');if(!nav)return;nav.innerHTML='';allIds().filter(n=>pOf(n)===S.passage).forEach(n=>{const b=document.createElement('button');b.className='qbtn';b.textContent=n;b.dataset.q=n;b.addEventListener('click',()=>goToQ(n));nav.appendChild(b)});refreshFooter()}
+function refreshFooter(){
+  document.querySelectorAll('.qbtn').forEach(b=>{const n=Number(b.dataset.q);b.classList.toggle('answered',isAns(n));b.classList.toggle('active',n===S.question)});
+  const cells=document.querySelectorAll('.part-cell.collapsed');let idx=0;
+  [1,2,3].forEach(p=>{if(p===S.passage)return;const cell=cells[idx++];if(!cell)return;const ids=allIds().filter(n=>pOf(n)===p);cell.querySelector('.pc-count').textContent=ids.filter(isAns).length+' of '+ids.length});
+  if(S.submitted)document.querySelectorAll('.qbtn').forEach(b=>{const n=Number(b.dataset.q);b.classList.toggle('res-correct',chk(n));b.classList.toggle('res-wrong',!chk(n))});
+}
+function switchP(pid){saveP();S.passage=pid;renderP(pid);renderQs(pid);const f=allIds().filter(n=>pOf(n)===pid)[0];if(f)S.question=f;renderPartsBar();updateNav()}
+function goToQ(n){const p=pOf(n);if(p!==S.passage){saveP();S.passage=p;renderP(p);renderQs(p);renderPartsBar()}S.question=n;refreshFooter();updateNav();const el=$('qi-'+n)||document.querySelector('[data-q="'+n+'"]')||document.querySelector('[data-blk="'+n+'"]');if(el)setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'nearest'}),50)}
+function nextQ(){const ids=allIds();const idx=ids.indexOf(S.question);if(idx<ids.length-1)goToQ(ids[idx+1]);else showReview()}
+function updateNav(){const last=allIds().slice(-1)[0];$('nextBtn').disabled=(S.question>=last&&S.submitted)}
+
+/* highlighter */
+function hlRoot(node){if(!node)return null;const el=node.nodeType===Node.TEXT_NODE?node.parentElement:node;if(!el||el.closest('input,textarea,select,button,.hl-pop,.topbar,.footer,.settings,.modal'))return null;return el.closest('#pbody,#qbody')}
+function hideHLPop(){const pop=$('hlPop');if(pop)pop.classList.remove('show');S.hlRange=null;S.hlMark=null}
+function posHLPop(rect){const pop=$('hlPop');if(!pop||!rect)return;pop.classList.add('show');const top=Math.max(8,rect.top-pop.offsetHeight-8);const left=Math.min(window.innerWidth-pop.offsetWidth-8,Math.max(8,rect.left+(rect.width-pop.offsetWidth)/2));pop.style.top=top+'px';pop.style.left=left+'px'}
+function showSelectionHL(){const sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.toString().trim()){hideHLPop();return}const range=sel.getRangeAt(0),root=hlRoot(range.commonAncestorContainer);if(!root){hideHLPop();return}S.hlRange=range.cloneRange();S.hlMark=null;$('hlApply').style.display='inline-block';$('hlRemove').style.display='none';posHLPop(range.getBoundingClientRect())}
+function showRemoveHL(mark){S.hlRange=null;S.hlMark=mark;$('hlApply').style.display='none';$('hlRemove').style.display='inline-block';posHLPop(mark.getBoundingClientRect())}
+function unwrapHL(mark){const p=mark.parentNode;if(!p)return;while(mark.firstChild)p.insertBefore(mark.firstChild,mark);p.removeChild(mark);p.normalize();saveP()}
+function highlightRange(range){const root=hlRoot(range.commonAncestorContainer);if(!root)return;const nodes=[];const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){if(!node.nodeValue.trim()||node.parentElement.closest('mark.uhl,input,textarea,select,button,.hl-pop'))return NodeFilter.FILTER_REJECT;return range.intersectsNode(node)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});while(walker.nextNode())nodes.push(walker.currentNode);nodes.reverse().forEach(node=>{const start=node===range.startContainer?range.startOffset:0;const end=node===range.endContainer?range.endOffset:node.nodeValue.length;if(start>=end)return;const seg=node.splitText(start);seg.splitText(end-start);const mark=document.createElement('mark');mark.className='uhl';seg.parentNode.insertBefore(mark,seg);mark.appendChild(seg)});window.getSelection().removeAllRanges();saveP()}
+$('hlApply').addEventListener('mousedown',e=>e.preventDefault());
+$('hlRemove').addEventListener('mousedown',e=>e.preventDefault());
+$('hlApply').addEventListener('click',()=>{if(S.hlRange)highlightRange(S.hlRange);hideHLPop()});
+$('hlRemove').addEventListener('click',()=>{if(S.hlMark)unwrapHL(S.hlMark);hideHLPop()});
+document.addEventListener('mouseup',function(e){const mark=e.target.closest&&e.target.closest('mark.uhl');if(mark){showRemoveHL(mark);return}setTimeout(showSelectionHL,0)});
+document.addEventListener('mousedown',function(e){if(!e.target.closest||(!e.target.closest('.hl-pop')&&!e.target.closest('mark.uhl')))hideHLPop()});
+document.addEventListener('scroll',hideHLPop,true);
+
+/* resizer */
+(function(){const rszr=$('rszr'),left=document.querySelector('.pp'),right=document.querySelector('.qp');let x0,lw;
+  rszr.addEventListener('pointerdown',e=>{x0=e.clientX;lw=left.getBoundingClientRect().width;rszr.classList.add('dragging');rszr.setPointerCapture(e.pointerId);document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up)});
+  function mv(e){const dx=e.clientX-x0,total=left.parentElement.getBoundingClientRect().width-rszr.getBoundingClientRect().width,nw=Math.min(Math.max(lw+dx,240),total-240);left.style.flex='none';left.style.width=nw+'px';right.style.flex='1'}
+  function up(e){rszr.classList.remove('dragging');try{rszr.releasePointerCapture(e.pointerId)}catch(_e){}document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up)}
+})();
+
+/* review */
+function showReview(){
+  saveP();const ids=allIds();const ans=ids.filter(isAns).length,unans=ids.length-ans;
+  $('rev-stats').innerHTML='<div class="rev-stat g"><strong>'+ans+'</strong><span>Answered</span></div><div class="rev-stat o"><strong>'+unans+'</strong><span>Unanswered</span></div><div class="rev-stat n"><strong>'+ids.length+'</strong><span>Total</span></div>';
+  let html='';[1,2,3].forEach(p=>{html+='<div class="rev-sec"><div class="rev-plbl">Passage '+p+' \u2014 '+esc(PD(p).title)+'</div><div class="rev-grid">';ids.filter(n=>pOf(n)===p).forEach(n=>{html+='<div class="rqt '+(isAns(n)?'ans':'unans')+'" onclick="revGoQ('+n+')" title="Q'+n+'">'+n+'</div>'});html+='</div></div>'});
+  $('rev-passes').innerHTML=html;showScreen('screen-review');
+}
+function backToTest(){showScreen('screen-test');renderP(S.passage);renderQs(S.passage);renderPartsBar();updateNav()}
+function revGoQ(n){showScreen('screen-test');const p=pOf(n);S.passage=p;renderP(p);renderQs(p);S.question=n;renderPartsBar();updateNav();setTimeout(()=>{const el=$('qi-'+n)||document.querySelector('[data-q="'+n+'"]');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'})},100)}
+function showSubModal(){const ids=allIds();const u=ids.filter(n=>!isAns(n)).length;$('modal-p').textContent=u>0?'You have '+u+' unanswered question'+(u!==1?'s':'')+'. They will be marked incorrect. Once you submit, your answers are locked \u2014 you can still review your mistakes afterwards.':'All questions answered. Once you submit, your answers are locked \u2014 you can still review your mistakes afterwards.';$('modal').classList.add('show')}
+function closeModal(){$('modal').classList.remove('show')}
+function submitTest(){closeModal();clearInterval(S.timerInt);window.removeEventListener('beforeunload',warnL);S.endTime=Date.now();showResults()}
+
+/* answer checking */
+function normalize(s){return String(s==null?'':s).trim().toLowerCase().replace(/\s+/g,' ').replace(/^(a|an|the)\s+/,'').replace(/[.,;:!?'"()]/g,'').replace(/our\b/g,'or').replace(/ise\b/g,'ize').replace(/isation\b/g,'ization').replace(/re\b/g,'er').replace(/ll/g,'l')}
+function chk(n){
+  const key=ANSWERS[n];if(key==null)return false;
+  if(multiBlockFor(n)){const blk=multiBlockFor(n);const cs=new Set();for(let k=blk.from;k<=blk.to;k++)cs.add(String(ANSWERS[k]||'').toUpperCase());const gs=new Set();for(let k=blk.from;k<=blk.to;k++){const a=S.answers[k];if(a)gs.add(String(a).toUpperCase())}return gs.size===cs.size&&[...gs].every(x=>cs.has(x))}
+  const q=QUESTIONS.find(x=>x.id===n);
+  const isLetter=q&&['mcq','info','heads','ends'].includes(q.type);
+  const user=S.answers[n];
+  if(isLetter)return String(user||'').toUpperCase()===String(key).toUpperCase();
+  const alts=String(key).split('/').map(normalize);
+  return alts.includes(normalize(user));
+}
+
+function showResults(){
+  S.submitted=true;const ids=allIds();let score=0;ids.forEach(n=>{if(chk(n))score++});
+  const bandV=getBand(score);
+  const taken=S.endTime?Math.floor((S.endTime-S.startTime)/1000):3600-S.timerSecs;
+  const tm=String(Math.floor(taken/60)).padStart(2,'0'),ts=String(taken%60).padStart(2,'0');
+  let pcards='';[1,2,3].forEach(p=>{const pn=ids.filter(n=>pOf(n)===p);const ps=pn.filter(chk).length;pcards+='<div class="pcard"><div class="pcardn">Passage '+p+'</div><strong>'+ps+'</strong><span class="of"> / '+pn.length+'</span></div>'});
+  let rows='';[1,2,3].forEach(p=>{ids.filter(n=>pOf(n)===p).forEach(n=>{const ok=chk(n);const ua=S.answers[n];const ustr=Array.isArray(ua)?ua.join(', '):(ua||'');rows+='<div class="ans-row '+(ok?'correct':'wrong')+'"><strong>Q'+n+'</strong><span>'+(ustr?'Your answer: <strong>'+esc(ustr)+'</strong>':'<span class="muted">No answer</span>')+'</span><span>Correct: <strong>'+esc(ANSWERS[n])+'</strong></span><span class="tick '+(ok?'g':'b')+'">'+(ok?'\u2713':'\u2717')+'</span></div>'})});
+  $('resultsContent').innerHTML='<h1 style="color:var(--navy);margin-bottom:16px">Reading Test Results</h1>'+
+    '<div class="score-hero"><div class="band-card"><span>Band Score</span><div class="band">'+bandV+'</div></div>'+
+    '<div class="stats"><div class="stat">Raw score<strong>'+score+' / '+ids.length+'</strong></div><div class="stat">Time taken<strong>'+tm+':'+ts+'</strong></div><div class="stat">Passages<strong>3</strong></div><div class="stat">Questions<strong>'+ids.length+'</strong></div></div></div>'+
+    '<div class="pcards">'+pcards+'</div>'+
+    '<h2 style="color:var(--navy)">Full Answer Review</h2><div class="ans-review">'+rows+'</div>'+
+    '<div class="action-row" style="margin-top:24px"><button class="btn" onclick="reviewTest()">Review Test &amp; Passages</button><button class="btn primary" onclick="restart()">Restart</button></div>';
+  showScreen('screen-results');
+}
+function getBand(raw){for(const[lo,hi,b]of BANDS)if(raw>=lo&&raw<=hi)return b;return'2.0'}
+const BANDS=[[39,40,'9.0'],[37,38,'8.5'],[35,36,'8.0'],[33,34,'7.5'],[30,32,'7.0'],[27,29,'6.5'],[23,26,'6.0'],[19,22,'5.5'],[15,18,'5.0'],[13,14,'4.5'],[10,12,'4.0'],[8,9,'3.5'],[6,7,'3.0'],[4,5,'2.5'],[0,3,'2.0']];
+
+function reviewTest(){showScreen('screen-test');$('checkBtn').style.display='none';renderP(S.passage);renderQs(S.passage);renderPartsBar();markReviewColours()}
+function markReviewColours(){
+  document.querySelectorAll('#qbody input,#qbody select').forEach(el=>el.disabled=true);
+  allIds().filter(n=>pOf(n)===S.passage).forEach(n=>{
+    const ok=chk(n);
+    const gi=document.querySelector('.gap-input[data-q="'+n+'"]');if(gi)gi.classList.add(ok?'good':'bad');
+    const ai=document.querySelector('.ainput[data-q="'+n+'"]');if(ai)ai.classList.add(ok?'good':'bad');
+    const se=document.querySelector('.hsel[data-q="'+n+'"]');if(se)se.classList.add(ok?'good':'bad');
+    const bl=document.querySelector('.blank[data-blk="'+n+'"]');if(bl)bl.classList.add(ok?'good':'bad');
+    const chosen=document.querySelector('input[name="q'+n+'"]:checked');if(chosen){const l=chosen.closest('.olbl');if(l)l.classList.add(ok?'good':'bad')}
+    if(!ok){const host=document.querySelector('.gap-input[data-q="'+n+'"],.ainput[data-q="'+n+'"],.hsel[data-q="'+n+'"],.blank[data-blk="'+n+'"]');if(host&&host.parentNode&&!host.parentNode.querySelector('.corr')){const tag=document.createElement('span');tag.className='corr';tag.textContent='\u2713 '+ANSWERS[n];host.insertAdjacentElement('afterend',tag)}}
+  });
+  QUESTIONS.filter(q=>q.type==='multi').forEach(q=>{const correct=[];for(let k=q.from;k<=q.to;k++)correct.push(String(ANSWERS[k]||'').toUpperCase());document.querySelectorAll('input[name="m'+q.from+'-'+q.to+'"]').forEach(c=>{const l=c.closest('.olbl');if(c.checked)l.classList.add(correct.includes(c.value.toUpperCase())?'good':'bad');else if(correct.includes(c.value.toUpperCase()))l.classList.add('good')})});
+}
+
+/* settings */
+function applyScale(f,l){document.documentElement.style.setProperty('--font-scale',f);document.documentElement.style.setProperty('--line-scale',l)}
+function applyTheme(t){document.body.classList.remove('theme-dark','theme-sepia');if(t==='dark')document.body.classList.add('theme-dark');if(t==='sepia')document.body.classList.add('theme-sepia');document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('active',s.dataset.theme===t))}
+$('setToggle').addEventListener('click',()=>$('settings').classList.toggle('open'));
+$('setClose').addEventListener('click',()=>$('settings').classList.remove('open'));
+$('fontScale').addEventListener('input',e=>applyScale(e.target.value,$('lineScale').value));
+$('lineScale').addEventListener('input',e=>applyScale($('fontScale').value,e.target.value));
+$('setReset').addEventListener('click',()=>{$('fontScale').value=1;$('lineScale').value=1;applyScale(1,1);applyTheme('light')});
+document.querySelectorAll('.swatch').forEach(s=>s.addEventListener('click',()=>applyTheme(s.dataset.theme)));
+$('resetAnswers').addEventListener('click',()=>{if(S.submitted)return;if(confirm('Reset all your answers?')){S.answers={};renderQs(S.passage);renderPartsBar();$('settings').classList.remove('open')}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('settings').classList.remove('open')});
+
+/* fullscreen */
+(function(){const btn=$('fsBtn'),path=$('fsPath');
+  const ENTER="M1.5 1h4a.5.5 0 0 1 0 1H2v3.5a.5.5 0 0 1-1 0v-4a.5.5 0 0 1 .5-.5zm9 0h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V2h-3.5a.5.5 0 0 1 0-1zm-9 9a.5.5 0 0 1 .5.5V14h3.5a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5zm13 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1 0-1H14v-3.5a.5.5 0 0 1 .5-.5z";
+  const EXIT="M5.5 0a.5.5 0 0 1 .5.5v4A.5.5 0 0 1 5.5 5h-4a.5.5 0 0 1 0-1H5V.5a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5V4h3.5a.5.5 0 0 1 0 1h-4A.5.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V11H.5a.5.5 0 0 1-.5-.5zm10 0a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5.5.5 0 0 1-.5.5H11v3.5a.5.5 0 0 1-1 0v-4z";
+  function upd(){path.setAttribute('d',document.fullscreenElement?EXIT:ENTER);btn.title=document.fullscreenElement?'Exit fullscreen':'Fullscreen'}
+  btn.addEventListener('click',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});else document.exitFullscreen().catch(()=>{})});
+  document.addEventListener('fullscreenchange',upd);
+})();
+function restart(){location.reload()}
+
+/* smoke tests (console only) */
+(function(){const out=[];const A=(n,c)=>out.push({n,c:!!c});const ids=allIds();
+  A('40 ids',ids.length===40);A('1..40 no gaps',ids[0]===1&&ids[39]===40&&ids.every((v,i)=>v===i+1));
+  A('answers=40',Object.keys(ANSWERS).length===40);
+  let missing=[];for(let i=1;i<=40;i++)if(ANSWERS[i]===undefined)missing.push(i);A('all answers present',missing.length===0);
+  A('3 passages',Object.keys(PASSAGES).length===3);
+  const ends=QUESTIONS.filter(q=>q.type==='ends');A('ends<=endings',ends.length<=ENDINGS.length);
+  const fail=out.filter(o=>!o.c);if(fail.length)console.error('READING SMOKE FAIL',fail,'missing',missing);else console.info('Reading smoke passed ('+out.length+' checks)');
+})();
+</script>
+
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

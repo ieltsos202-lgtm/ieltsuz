@@ -1,0 +1,594 @@
+{
+  "task1": [
+    {
+      "id": 1,
+      "prompt": "The chart below shows the percentage of households in owned and rented accommodation in England and Wales between 1918 and 2011.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Households in owned and rented accommodation in England and Wales",
+        "xAxisLabels": ["1918", "1939", "1953", "1971", "1981", "1991", "2001", "2011"],
+        "series": [
+          { "name": "Owned", "data": [25, 35, 40, 50, 55, 62, 68, 65] },
+          { "name": "Rented", "data": [75, 65, 60, 50, 45, 38, 32, 35] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 2,
+      "prompt": "The diagram below shows the process of making chocolate.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Stages in the chocolate production process",
+        "tableColumns": ["Stage", "Description", "Time / Temperature"],
+        "tableRows": [
+          { "label": "1. Harvesting", "values": ["Cocoa pods are picked", "Manual labour"] },
+          { "label": "2. Fermentation", "values": ["Beans left in boxes", "5-7 days"] },
+          { "label": "3. Drying", "values": ["Spread under sun", "Several days"] },
+          { "label": "4. Roasting", "values": ["Beans heated", "130-150°C"] },
+          { "label": "5. Grinding", "values": ["Turned into liquid", "—"] },
+          { "label": "6. Conching", "values": ["Smoothing process", "72+ hours"] }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "prompt": "The table below shows the changes in the number of people visiting a cinema in different age groups in a town between 2000 and 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Cinema visitors by age group (thousands)",
+        "tableColumns": ["Age Group", "2000", "2010"],
+        "tableRows": [
+          { "label": "Under 15", "values": [18, 12] },
+          { "label": "15-24", "values": [32, 28] },
+          { "label": "25-44", "values": [24, 35] },
+          { "label": "45-64", "values": [14, 22] },
+          { "label": "65+", "values": [8, 15] }
+        ],
+        "unit": "thousands"
+      }
+    },
+    {
+      "id": 4,
+      "prompt": "The maps below show the centre of a small town called Islip in 2010 and planned developments for 2015.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Changes in Islip town centre (2010 vs 2015)",
+        "tableColumns": ["Feature", "2010", "2015 (planned)"],
+        "tableRows": [
+          { "label": "Main road", "values": ["Through town centre", "Pedestrian-only zone"] },
+          { "label": "Shopping area", "values": ["Small shops east", "Expanded east + west"] },
+          { "label": "Housing", "values": ["None in centre", "New housing north"] },
+          { "label": "Park", "values": ["No park", "New park south-east"] },
+          { "label": "Bus station", "values": ["North of shops", "Relocated south-west"] }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "prompt": "The graph below shows the consumption of fish and some different kinds of meat in a European country between 1979 and 2004.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Consumption of meat and fish (grams per person per week)",
+        "xAxisLabels": ["1979", "1984", "1989", "1994", "1999", "2004"],
+        "series": [
+          { "name": "Beef", "data": [220, 210, 180, 160, 140, 120] },
+          { "name": "Lamb", "data": [150, 130, 100, 80, 60, 50] },
+          { "name": "Chicken", "data": [140, 160, 190, 210, 230, 250] },
+          { "name": "Fish", "data": [60, 65, 70, 75, 80, 85] }
+        ],
+        "unit": "grams/person/week"
+      }
+    },
+    {
+      "id": 6,
+      "prompt": "The bar chart below shows the expenditure of two countries (UK and France) on five consumer goods in 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Expenditure on consumer goods in the UK and France (2010, £ thousands)",
+        "xAxisLabels": ["Cars", "Computers", "Books", "Perfume", "Cameras"],
+        "series": [
+          { "name": "UK", "data": [450, 350, 200, 140, 170] },
+          { "name": "France", "data": [400, 300, 150, 190, 160] }
+        ],
+        "unit": "£ thousands"
+      }
+    },
+    {
+      "id": 7,
+      "prompt": "The bar chart below shows the percentage of women, men and children consuming five portions of fruit and vegetables per day in the UK from 2001 to 2008.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Percentage consuming 5 portions of fruit and vegetables daily",
+        "xAxisLabels": ["2001", "2003", "2005", "2006", "2007", "2008"],
+        "series": [
+          { "name": "Women", "data": [22, 25, 28, 34, 32, 30] },
+          { "name": "Men", "data": [17, 18, 21, 27, 27, 26] },
+          { "name": "Children", "data": [12, 12, 16, 22, 25, 24] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 8,
+      "prompt": "The chart below shows the global sales of different kinds of digital games from 2000 to 2006.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Global sales of digital games ($ billions)",
+        "xAxisLabels": ["2000", "2001", "2002", "2003", "2004", "2005", "2006"],
+        "series": [
+          { "name": "Console games", "data": [6, 8, 10, 11, 12, 13, 14] },
+          { "name": "Online games", "data": [0.5, 1, 2, 3, 4, 5, 7] },
+          { "name": "Mobile games", "data": [0.1, 0.2, 0.5, 1, 2, 3, 5] },
+          { "name": "Tablet games", "data": [0, 0, 0, 0, 0.1, 0.3, 0.8] }
+        ],
+        "unit": "$ billions"
+      }
+    },
+    {
+      "id": 9,
+      "prompt": "The graph below shows the consumption of three kinds of spreads (butter, margarine, and low-fat spreads) in a country from 1981 to 2007.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Consumption of spreads (grams per person per week)",
+        "xAxisLabels": ["1981", "1985", "1990", "1995", "2000", "2005", "2007"],
+        "series": [
+          { "name": "Butter", "data": [140, 120, 95, 65, 50, 45, 40] },
+          { "name": "Margarine", "data": [90, 85, 75, 60, 50, 40, 35] },
+          { "name": "Low fat", "data": [5, 15, 30, 55, 80, 90, 95] }
+        ],
+        "unit": "grams/week"
+      }
+    },
+    {
+      "id": 10,
+      "prompt": "The graph below shows the population figures for different types of turtles in India from 1980 to 2012.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Population of turtle species in India (thousands)",
+        "xAxisLabels": ["1980", "1985", "1990", "1995", "2000", "2005", "2010", "2012"],
+        "series": [
+          { "name": "Leatherback", "data": [120, 110, 95, 80, 65, 50, 45, 40] },
+          { "name": "Green", "data": [80, 85, 90, 95, 100, 105, 110, 115] },
+          { "name": "Olive Ridley", "data": [100, 105, 110, 115, 120, 125, 130, 135] }
+        ],
+        "unit": "thousands"
+      }
+    },
+    {
+      "id": 11,
+      "prompt": "The graph below shows the amount of goods transported in the UK from 1974 to 2002 by four modes of transport.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Goods transported in the UK (million tonnes)",
+        "xAxisLabels": ["1974", "1978", "1982", "1986", "1990", "1994", "1998", "2002"],
+        "series": [
+          { "name": "Road", "data": [70, 75, 78, 80, 82, 85, 90, 95] },
+          { "name": "Water", "data": [40, 38, 35, 32, 30, 28, 27, 25] },
+          { "name": "Rail", "data": [30, 28, 26, 24, 22, 20, 18, 15] },
+          { "name": "Pipeline", "data": [10, 12, 14, 16, 18, 20, 22, 24] }
+        ],
+        "unit": "million tonnes"
+      }
+    },
+    {
+      "id": 12,
+      "prompt": "The bar chart shows the most popular countries visited by UK residents in 1999.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Most popular countries visited by UK residents in 1999 (millions)",
+        "xAxisLabels": ["France", "Spain", "USA", "Greece", "Turkey"],
+        "series": [
+          { "name": "Visitors", "data": [10, 9, 4, 3, 2] }
+        ],
+        "unit": "millions"
+      }
+    },
+    {
+      "id": 13,
+      "prompt": "The three pie charts show the proportion of four kinds of vehicles used in the UK in 1965, 1985 and 2005.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "pie",
+        "title": "Vehicles used in the UK (2005)",
+        "pieData": [
+          { "name": "Private cars", "value": 62 },
+          { "name": "Public transport", "value": 22 },
+          { "name": "Lorries/commercial", "value": 10 },
+          { "name": "Recreational", "value": 6 }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 14,
+      "prompt": "The pie charts below show the distribution of the world's water and how it is used.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "pie",
+        "title": "World water usage",
+        "pieData": [
+          { "name": "Agriculture", "value": 70 },
+          { "name": "Industry", "value": 20 },
+          { "name": "Domestic", "value": 10 }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 15,
+      "prompt": "The pie charts below illustrate the average household spending in India and China.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "pie",
+        "title": "Average household spending in India",
+        "pieData": [
+          { "name": "Food", "value": 35 },
+          { "name": "Housing", "value": 25 },
+          { "name": "Clothing", "value": 15 },
+          { "name": "Transport", "value": 12 },
+          { "name": "Entertainment", "value": 8 },
+          { "name": "Others", "value": 5 }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 16,
+      "prompt": "The table below illustrates the average retirement age of males and females in five countries from 2000 to 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Average retirement age (years)",
+        "tableColumns": ["Country", "2000 (M/F)", "2020 (M/F)"],
+        "tableRows": [
+          { "label": "Japan", "values": ["62 / 59", "65 / 63"] },
+          { "label": "Germany", "values": ["63 / 61", "65 / 65"] },
+          { "label": "USA", "values": ["65 / 62", "67 / 67"] },
+          { "label": "UK", "values": ["65 / 60", "66 / 66"] },
+          { "label": "Brazil", "values": ["55 / 52", "60 / 58"] }
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "prompt": "The charts below give information about levels of education in Glasgow, a city in Scotland, in 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Education levels in Glasgow (2010)",
+        "tableColumns": ["Level", "University degree", "School certificate", "No qualifications"],
+        "tableRows": [
+          { "label": "Males", "values": [35, 30, 35] },
+          { "label": "Females", "values": [40, 25, 35] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 18,
+      "prompt": "The table below shows how much money is spent in the budget on different sectors by the UK government in 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "UK government spending by sector (2010, £ billions)",
+        "tableColumns": ["Sector", "Amount"],
+        "tableRows": [
+          { "label": "Health", "values": [130] },
+          { "label": "Education", "values": [95] },
+          { "label": "Defence", "values": [45] },
+          { "label": "Transport", "values": [22] },
+          { "label": "Housing", "values": [18] },
+          { "label": "Culture", "values": [12] }
+        ],
+        "unit": "£ billions"
+      }
+    },
+    {
+      "id": 19,
+      "prompt": "The maps below illustrate the changes that occurred to a coastal village of Seaville in 1990 and 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Changes in Seaville (1990 vs 2010)",
+        "tableColumns": ["Feature", "1990", "2010"],
+        "tableRows": [
+          { "label": "Hotel", "values": ["Small (20 rooms)", "Expanded (60 rooms)"] },
+          { "label": "Golf course", "values": ["None", "New 18-hole course"] },
+          { "label": "Fishing port", "values": ["Active with 12 boats", "Closed"] },
+          { "label": "Beach access", "values": ["One path", "Two paths + parking"] },
+          { "label": "Forest", "values": ["Large area north", "Reduced by 40%"] }
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "prompt": "The diagram below shows how bricks are manufactured for the building industry.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Brick manufacturing process",
+        "tableColumns": ["Stage", "Action", "Details"],
+        "tableRows": [
+          { "label": "1. Clay extraction", "values": ["Dig clay from ground", "From open quarry"] },
+          { "label": "2. Moulding", "values": ["Shape clay into brick form", "Using wire cutter or mould"] },
+          { "label": "3. Drying", "values": ["Dry in open air", "24-48 hours"] },
+          { "label": "4. Firing", "values": ["Heat in kiln", "1000-1300°C for 2-3 days"] },
+          { "label": "5. Cooling", "values": ["Cool slowly", "2-3 days in kiln"] },
+          { "label": "6. Packaging", "values": ["Sort and pack", "Ready for delivery"] }
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "prompt": "The diagram below shows the process of making instant noodles.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Instant noodle production process",
+        "tableColumns": ["Stage", "Action", "Details"],
+        "tableRows": [
+          { "label": "1. Mixing", "values": ["Mix flour + water + oil", "In large mixer"] },
+          { "label": "2. Dough strips", "values": ["Roll into sheets", "Cut into strips"] },
+          { "label": "3. Cooking", "values": ["Steam the strips", "2 minutes at 100°C"] },
+          { "label": "4. Frying/Drying", "values": ["Fry in palm oil OR dry by hot air", "Frying: 140°C / Drying: 30 min"] },
+          { "label": "5. Cooling", "values": ["Air cool", "To room temperature"] },
+          { "label": "6. Packaging", "values": ["Weigh + add seasoning + seal", "In cups or packets"] }
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "prompt": "The bar chart below shows the changes in ownership of electrical appliances and amount of time spent on housework in one country's households between 1920 and 2019.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Ownership of electrical appliances (% of households)",
+        "xAxisLabels": ["1920", "1940", "1960", "1980", "2000", "2019"],
+        "series": [
+          { "name": "Washing machine", "data": [5, 30, 55, 70, 90, 95] },
+          { "name": "Refrigerator", "data": [0, 10, 60, 95, 99, 99] },
+          { "name": "Vacuum cleaner", "data": [0, 25, 50, 80, 93, 98] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 23,
+      "prompt": "The pie charts below show the average money spent on household items in India and China.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "pie",
+        "title": "Average household spending in China",
+        "pieData": [
+          { "name": "Food", "value": 28 },
+          { "name": "Housing", "value": 22 },
+          { "name": "Clothing", "value": 12 },
+          { "name": "Transport", "value": 18 },
+          { "name": "Entertainment", "value": 14 },
+          { "name": "Others", "value": 6 }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 24,
+      "prompt": "The line chart below shows the average amount of money spent per customer on different types of equipment in a sporting goods store in Brazil.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Average spending per customer at a sporting goods store (R$)",
+        "xAxisLabels": ["2015", "2016", "2017", "2018", "2019", "2020"],
+        "series": [
+          { "name": "Football equipment", "data": [120, 125, 130, 135, 140, 110] },
+          { "name": "Running shoes", "data": [180, 190, 200, 210, 225, 200] },
+          { "name": "Swimwear", "data": [80, 85, 90, 95, 100, 70] }
+        ],
+        "unit": "R$"
+      }
+    },
+    {
+      "id": 25,
+      "prompt": "The bar chart below shows the number of international students enrolled at a Canadian university from 2005 to 2015, by country of origin.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "International students at a Canadian university (2005-2015)",
+        "xAxisLabels": ["2005", "2007", "2009", "2011", "2013", "2015"],
+        "series": [
+          { "name": "China", "data": [500, 650, 800, 950, 1100, 1250] },
+          { "name": "India", "data": [200, 280, 350, 450, 580, 720] },
+          { "name": "South Korea", "data": [150, 180, 200, 220, 240, 260] },
+          { "name": "USA", "data": [80, 90, 100, 110, 120, 130] }
+        ],
+        "unit": "students"
+      }
+    },
+    {
+      "id": 26,
+      "prompt": "The bar chart below shows the percentage of people in different age groups who attended cultural events (theatre, art galleries, concerts) in a European city in 2010 and 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Attendance at cultural events by age group (%)",
+        "xAxisLabels": ["16-25", "26-35", "36-45", "46-55", "56-65", "65+"],
+        "series": [
+          { "name": "2010", "data": [45, 52, 48, 40, 30, 20] },
+          { "name": "2020", "data": [38, 48, 55, 50, 42, 35] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 27,
+      "prompt": "The line graph below shows the percentage of adults who smoked cigarettes in the UK between 1974 and 2004.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "line",
+        "title": "Adults smoking cigarettes in the UK (%)",
+        "xAxisLabels": ["1974", "1979", "1984", "1989", "1994", "1999", "2004"],
+        "series": [
+          { "name": "Men", "data": [51, 47, 42, 36, 30, 27, 24] },
+          { "name": "Women", "data": [41, 37, 34, 30, 27, 25, 23] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 28,
+      "prompt": "The pie chart below shows the main reasons why students chose to study at a particular university.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "pie",
+        "title": "Reasons for choosing a university",
+        "pieData": [
+          { "name": "Course quality", "value": 35 },
+          { "name": "Location", "value": 22 },
+          { "name": "Tuition fees", "value": 18 },
+          { "name": "Campus facilities", "value": 15 },
+          { "name": "Career prospects", "value": 10 }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 29,
+      "prompt": "The table below shows the percentage of women in tertiary education in five countries in 1995 and 2015.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "table",
+        "title": "Women in tertiary education (%)",
+        "tableColumns": ["Country", "1995", "2015"],
+        "tableRows": [
+          { "label": "Sweden", "values": [52, 58] },
+          { "label": "Australia", "values": [48, 55] },
+          { "label": "Japan", "values": [35, 48] },
+          { "label": "Turkey", "values": [28, 42] },
+          { "label": "Nigeria", "values": [15, 25] }
+        ],
+        "unit": "%"
+      }
+    },
+    {
+      "id": 30,
+      "prompt": "The bar chart below shows the proportion of male and female employees in three sectors (agriculture, manufacturing, services) in a country in 1980 and 2010.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+      "chart_data": {
+        "type": "bar",
+        "title": "Employees by sector and gender (1980 vs 2010)",
+        "xAxisLabels": ["Agriculture", "Manufacturing", "Services"],
+        "series": [
+          { "name": "Male 1980", "data": [55, 35, 10] },
+          { "name": "Female 1980", "data": [45, 25, 30] },
+          { "name": "Male 2010", "data": [30, 28, 42] },
+          { "name": "Female 2010", "data": [20, 22, 58] }
+        ],
+        "unit": "%"
+      }
+    }
+  ],
+  "task2": [
+    {
+      "id": 1,
+      "prompt": "Some people think that strict punishments for driving offenses are the key to reducing traffic accidents. Others, however, believe that other measures would be more effective in improving road safety.\n\nDiscuss both these views and give your own opinion."
+    },
+    {
+      "id": 2,
+      "prompt": "In many countries, children are becoming overweight and unhealthy. Some people believe that this is the responsibility of parents to teach their children about a healthy lifestyle. Others think it is the duty of the government and schools.\n\nDiscuss both views and give your own opinion."
+    },
+    {
+      "id": 3,
+      "prompt": "Some people believe that universities should focus on providing academic skills, while others think they should prepare students for employment.\n\nDiscuss both views and give your own opinion."
+    },
+    {
+      "id": 4,
+      "prompt": "In some countries, young people are encouraged to work or travel for a year between finishing high school and starting university studies.\n\nDiscuss the advantages and disadvantages of this approach."
+    },
+    {
+      "id": 5,
+      "prompt": "Some people think that it is better to educate boys and girls in separate schools. Others, however, believe that mixed schools are better.\n\nDiscuss both views and give your own opinion."
+    },
+    {
+      "id": 6,
+      "prompt": "The development of technology has changed the way people interact with each other. Some people think this has had negative effects on social relationships.\n\nTo what extent do you agree or disagree?"
+    },
+    {
+      "id": 7,
+      "prompt": "Many people work long hours, leaving very little time for leisure activities. This can have negative effects on individuals and society.\n\nDo the advantages of this trend outweigh the disadvantages?"
+    },
+    {
+      "id": 8,
+      "prompt": "Some people believe that the best way to succeed in life is to have a university education. Others disagree and say that practical experience is more important.\n\nDiscuss both views and give your own opinion."
+    },
+    {
+      "id": 9,
+      "prompt": "In many countries, it is mandatory for school children to wear uniforms. Do the advantages of this policy outweigh the disadvantages? Give reasons for your answer and include any relevant examples from your own knowledge or experience."
+    },
+    {
+      "id": 10,
+      "prompt": "Many museums charge for admission while others are free. Do you think the advantages of charging people for admission outweigh the disadvantages?"
+    },
+    {
+      "id": 11,
+      "prompt": "Ambition is a positive quality for people to have in society today. How important is it for people who want to succeed in life? Is it a positive or negative characteristic?"
+    },
+    {
+      "id": 12,
+      "prompt": "Research has shown that the transportation of products and people are the main source of pollution. Some people believe the government should be in charge of this, while others believe it is the fault of individuals. Discuss both views and give your opinion."
+    },
+    {
+      "id": 13,
+      "prompt": "Extreme sports such as skydiving and rock climbing are very dangerous and should be banned. To what extent do you agree or disagree with this view?"
+    },
+    {
+      "id": 14,
+      "prompt": "These days more people put their personal information, such as names, addresses and telephone numbers, online for everyday activities such as socialising on social networks or banking purposes. Do you think it is a positive or negative development?"
+    },
+    {
+      "id": 15,
+      "prompt": "The leaders or directors of organizations are often older people. But some people say that young people can also be a leader. Do you agree or disagree?"
+    },
+    {
+      "id": 16,
+      "prompt": "Some people believe that people living in the twenty-first century have a better standard of living as compared to previous centuries. To what extent do you agree or disagree with this statement?"
+    },
+    {
+      "id": 17,
+      "prompt": "A portion of the human population believes that criminal behaviour has its roots in genes. Others think that circumstances lead people to commit crimes. Discuss your take on both views and put forward your opinions."
+    },
+    {
+      "id": 18,
+      "prompt": "Some people think the government should provide free housing, while others believe it is not the government's responsibility. Discuss both views and give your opinion."
+    },
+    {
+      "id": 19,
+      "prompt": "Some people believe the purpose of education is to prepare individuals to be beneficial to society. Others say the purpose of education is to achieve personal ambitions. Discuss both views and give your own opinion."
+    },
+    {
+      "id": 20,
+      "prompt": "With the growing population of cities, more and more people live in homes that have little or no outdoor area. Is this a positive or negative development? Give reasons for your answer and include any relevant examples from your knowledge or experience."
+    },
+    {
+      "id": 21,
+      "prompt": "It has been suggested that all young adults should be required to undertake a period of unpaid work helping people in the community. Would the drawbacks of such a requirement be greater than the benefits to the community and the individual young adults?"
+    },
+    {
+      "id": 22,
+      "prompt": "Although countries with long average working hours are economically successful, this often has some negative social consequences. To what extent do you agree or disagree?"
+    },
+    {
+      "id": 23,
+      "prompt": "In many countries, the number of animals and plants is declining. Why do you think this is happening? How can this issue be solved? Give reasons for your answer and include any relevant examples from your knowledge or experience."
+    },
+    {
+      "id": 24,
+      "prompt": "Some people think that activities during free time should be planned while others disagree. Discuss both sides and include examples and relevant data from your own experience."
+    },
+    {
+      "id": 25,
+      "prompt": "The tendency of news reports in the media to focus more on problems and emergencies than on positive developments is harmful to individuals and society as a whole. To what extent do you agree or disagree?"
+    },
+    {
+      "id": 26,
+      "prompt": "Some people think the government should support artists like painters, musicians, and poets, while others believe this wastes money. Discuss both views and give your own opinion."
+    },
+    {
+      "id": 27,
+      "prompt": "Earlier technology developments brought more benefits and changed the lives of ordinary people more than recent developments ever will. To what extent do you agree or disagree?"
+    },
+    {
+      "id": 28,
+      "prompt": "These days more and more people are going to other countries for a significant period either to find a job or study. Discuss the advantages and disadvantages of living and working in a foreign country."
+    },
+    {
+      "id": 29,
+      "prompt": "Nowadays online shopping is extremely popular. Discuss the impact of it on the environment and on people who lost their jobs because of it."
+    },
+    {
+      "id": 30,
+      "prompt": "In some countries the government promotes public transport as the primary means of transportation, and discourages private vehicle ownership. Do you think the advantages of this policy outweigh the disadvantages?"
+    }
+  ]
+}

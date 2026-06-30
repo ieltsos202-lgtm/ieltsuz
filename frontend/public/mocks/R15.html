@@ -1,0 +1,1561 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f5f5; color: #333; line-height: 1.6; overflow: hidden; }
+        .loading-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+        .loading-content { text-align: center; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); border-left-color: #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-title { font-size: 1.2rem; color: #6b7280; margin-bottom: 20px; }
+        .loading-subtitle { font-size: 1rem; color: #9ca3af; }
+        .start-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; position: fixed; top: 0; left: 0; width: 100%; z-index: 9998; }
+        .start-content { text-align: center; }
+        .start-title { font-size: 1.5rem; font-weight: 600; color: #111827; margin-bottom: 24px; }
+        .start-subtitle { color: #6b7280; margin-bottom: 24px; }
+        .start-button { padding: 12px 32px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s; }
+        .start-button:hover { background-color: #1d4ed8; }
+        .hidden { display: none !important; }
+        .container { display: flex; flex-direction: column; height: 100vh; width: 100vw; background: white; }
+        header { background-color: transparent; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; border-bottom: 1px solid #e2e8f0; }
+        .passage-info { font-size: 0.9rem; font-weight: 500; color: #2d3748; }
+        .timer { background-color: rgba(255,193,193,0.5); padding: 6px 12px; border-radius: 4px; display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: #c53030; border: 1px solid rgba(255,120,120,0.3); }
+        .timer.warning { color: #9b2c2c; background-color: rgba(254,178,178,0.7); }
+        .logo-area { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background-color: #007bff; color: white; border-radius: 20px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,123,255,0.3); }
+        .logo-area:hover { background-color: #0056b3; transform: translateY(-1px); }
+        .progress-container { background-color: #f8f9fa; padding: 4px 20px; flex-shrink: 0; border-top: 1px solid #e2e8f0; }
+        .progress-nav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
+        .nav-buttons { display: flex; gap: 6px; }
+        .progress-item { width: 30px; height: 20px; border-radius: 6px; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #4a5568; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 14px; border: 1px solid #cbd5e0; line-height: 20px; padding: 0; }
+        .progress-item.current { background-color: #4299e1; color: white; border-color: #2b6cb0; }
+        .progress-item.answered { background-color: #9ae6b4; color: #22543d; border-color: #68d391; }
+        .progress-item.correct { background-color: #48bb78; color: white; border-color: #38a169; }
+        .progress-item.incorrect { background-color: #fed7d7; color: #c53030; border-color: #feb2b2; }
+        .btn { padding: 6px 14px; border: 1px solid #cbd5e0; border-radius: 4px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px; font-size: 0.95rem; background-color: #f7fafc; color: #4a5568; }
+        .btn:hover { background-color: #edf2f7; }
+        .btn-submit { background-color: #48bb78; color: white; font-weight: 900; border-color: #38a169; }
+        .btn-submit:hover { background-color: #38a169; }
+        .main-content { display: flex; flex: 1; overflow: hidden; }
+        .passage-container { flex: 1; padding: 20px; overflow-y: auto; background-color: #fafafa; }
+        .resizer { width: 4px; background-color: #cbd5e0; cursor: col-resize; }
+        .resizer:hover { background-color: #a0aec0; }
+        .questions-container { width: 40%; padding: 20px; overflow-y: auto; background-color: white; border-left: 1px solid #e2e8f0; }
+        .passage-content p { margin: 12px 0; text-align: justify; }
+        .section-title { font-size: 1.3rem; font-weight: 600; color: #2d3748; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+        .question { margin-bottom: 18px; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; }
+        .question:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .question-text { font-weight: 500; margin-bottom: 10px; color: #2d3748; }
+        .options { display: flex; flex-direction: column; gap: 7px; }
+        .option { display: flex; align-items: flex-start; padding: 7px 10px; border: 1px solid #e2e8f0; border-radius: 4px; cursor: pointer; font-size: 0.9rem; gap: 8px; }
+        .option:hover { background-color: #f7fafc; }
+        .option input { margin-top: 2px; width: 16px; height: 16px; flex-shrink: 0; }
+        .answer-indicator { padding: 8px 10px; border-radius: 4px; margin-top: 8px; font-size: 0.88rem; display: block; }
+        .answer-indicator.correct { background-color: #e6fffa; border: 1px solid #38b2ac; color: #234e52; }
+        .answer-indicator.incorrect { background-color: #fed7d7; border: 1px solid #fc8181; color: #742a2a; }
+        .question-group { background: #f9f9f9; padding: 14px; border-radius: 8px; margin-bottom: 18px; }
+        .question-group-title { font-weight: 700; margin-bottom: 10px; color: #2d3748; font-size: 1rem; }
+        .highlight { background-color: #ffff00; cursor: pointer; }
+        #highlight-btn, #remove-highlight-btn { position: absolute; z-index: 9999; display: none; padding: 6px 12px; font-size: 14px; border: 1px solid #888; border-radius: 4px; cursor: pointer; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 450px; text-align: center; }
+        .score-display { font-size: 2.2rem; font-weight: bold; margin: 20px 0; color: #2d3748; }
+        .score-breakdown { margin: 20px 0; text-align: left; }
+        .score-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        .notes-box { background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px; margin: 10px 0; }
+        .notes-box h4 { font-size: 0.95rem; font-weight: 700; text-align: center; margin-bottom: 10px; color: #1a202c; }
+        .notes-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; font-size: 0.9rem; }
+        .notes-row input[type="text"] { padding: 3px 7px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.88rem; min-width: 100px; }
+        .match-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        .match-table th, .match-table td { border: 1px solid #e2e8f0; padding: 8px 10px; }
+        .match-table th { background: #f1f5f9; font-weight: 600; }
+        .expert-box { background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9rem; }
+        .sentence-ending-box { background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-top: 10px; font-size: 0.9rem; }
+        .sentence-ending-item { display: flex; gap: 8px; margin: 5px 0; }
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .questions-container { width: 100%; border-left: none; border-top: 1px solid #e2e8f0; }
+            .resizer { width: 100%; height: 4px; cursor: row-resize; }
+        }
+    
+
+/* === IELTSUZ THEME NORMALIZER === */
+:root {
+  --os-bg: #ffffff;
+  --os-fg: #0f172a;
+  --os-muted: #334155;
+  --os-border: #e2e8f0;
+  --os-input-bg: #ffffff;
+  --os-input-border: #94a3b8;
+  --os-nav-bg: #f8fafc;
+  --os-nav-border: #e2e8f0;
+  --os-accent: #6366f1;
+}
+html.dark, html[data-theme="dark"] {
+  --os-bg: #0a0a0f;
+  --os-fg: #f8fafc;
+  --os-muted: #94a3b8;
+  --os-border: #2d2d3a;
+  --os-input-bg: #1a1a24;
+  --os-input-border: #475569;
+  --os-nav-bg: #111118;
+  --os-nav-border: #2d2d3a;
+  --os-accent: #6366f1;
+}
+
+/* Base overrides */
+html, body {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* All major containers */
+.header, .main-container, .content, .test-content,
+.question-area, .passage, .container, .main-area,
+.section, .modal-content, .questions-panel, .intro-card {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Navigation bars */
+.nav-row, .nav-fixed, .bottom-nav, .nav-row-cdi,
+#top-nav, .floating-audio-bar, .audio-bar {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-nav-border) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Audio player shell */
+.audio-shell, .audio-shell-hdr {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"], .blank,
+.answer-input, .ldm-slot, .ldm-option,
+.multi-choice-option, .word-bank-box, select, textarea {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+  font-size: 16px !important;
+}
+
+/* Placeholders */
+input::placeholder, textarea::placeholder {
+  color: #999 !important;
+}
+html.dark input::placeholder, html[data-theme="dark"] input::placeholder {
+  color: #64748b !important;
+}
+
+/* Text elements */
+p, li, td, th, label, h1, h2, h3, h4, h5, h6,
+.question-text, .instruction, .subtitle, .hint,
+.test-info, .time-info, .section-prefix, .sectionNr {
+  color: var(--os-fg) !important;
+}
+
+/* Muted text */
+.test-info, .subtitle, .instruction, .hint,
+.attemptedCount, .time-text, .zoom-lbl-hdr {
+  color: var(--os-muted) !important;
+}
+
+/* Question number badges */
+.question-number, .inline-qno, .qbadge, .q-num,
+.flow-inline-qno {
+  background-color: #eef5ff !important;
+  border-color: #4a90e2 !important;
+  color: #2563eb !important;
+}
+html.dark .question-number, html[data-theme="dark"] .question-number,
+html.dark .inline-qno, html[data-theme="dark"] .inline-qno,
+html.dark .qbadge, html[data-theme="dark"] .qbadge,
+html.dark .q-num, html[data-theme="dark"] .q-num {
+  background-color: #1e3a5f !important;
+  border-color: #64b5f6 !important;
+  color: #90caf9 !important;
+}
+
+/* Sub-question buttons */
+.subQuestion, .fqsub-wrap .subQuestion {
+  background-color: #ffffff !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .subQuestion, html[data-theme="dark"] .subQuestion {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+}
+.subQuestion.answered {
+  background-color: #e6f7ff !important;
+  border-color: #1890ff !important;
+  color: #096dd9 !important;
+}
+html.dark .subQuestion.answered, html[data-theme="dark"] .subQuestion.answered {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+/* Section tabs */
+.section-tabs, .part-tabs, .part-tab, .nav-btn,
+.nav-button, .fqno-btn {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-border) !important;
+  color: var(--os-fg) !important;
+}
+.section-tabs .active, .part-tab.active, .nav-btn.active,
+.nav-button.active, .fqw.selected .fqno-btn {
+  background-color: var(--os-accent) !important;
+  color: #ffffff !important;
+}
+
+/* Navigation arrows */
+.nav-arrow, .nav-arrow-btn {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+html.dark .nav-arrow, html[data-theme="dark"] .nav-arrow,
+html.dark .nav-arrow-btn, html[data-theme="dark"] .nav-arrow-btn {
+  background-color: #3b3b4f !important;
+  color: #fff !important;
+}
+.nav-arrow:disabled, .nav-arrow-btn:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+}
+html.dark .nav-arrow:disabled, html[data-theme="dark"] .nav-arrow:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+}
+
+/* Intro overlay */
+#intro-overlay, #introOverlay {
+  background: #e8edf5 !important;
+}
+html.dark #intro-overlay, html[data-theme="dark"] #intro-overlay,
+html.dark #introOverlay, html[data-theme="dark"] #introOverlay {
+  background: rgba(0,0,0,0.7) !important;
+}
+#intro-overlay .intro-card, #introOverlay .intro-card {
+  background: #ffffff !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+html.dark #intro-overlay .intro-card, html[data-theme="dark"] #intro-overlay .intro-card,
+html.dark #introOverlay .intro-card, html[data-theme="dark"] #introOverlay .intro-card {
+  background: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Start test button */
+#start-test-btn, #startTestBtn, .start-btn {
+  background: #1a2340 !important;
+  color: #fff !important;
+}
+html.dark #start-test-btn, html[data-theme="dark"] #start-test-btn,
+html.dark #startTestBtn, html[data-theme="dark"] #startTestBtn {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+}
+
+/* Tables */
+table, .test-table, .mcq-table {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+.test-table td, .test-table th, .mcq-table td, .mcq-table th {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+  border-color: var(--os-border) !important;
+}
+.mcq-table tr:nth-child(even) td {
+  background-color: #f8faff !important;
+}
+html.dark .mcq-table tr:nth-child(even) td, html[data-theme="dark"] .mcq-table tr:nth-child(even) td {
+  background-color: var(--os-nav-bg) !important;
+}
+
+/* Timer display */
+.timer-display {
+  background: #f0f0f0 !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+html.dark .timer-display, html[data-theme="dark"] .timer-display {
+  background: #444 !important;
+  color: #e0e0e0 !important;
+  border-color: #555 !important;
+}
+
+/* Highlight marks */
+mark.hl-y { background: #FEF08A !important; color: #000 !important; }
+mark.hl-g { background: #BBF7D0 !important; color: #000 !important; }
+mark.hl-p { background: #FBCFE8 !important; color: #000 !important; }
+mark.hl-b { background: #BFDBFE !important; color: #000 !important; }
+html.dark mark.hl-y, html[data-theme="dark"] mark.hl-y { background: #854d0e !important; color: #fef08a !important; }
+html.dark mark.hl-g, html[data-theme="dark"] mark.hl-g { background: #14532d !important; color: #bbf7d0 !important; }
+html.dark mark.hl-p, html[data-theme="dark"] mark.hl-p { background: #831843 !important; color: #fbcfe8 !important; }
+html.dark mark.hl-b, html[data-theme="dark"] mark.hl-b { background: #1e3a5f !important; color: #bfdbfe !important; }
+
+/* Section banners */
+.section-banner, .test-table th {
+  background: #f0f4ff !important;
+  color: #1e3a5f !important;
+}
+html.dark .section-banner, html[data-theme="dark"] .section-banner {
+  background: #3a3a3a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--os-bg); }
+::-webkit-scrollbar-thumb { background: var(--os-border); border-radius: 4px; }
+
+/* L6 specific */
+.brand-tp { color: #0088cc !important; }
+html.dark .brand-tp, html[data-theme="dark"] .brand-tp { color: #64b5f6 !important; }
+.hdr-pill-btn, .circle-btn, .zoom-controls-hdr {
+  background: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .hdr-pill-btn, html[data-theme="dark"] .hdr-pill-btn,
+html.dark .circle-btn, html[data-theme="dark"] .circle-btn,
+html.dark .zoom-controls-hdr, html[data-theme="dark"] .zoom-controls-hdr {
+  background: #444 !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+.skip-btn, .skip-btn-hdr {
+  color: #4b5563 !important;
+}
+html.dark .skip-btn, html[data-theme="dark"] .skip-btn,
+html.dark .skip-btn-hdr, html[data-theme="dark"] .skip-btn-hdr {
+  color: #e0e0e0 !important;
+}
+
+
+/* === BRANDING === */
+.ielts-logo,[id*="ielts-logo"],[class*="ielts-logo"],img[src*="ielts"],img[alt*="IELTS"],.header img,.header .logo{display:none!important}
+.header::before{content:"IELTSUZ";font-size:20px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-family:Inter,Arial,sans-serif;letter-spacing:-0.02em;display:block}
+.header{background:var(--os-bg,#fff)!important;border-bottom:1px solid var(--os-border,#e2e8f0)!important;color:var(--os-fg,#0f172a)!important;height:60px!important;padding:12px 20px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;position:fixed!important;top:0;left:0;right:0;z-index:100!important}
+html.dark .header{background:var(--os-bg,#0a0a0f)!important;border-bottom-color:var(--os-border,#2d2d3a)!important}
+.audio-player-container,.audio-shell,.floating-audio-bar,.fab-inner{background:var(--os-bg,#fff)!important;border:1px solid var(--os-border,#e2e8f0)!important;border-radius:12px!important;padding:8px 16px!important;margin:8px!important}
+html.dark .audio-player-container,html.dark .audio-shell,html.dark .floating-audio-bar,html.dark .fab-inner{background:var(--os-nav-bg,#111118)!important;border-color:var(--os-nav-border,#2d2d3a)!important}
+.player-btn,.audio-play,.audio-play-hdr,.circle-btn{background:#6366f1!important;color:#fff!important;border:none!important;border-radius:50%!important;width:40px!important;height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important}
+.player-btn:hover,.audio-play:hover{background:#4f46e5!important}
+input[type="range"],#progress-bar,#progressSlider{accent-color:#6366f1!important}
+.timer-display,#timerDisplay{background:#f1f5f9!important;color:#0f172a!important;border:1px solid #e2e8f0!important;border-radius:18px!important;padding:5px 14px!important;font-size:15px!important;font-weight:500!important}
+html.dark .timer-display,html.dark #timerDisplay{background:#1a1a24!important;color:#f8fafc!important;border-color:#475569!important}
+.section-banner,.part-header{background:#f0f4ff!important;border-left:4px solid #6366f1!important;padding:16px 20px!important;margin:16px 0!important;border-radius:0 8px 8px 0!important}
+html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;border-left-color:#6366f1!important}
+.question-text,.question p,.passage p{font-size:17px!important;line-height:1.7!important}
+.answer-input,input[type="text"],.blank,.ldm-slot{background:var(--os-input-bg,#fff)!important;border:2px solid var(--os-input-border,#94a3b8)!important;color:var(--os-fg,#0f172a)!important;border-radius:6px!important;padding:6px 10px!important;font-size:16px!important;min-width:80px!important;text-align:center!important}
+.subQuestion.active{background:#6366f1!important;color:#fff!important;border-color:#6366f1!important}
+
+</style>
+
+<style data-theme-injected>
+/* Light mode defaults (already in files) */
+/* Dark mode overrides */
+[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .header,
+[data-theme="dark"] header {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .passage,
+[data-theme="dark"] .passage-container,
+[data-theme="dark"] .question-area,
+[data-theme="dark"] .questions-container,
+[data-theme="dark"] .main-container,
+[data-theme="dark"] .left-column,
+[data-theme="dark"] .right-column,
+[data-theme="dark"] .text-content,
+[data-theme="dark"] .reading-passage,
+[data-theme="dark"] .passage-text,
+[data-theme="dark"] .section-content,
+[data-theme="dark"] .container,
+[data-theme="dark"] .wrapper,
+[data-theme="dark"] .inner,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .question-card,
+[data-theme="dark"] .part-header,
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-container,
+[data-theme="dark"] .test-area,
+[data-theme="dark"] .test-content,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .test-panel,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-container,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .page-area,
+[data-theme="dark"] .page-panel,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .question-panel,
+[data-theme="dark"] .question-content,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .passage-panel,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .reading-panel,
+[data-theme="dark"] .reading-content,
+[data-theme="dark"] .reading-container,
+[data-theme="dark"] .listening-container,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .listening-panel,
+[data-theme="dark"] .listening-content,
+[data-theme="dark"] .ielts-container,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .ielts-panel,
+[data-theme="dark"] .ielts-content,
+[data-theme="dark"] .exam-container,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .exam-panel,
+[data-theme="dark"] .exam-content,
+[data-theme="dark"] .practice-container,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .practice-panel,
+[data-theme="dark"] .practice-content,
+[data-theme="dark"] .mock-container,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .mock-panel,
+[data-theme="dark"] .mock-content,
+[data-theme="dark"] .test-section,
+[data-theme="dark"] .reading-section,
+[data-theme="dark"] .listening-section,
+[data-theme="dark"] .ielts-section,
+[data-theme="dark"] .exam-section,
+[data-theme="dark"] .practice-section,
+[data-theme="dark"] .mock-section,
+[data-theme="dark"] .question-section,
+[data-theme="dark"] .passage-section,
+[data-theme="dark"] .content-section,
+[data-theme="dark"] .page-section,
+[data-theme="dark"] .area-section,
+[data-theme="dark"] .panel-section,
+[data-theme="dark"] .box-section,
+[data-theme="dark"] .wrapper-section,
+[data-theme="dark"] .container-section,
+[data-theme="dark"] .main-section,
+[data-theme="dark"] .sub-section,
+[data-theme="dark"] .inner-section,
+[data-theme="dark"] .outer-section,
+[data-theme="dark"] .top-section,
+[data-theme="dark"] .bottom-section,
+[data-theme="dark"] .left-section,
+[data-theme="dark"] .right-section,
+[data-theme="dark"] .center-section,
+[data-theme="dark"] .middle-section,
+[data-theme="dark"] .full-section,
+[data-theme="dark"] .half-section,
+[data-theme="dark"] .third-section,
+[data-theme="dark"] .quarter-section,
+[data-theme="dark"] .fifth-section,
+[data-theme="dark"] .sixth-section,
+[data-theme="dark"] .seventh-section,
+[data-theme="dark"] .eighth-section,
+[data-theme="dark"] .ninth-section,
+[data-theme="dark"] .tenth-section,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .answer-wrapper,
+[data-theme="dark"] .instruction-wrapper,
+[data-theme="dark"] .direction-wrapper,
+[data-theme="dark"] .title-wrapper,
+[data-theme="dark"] .section-wrapper,
+[data-theme="dark"] .part-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .inner-wrapper,
+[data-theme="dark"] .outer-wrapper,
+[data-theme="dark"] .top-wrapper,
+[data-theme="dark"] .bottom-wrapper,
+[data-theme="dark"] .left-wrapper,
+[data-theme="dark"] .right-wrapper,
+[data-theme="dark"] .center-wrapper,
+[data-theme="dark"] .middle-wrapper,
+[data-theme="dark"] .full-wrapper,
+[data-theme="dark"] .half-wrapper,
+[data-theme="dark"] .third-wrapper,
+[data-theme="dark"] .quarter-wrapper,
+[data-theme="dark"] .fifth-wrapper,
+[data-theme="dark"] .sixth-wrapper,
+[data-theme="dark"] .seventh-wrapper,
+[data-theme="dark"] .eighth-wrapper,
+[data-theme="dark"] .ninth-wrapper,
+[data-theme="dark"] .tenth-wrapper,
+[data-theme="dark"] div[style*="background-color: rgb(255, 255, 255)"],
+[data-theme="dark"] div[style*="background-color: #ffffff"],
+[data-theme="dark"] div[style*="background-color: #fff"] {
+  background-color: #1e293b !important;
+}
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] li,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] label,
+[data-theme="dark"] div {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .part-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .area-box,
+[data-theme="dark"] .panel-box,
+[data-theme="dark"] .wrapper-box,
+[data-theme="dark"] .container-box,
+[data-theme="dark"] .inner-box,
+[data-theme="dark"] .outer-box,
+[data-theme="dark"] .top-box,
+[data-theme="dark"] .bottom-box,
+[data-theme="dark"] .left-box,
+[data-theme="dark"] .right-box,
+[data-theme="dark"] .center-box,
+[data-theme="dark"] .middle-box,
+[data-theme="dark"] .full-box,
+[data-theme="dark"] .half-box,
+[data-theme="dark"] .third-box,
+[data-theme="dark"] .quarter-box,
+[data-theme="dark"] .fifth-box,
+[data-theme="dark"] .sixth-box,
+[data-theme="dark"] .seventh-box,
+[data-theme="dark"] .eighth-box,
+[data-theme="dark"] .ninth-box,
+[data-theme="dark"] .tenth-box {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .answer-input,
+[data-theme="dark"] .answer-select,
+[data-theme="dark"] input[type="text"] {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .subQuestion,
+[data-theme="dark"] .question-number,
+[data-theme="dark"] .question-btn,
+[data-theme="dark"] .footer__questionNo___3WNct {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .subQuestion:hover,
+[data-theme="dark"] .question-btn:hover,
+[data-theme="dark"] .footer__questionNo___3WNct:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .subQuestion.active,
+[data-theme="dark"] .question-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.correct,
+[data-theme="dark"] .question-btn.correct {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.incorrect,
+[data-theme="dark"] .question-btn.incorrect {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .drop-zone {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .drop-zone.drag-over {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .drop-zone.correct {
+  background-color: #14532d !important;
+  border-color: #22c55e !important;
+}
+[data-theme="dark"] .drop-zone.incorrect {
+  background-color: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+[data-theme="dark"] .highlight,
+[data-theme="dark"] .text-highlight {
+  background-color: #854d0e !important;
+  color: #fef3c7 !important;
+}
+[data-theme="dark"] .comment-highlight {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .resizer {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .context-menu {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-panel {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .timer-display,
+[data-theme="dark"] .timer-container {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07 {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07:hover {
+  background-color: #475569 !important;
+}
+[data-theme="dark"] #goto-btn,
+[data-theme="dark"] .goto-btn {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .tf-question-line {
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .tf-question.correct .tf-question-line {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .tf-question.incorrect .tf-question-line {
+  background-color: #7f1d1d !important;
+}
+[data-theme="dark"] .matching-question-container {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .matching-item,
+[data-theme="dark"] .matching-option {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .matching-item:hover,
+[data-theme="dark"] .matching-option:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .summary-blank,
+[data-theme="dark"] .gap-input {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .part-title,
+[data-theme="dark"] .test-title,
+[data-theme="dark"] .page-title {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .instruction-text,
+[data-theme="dark"] .direction-text,
+[data-theme="dark"] .note-text,
+[data-theme="dark"] .hint-text,
+[data-theme="dark"] .tip-text {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] a {
+  color: #60a5fa !important;
+}
+[data-theme="dark"] a:hover {
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .check-answers-btn,
+[data-theme="dark"] .submit-btn,
+[data-theme="dark"] .next-btn,
+[data-theme="dark"] .prev-btn {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+[data-theme="dark"] .check-answers-btn:hover,
+[data-theme="dark"] .submit-btn:hover,
+[data-theme="dark"] .next-btn:hover,
+[data-theme="dark"] .prev-btn:hover {
+  background-color: #2563eb !important;
+}
+[data-theme="dark"] .audio-player,
+[data-theme="dark"] .audio-controls,
+[data-theme="dark"] .player-controls {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .progress-bar,
+[data-theme="dark"] .volume-slider {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569 !important;
+  border-radius: 4px;
+}
+[data-theme="dark"] table {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] th {
+  background-color: #334155 !important;
+}
+</style>
+
+</head>
+<body>
+
+<div id="loadingScreen" class="loading-screen">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h2 class="loading-title">Your test will begin shortly</h2>
+        <p class="loading-subtitle">Please wait</p>
+    </div>
+</div>
+
+<div id="startScreen" class="start-screen hidden">
+    <div class="start-content">
+        <h1 class="start-title">IELTSUZ</h1>
+        <p class="start-subtitle">Ready to begin your reading test?</p>
+        <button class="start-button" onclick="startTest()">Start Test</button>
+    </div>
+</div>
+
+<div class="container hidden" id="testContainer">
+    <header>
+        <div class="passage-info">IELTSUZ</div>
+        <div class="timer" id="globalTimer"><i class="fas fa-clock"></i><span>60:00</span></div>
+        <div class="logo-area">IELTSUZ</div>
+        <div class="passage-info" id="headerPassageTitle">Passage 1 of 3</div>
+    </header>
+
+    <button id="highlight-btn" type="button">Highlight</button>
+    <button id="remove-highlight-btn" type="button">Remove Highlight</button>
+
+    <div class="main-content">
+
+        <!-- ===== PASSAGE 1 ===== -->
+        <div class="passage-container" id="p1_passagePanel">
+            <h2 class="section-title">READING PASSAGE 1</h2>
+            <p><em>You should spend about 20 minutes on <strong>Questions 1вЂ“13</strong>, which are based on Reading Passage 1 below.</em></p>
+            <div class="passage-content">
+                <h3 style="text-align:center;margin:18px 0 12px;font-size:1.3rem;">Archaeologists discover evidence of prehistoric island settlers</h3>
+
+                <p>In early April 2019, Dr Ceri Shipton and his colleagues from Australian National University became the first archaeologists to explore Obi, one of many tropical islands in Indonesia's Maluku Utara province. The research team's discoveries suggest that the prehistoric people who lived on Obi were adept on both land and sea, hunting in the dense rainforest, foraging on the seashore, and possibly even voyaging between islands.</p>
+
+                <p>The excavations were part of a project to learn more about how people first dispersed from mainland Asia, through the Indonesian archipelago and into the prehistoric continent that once connected Australia and New Guinea. The team's earlier research suggested that the northernmost islands in the group, known as the Wallacean islands, including Obi, would have offered the easiest migration route. It also seemed likely that these islands were crucial 'stepping stones' on humans' island-hopping voyages through this region millennia ago. But to support this idea, they needed archaeological evidence for humans living in this remote area in the ancient past. So, they travelled to Obi to look for sites that might reveal evidence of early occupation.</p>
+
+                <p>Just inland from the village of Kelo on Obi's northern coast, Shipton and his colleagues found two caves containing prehistoric rock shelters that were suitable for excavation. With the permission and help of the local people of Kelo, they dug a small test excavation in each shelter. There they found numerous artefacts, including fragments of axes, some dating to about 14,000 years ago. The earliest axes at Kelo were made using clam shells. Axes made from clam shells from roughly the same time had also previously been found elsewhere in this region, including on the nearby island of Gebe to the northeast. As on Gebe, it is highly likely that Obi's axes were used in the construction of canoes, thus allowing these early peoples to maintain connections between communities on neighbouring islands.</p>
+
+                <p>The oldest cultural layers from the Kelo site provided the team with the earliest record for human occupation on Obi, dating back around 18,000 years. At this time the climate was drier and colder than today, and the island's dense rainforests would likely have been much less impenetrable than they are now. Sea levels were about 120 metres lower, meaning Obi was a much larger island, encompassing what is today the separate island of Bisa, as well as several other small islands nearby.</p>
+
+                <p>Roughly 11,700 years ago, as the most recent ice age ended, the climate became significantly warmer and wetter, no doubt making Obi's jungle much thicker. According to the researchers, it is no coincidence that around this time the first axes crafted from stone rather than sea shells appear, likely in response to their heavy-duty use for clearing and modification of the increasingly dense rainforest. While stone takes about twice as long to grind into an axe compared to shell, the harder material keeps its sharp edge for longer.</p>
+
+                <p>Judging by the bones which the researchers unearthed in the Kelo caves, people living there mainly hunted the Rothschild's cuscus, a possum-like creature that still lives on Obi today. As the forest grew more dense, people probably used axes to clear patches of forest and make hunting easier.</p>
+
+                <p>Shipton's team's excavation of the shelters at the Kelo site unearthed a volcanic glass substance called obsidian, which must have been brought over from another island, as there is no known source on Obi. It also revealed particular types of beads, similar to those previously found on islands in southern Wallacea. These finds again support the idea that Obi islanders routinely travelled to other islands.</p>
+
+                <p>The excavations suggest people successfully lived in the two Kelo shelters for about 10,000 years. But then, about 8,000 years ago, both were abandoned. Did the residents leave Obi completely, or move elsewhere on the island? Perhaps the jungle had grown so thick that axes were no longer a match for the dense undergrowth. Perhaps people simply moved to the coast and turned to fishing rather than hunting as a means of survival.</p>
+
+                <p>Whatever the reason for the departure, there is no evidence for use of the Kelo shelters after this time, until about 1,000 years ago, when they were re-occupied by people who owned pottery as well as items made out of gold and silver. It seems likely, in view of Obi's location, that this final phase of occupation also saw the Kelo shelters used by people involved in the historic trade in spices between the Maluku islands and the rest of the world.</p>
+            </div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
+        <!-- Questions Passage 1 -->
+        <div class="questions-container" id="p1_questionsPanel">
+            <h2 class="section-title">Questions 1вЂ“13</h2>
+
+            <!-- Q1вЂ“7: TRUE/FALSE/NOT GIVEN -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 1вЂ“7</div>
+                <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+                <p style="margin-top:6px;"><em>In boxes 1вЂ“7 on your answer sheet, write</em></p>
+                <p style="margin-top:4px;"><strong>TRUE</strong> &nbsp;&nbsp;&nbsp; if the statement agrees with the information<br>
+                <strong>FALSE</strong> &nbsp;&nbsp; if the statement contradicts the information<br>
+                <strong>NOT GIVEN</strong> &nbsp; if there is no information on this</p>
+
+                <div class="question" data-question="1">
+                    <div class="question-text">1 &nbsp; Archaeological research had taken place on the island of Obi before the arrival of Ceri Shipton and his colleagues.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q1" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q1" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q1" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="2">
+                    <div class="question-text">2 &nbsp; At the Kelo sites, the researchers found the first clam shell axes ever to be discovered in the region.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q2" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q2" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q2" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="3">
+                    <div class="question-text">3 &nbsp; The size of Obi today is less than it was 18,000 years ago.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q3" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q3" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q3" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="4">
+                    <div class="question-text">4 &nbsp; A change in the climate around 11,700 years ago had a greater impact on Obi than on the surrounding islands.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q4" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q4" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q4" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="5">
+                    <div class="question-text">5 &nbsp; The researchers believe there is a connection between warmer, wetter weather and a change in the material used to make axes.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q5" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q5" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q5" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="6">
+                    <div class="question-text">6 &nbsp; Shipton's team were surprised to find evidence of the Obi islanders' hunting practices.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q6" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q6" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q6" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="7">
+                    <div class="question-text">7 &nbsp; It is thought that the Kelo shelters were occupied continuously until about 1,000 years ago.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q7" value="TRUE"> TRUE</label>
+                        <label class="option"><input type="radio" name="q7" value="FALSE"> FALSE</label>
+                        <label class="option"><input type="radio" name="q7" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q8вЂ“13: Notes completion -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 8вЂ“13</div>
+                <p><em>Complete the notes below.</em><br>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+
+                <div class="notes-box">
+                    <h4>Archaeological findings on Obi</h4>
+
+                    <div class="question" data-question="8" style="border:none;padding:0;background:transparent;">
+                        <div class="notes-row">Excavations of rock shelters inside <strong>8</strong> <input type="text" name="q8" maxlength="20" placeholder="one word"> near the village of Kelo revealed:</div>
+                    </div>
+
+                    <ul style="list-style:disc;padding-left:18px;font-size:0.9rem;margin-top:8px;">
+                        <li style="margin:5px 0;">axes from around 14,000 years ago, probably used to make canoes</li>
+                        <li style="margin:5px 0;">
+                            <div class="question" data-question="9" style="border:none;padding:0;background:transparent;display:inline;">
+                                <span>axes made out of <strong>9</strong> <input type="text" name="q9" maxlength="20" placeholder="one word">, dating from around 11,700 years ago</span>
+                            </div>
+                        </li>
+                        <li style="margin:5px 0;">
+                            <div class="question" data-question="10" style="border:none;padding:0;background:transparent;display:inline;">
+                                <span><strong>10</strong> <input type="text" name="q10" maxlength="20" placeholder="one word"> of an animal: evidence of what ancient islanders ate</span>
+                            </div>
+                        </li>
+                        <li style="margin:5px 0;">evidence of travel between islands:
+                            <ul style="list-style:circle;padding-left:18px;">
+                                <li>obsidian: a material that is not found naturally on Obi</li>
+                                <li>
+                                    <div class="question" data-question="11" style="border:none;padding:0;background:transparent;display:inline;">
+                                        <span><strong>11</strong> <input type="text" name="q11" maxlength="20" placeholder="one word"> which resembled ones found on other islands</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p style="margin-top:10px;font-size:0.9rem;">It is thought that from 8,000 years ago, Obi islanders:</p>
+                    <ul style="list-style:disc;padding-left:18px;font-size:0.9rem;margin-top:6px;">
+                        <li style="margin:5px 0;">may have switched from hunting to fishing</li>
+                        <li style="margin:5px 0;">
+                            <div class="question" data-question="12" style="border:none;padding:0;background:transparent;display:inline;">
+                                <span>had <strong>12</strong> <input type="text" name="q12" maxlength="20" placeholder="one word"> as well as items made out of metal</span>
+                            </div>
+                        </li>
+                        <li style="margin:5px 0;">
+                            <div class="question" data-question="13" style="border:none;padding:0;background:transparent;display:inline;">
+                                <span>probably took part in the production and sale of <strong>13</strong> <input type="text" name="q13" maxlength="20" placeholder="one word"></span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PASSAGE 2 ===== -->
+        <div class="passage-container hidden" id="p2_passagePanel">
+            <h2 class="section-title">READING PASSAGE 2</h2>
+            <p><em>You should spend about 20 minutes on <strong>Questions 14вЂ“26</strong>, which are based on Reading Passage 2 below.</em></p>
+            <div class="passage-content">
+                <h3 style="text-align:center;margin:18px 0 12px;font-size:1.3rem;">The global importance of wetlands</h3>
+
+                <p><strong>A</strong> &nbsp; Wetlands are areas where water covers the soil, or is present either at or near the surface of the soil, for all or part of the year. These are complex ecosystems, rich in unique plant and animal life. But according to the World Wide Fund for Nature (WWFN), half of the world's wetlands have disappeared since 1990 вЂ“ converted or destroyed for commercial development, drainage schemes and the extraction of minerals and peat*. Many of those that remain have been damaged by agricultural pesticides and fertilisers, industrial pollutants, and construction works.</p>
+
+                <p><strong>B</strong> &nbsp; Throughout history, humans have gathered around wetlands, and their fertile ecosystems have played an important part in human development. Consequently, they are of considerable religious, historical and archaeological value to many communities around the world. 'Wetlands directly support the livelihoods and well-being of millions of people,' says Dr Matthew McCartney, principal researcher and hydrologist at the International Water Management Institute (IWMI). 'In many developing countries, large numbers of people are dependent on wetland agriculture for their livelihoods.'</p>
+
+                <p><strong>C</strong> &nbsp; They also serve a crucial environmental purpose. 'Wetlands are one of the key tools in mitigating climate change across the planet,' says Pieter van Eijk, head of Climate Adaptation at Wetlands International (WI), pointing to their use as buffers that protect coastal areas from sea-level rise and extreme weather events such as hurricanes and flooding. Wetland coastal forests provide food and water, as well as shelter from storms, and WI and other agencies are working to restore those forests which have been lost. 'It can be as simple as planting a few trees per hectare to create shade and substantially change a microclimate,' he says. 'Implementing climate change projects isn't so much about money.'</p>
+
+                <p><strong>D</strong> &nbsp; The world's wetlands are, unfortunately, rich sources for in-demand commodities, such as palm oil and pulpwood. Peatlands вЂ“ wetlands with a waterlogged organic soil layer вЂ“ are particularly targeted. When peatlands are drained for cultivation, they become net carbon emitters instead of active carbon stores, and, according to Marcel Silvius, head of Climate-smart Land-use at WI, this practice causes six per cent of all global carbon emissions. The clearance of peatlands for planting also increases the risk of forest fires, which release huge amounts of COв‚‚. 'We're seeing huge peatland forests with extremely high biodiversity value being lost for a few decades of oil palm revenues,' says Silvius.</p>
+
+                <p><strong>E</strong> &nbsp; The damage starts when logging companies arrive to clear the trees. They dig ditches to enter the peat swamps by boat and then float the logs out the same way. These are then used to drain water out of the peatlands to allow for the planting of corn, oil palms or pulpwood trees. Once the water has drained away, bacteria and fungi then break down the carbon in the peat and turn it into COв‚‚ and methane. Meanwhile, the remainder of the solid matter in the peat starts to move downwards, in a process known as subsidence**. Peat comprises 90 per cent water, so this is one of the most alarming consequences of peatland clearances. 'In the tropics, peat subsides at about four centimetres a year, so within half a century, very large landscapes on Sumatra and Borneo will become flooded as the peat drops below water level,' says Silvius. 'It's a huge catastrophe that's in preparation. Some provinces will lose 40 per cent of their landmass.'</p>
+
+                <p><strong>F</strong> &nbsp; And while these industries affect wetlands in ways that can easily be documented, Dr Dave Tickner of the WWFN believes that more subtle impacts can be even more devastating. 'Sediment run-off and fertilisers can be pretty invisible,' says Tickner. 'Over-extraction of water is equally invisible. You do get shock stories about rivers running red, or even catching fire, but there's seldom one big impact that really hurts a wetland.' Tickner does not blame anyone for deliberate damage, however. 'I've worked on wetland issues for 20 years and have never met anybody who wanted to damage a wetland,' he says. 'It isn't something that people generally set out to do. Quite often, the effects simply come from people trying to make a living.'</p>
+
+                <p><strong>G</strong> &nbsp; Silvius also acknowledges the importance of income generation. 'It's not that we just want to restore the biodiversity of wetlands вЂ“ which we do вЂ“ but we recognise there's a need to provide an income for local people.' This approach is supported by IWMI. 'The idea is that people in a developing country will only protect wetlands if they value and profit from them,' says McCartney. 'For sustainability, it's essential that local people are involved in wetland planning and decision making and have clear rights to use wetlands.'</p>
+
+                <p><strong>H</strong> &nbsp; The fortunes of wetlands would be improved, Silvius suggests, if more governments recognised their long-term value. 'Different governments have different attitudes,' he says, and goes on to explain that some countries place a high priority on restoring wetlands, while others still deny the issue. McCartney is cautiously optimistic, however. 'Awareness of the importance of wetlands is growing,' he says. 'It's true that wetland degradation still continues at a rapid pace, but my impression is that things are slowly changing.'</p>
+
+                <p style="font-size:0.83rem;">* peat: a brown deposit formed by the partial decomposition of vegetation in wet acidic conditions, often cut out and dried for use as fuel<br>** subsidence: the sinking of the Earth's surface, most often caused by the removal of resources from the ground</p>
+            </div>
+        </div>
+
+        <div class="questions-container hidden" id="p2_questionsPanel">
+            <h2 class="section-title">Questions 14вЂ“26</h2>
+
+            <!-- Q14вЂ“17: Which paragraph AвЂ“H -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 14вЂ“17</div>
+                <p>Reading Passage 2 has eight paragraphs, <strong>AвЂ“H</strong>.</p>
+                <p style="margin-top:5px;">Which paragraph contains the following information?</p>
+                <p style="margin-top:4px; font-style:italic;">Write the correct letter, AвЂ“H, in boxes 14вЂ“17 on your answer sheet.</p>
+
+                <div class="question" data-question="14">
+                    <div class="question-text">14 &nbsp; reference to the need to ensure that inhabitants of wetland regions continue to benefit from them</div>
+                    <div class="options"><select name="q14"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+                </div>
+                <div class="question" data-question="15">
+                    <div class="question-text">15 &nbsp; the proportion of wetlands which have already been lost</div>
+                    <div class="options"><select name="q15"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+                </div>
+                <div class="question" data-question="16">
+                    <div class="question-text">16 &nbsp; reference to the idea that people are beginning to appreciate the value of wetlands</div>
+                    <div class="options"><select name="q16"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+                </div>
+                <div class="question" data-question="17">
+                    <div class="question-text">17 &nbsp; mention of the cultural significance of wetlands</div>
+                    <div class="options"><select name="q17"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+                </div>
+            </div>
+
+            <!-- Q18вЂ“22: Sentence completion -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 18вЂ“22</div>
+                <p><em>Complete the sentences below.</em><br>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+
+                <div class="question" data-question="18">
+                    <div class="question-text">18 &nbsp; Peatlands which have been drained begin to release <input type="text" name="q18" maxlength="20" placeholder="one word" style="display:inline;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;width:100px;"> instead of storing it.</div>
+                </div>
+                <div class="question" data-question="19">
+                    <div class="question-text">19 &nbsp; Once peatland areas have been cleared, <input type="text" name="q19" maxlength="20" placeholder="one word" style="display:inline;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;width:100px;"> are more likely to occur.</div>
+                </div>
+                <div class="question" data-question="20">
+                    <div class="question-text">20 &nbsp; Clearing peatland forests to make way for oil palm plantations destroys the <input type="text" name="q20" maxlength="20" placeholder="one word" style="display:inline;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;width:120px;"> of the local environment.</div>
+                </div>
+                <div class="question" data-question="21">
+                    <div class="question-text">21 &nbsp; Water is drained out of peatlands through the <input type="text" name="q21" maxlength="20" placeholder="one word" style="display:inline;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;width:100px;"> which are created by logging companies.</div>
+                </div>
+                <div class="question" data-question="22">
+                    <div class="question-text">22 &nbsp; Draining peatlands leads to <input type="text" name="q22" maxlength="20" placeholder="one word" style="display:inline;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;width:120px;">: a serious problem which can eventually result in coastal flooding and land loss.</div>
+                </div>
+            </div>
+
+            <!-- Q23вЂ“26: Match expert -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 23вЂ“26</div>
+                <p>Look at the following statements (Questions 23вЂ“26) and the list of experts below.</p>
+                <p style="margin-top:5px; font-style:italic;">Match each statement with the correct expert, AвЂ“D.</p>
+                <p style="margin-top:4px; font-style:italic;">Write the correct letter, AвЂ“D, in boxes 23вЂ“26 on your answer sheet.</p>
+
+                <div class="expert-box">
+                    <strong>List of Experts</strong>
+                    <div style="margin-top:6px;">
+                        <div><strong>A</strong> &nbsp; Matthew McCartney</div>
+                        <div><strong>B</strong> &nbsp; Pieter van Eijk</div>
+                        <div><strong>C</strong> &nbsp; Marcel Silvius</div>
+                        <div><strong>D</strong> &nbsp; Dave Tickner</div>
+                    </div>
+                </div>
+
+                <div class="question" data-question="23">
+                    <div class="question-text">23 &nbsp; Communities living in wetland regions must be included in discussions about the future of these areas.</div>
+                    <div class="options"><select name="q23"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+                </div>
+                <div class="question" data-question="24">
+                    <div class="question-text">24 &nbsp; Official policies towards wetlands vary from one nation to the next.</div>
+                    <div class="options"><select name="q24"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+                </div>
+                <div class="question" data-question="25">
+                    <div class="question-text">25 &nbsp; People cause harm to wetlands without having any intention to do so.</div>
+                    <div class="options"><select name="q25"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+                </div>
+                <div class="question" data-question="26">
+                    <div class="question-text">26 &nbsp; Initiatives to reverse environmental damage need not be complex.</div>
+                    <div class="options"><select name="q26"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== PASSAGE 3 ===== -->
+        <div class="passage-container hidden" id="p3_passagePanel">
+            <h2 class="section-title">READING PASSAGE 3</h2>
+            <p><em>You should spend about 20 minutes on <strong>Questions 27вЂ“40</strong>, which are based on Reading Passage 3 below.</em></p>
+            <div class="passage-content">
+                <h3 style="text-align:center;margin:18px 0 6px;font-size:1.3rem;">Is the era of artificial speech translation upon us?</h3>
+                <p style="text-align:center;font-style:italic;margin-bottom:14px;">Once the stuff of science fiction, technology that enables people to talk using different languages is now here. But how effective is it?</p>
+
+                <p>Noise, Alex Waibel tells me, is one of the major challenges that artificial speech translation has to meet. A device may be able to recognise speech in a laboratory, or a meeting room, but will struggle to cope with the kind of background noise I can hear in my office surrounding Professor Waibel as he speaks to me from Kyoto station in Japan. I'm struggling to follow him in English, on a scratchy line that reminds me we are nearly 10,000 kilometres apart вЂ“ and that distance is still an obstacle to communication even if you're speaking the same language, as we are. We haven't reached the future yet. If we had, Waibel would have been able to speak more comfortably in his native German and I would have been able to hear his words in English.</p>
+
+                <p>At Karlsruhe Institute of Technology, where he is a professor of computer science, Waibel and his colleagues already give lectures in German that his students can follow in English via an electronic translator. The system generates text that students can read on their laptops or phones, so the process is somewhat similar to subtitling. It helps that lecturers speak clearly, don't have to compete with background chatter, and say much the same thing each year.</p>
+
+                <p>The idea of artificial speech translation has been around for a long time. Douglas Adams' science fiction novel, <em>The Hitchhiker's Guide to the Galaxy</em>, published in 1979, featured a life form called the 'Babel fish' which, when placed in the ear, enabled a listener to understand any language in the universe. It came to represent one of those devices that technology enthusiasts dream of long before they become practically realisable, like TVs flat enough to hang on walls: objects that we once could only dream of having but that are now commonplace. Now devices that look like prototype Babel fish have started to appear, riding a wave of advances in artificial translation and voice recognition.</p>
+
+                <p>At this stage, however, they seem to be regarded as eye-catching novelties rather than steps towards what Waibel calls 'making a language-transparent society'. They tend to be domestic devices or applications suitable for hotel check-ins, for example, providing a practical alternative to speaking traveller's English. The efficiency of the translator is less important than the social function. However, 'Professionals are less inclined to be patient in a conversation,' founder and CEO at Waverly Labs, Andrew Ochoa, observes. To redress this, Waverly is now preparing a new model for professional applications, which entails performance improvements in speech recognition, translation accuracy and the time it takes to deliver the translated speech.</p>
+
+                <p>For a conversation, both speakers need to have devices called Pilots (translator earpieces) in their ears. 'We find that there's a barrier with sharing one of the earphones with a stranger,' says Ochoa. 'That can't have been totally unexpected. The problem would be solved if earpiece translators became sufficiently prevalent that strangers would be likely to already have their own in their ears. Whether that happens, and how quickly, will probably depend not so much on the earpieces themselves, but on the prevalence of voice-controlled devices and artificial translation in general.</p>
+
+                <p>Waibel highlights the significance of certain Asian nations, noting that voice translation has really taken off in countries such as Japan with a range of systems. There is still a long way to go, though. A translation system needs to be simultaneous, like the translator's voice speaking over the foreign politician being interviewed on the TV, rather than in sections that oblige speakers to pause after every few remarks and wait for the translation to be delivered. It needs to work offline, for situations where internet access isn't possible, and to address apprehensions about the amount of private speech data accumulating in the cloud, having been sent to servers for processing.</p>
+
+                <p>Systems not only need to cope with physical challenges such as noise, they will also need to be socially aware by addressing people in the right way. Some cultural traditions demand solemn respect for academic status, for example, and it is only polite to respect this. Etiquette-sensitive artificial translators could relieve people of the need to know these differing cultural norms. At the same time, they might help to preserve local customs, slowing the spread of habits associated with international English, such as its readiness to get on first-name terms.</p>
+
+                <p>Professors and other professionals will not outsource language awareness to software, though. If the technology matures into seamless, ubiquitous artificial speech translation, it will actually add value to language skills. Whether it will help people conduct their family lives or relationships is open to question вЂ“ though one noteworthy possibility is that it could overcome the language barriers that often arise between generations after migration, leaving children and their grandparents without a shared language.</p>
+
+                <p>Whatever uses it is put to, though, it will never be as good as the real thing. Even if voice-morphing technology simulates the speaker's voice, their lip movements won't match, and they will look like they are in a dubbed movie. The contrast will underline the value of shared languages, and the value of learning them. Sharing a language can promote a sense of belonging and community, as with the international scientists who use English as a lingua franca, where their predecessors used Latin. Though the practical need for a common language will diminish, the social value of sharing one will persist. And software will never be a substitute for the subtle but vital understanding that comes with knowledge of a language.</p>
+            </div>
+        </div>
+
+        <div class="questions-container hidden" id="p3_questionsPanel">
+            <h2 class="section-title">Questions 27вЂ“40</h2>
+
+            <!-- Q27вЂ“30: Multiple choice -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 27вЂ“30</div>
+                <p>Choose the correct letter, <strong>A</strong>, <strong>B</strong>, <strong>C</strong> or <strong>D</strong>.</p>
+
+                <div class="question" data-question="27">
+                    <div class="question-text">27 &nbsp; What does the reader learn about the conversation in the first paragraph?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q27" value="A"> A &nbsp; The speakers are communicating in different languages.</label>
+                        <label class="option"><input type="radio" name="q27" value="B"> B &nbsp; Neither of the speakers is familiar with their environment.</label>
+                        <label class="option"><input type="radio" name="q27" value="C"> C &nbsp; The topic of the conversation is difficult for both speakers.</label>
+                        <label class="option"><input type="radio" name="q27" value="D"> D &nbsp; Aspects of the conversation are challenging for both speakers.</label>
+                    </div>
+                </div>
+                <div class="question" data-question="28">
+                    <div class="question-text">28 &nbsp; What assists the electronic translator during lectures at Karlsruhe Institute of Technology?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q28" value="A"> A &nbsp; the repeated content of lectures</label>
+                        <label class="option"><input type="radio" name="q28" value="B"> B &nbsp; the students' reading skills</label>
+                        <label class="option"><input type="radio" name="q28" value="C"> C &nbsp; the languages used</label>
+                        <label class="option"><input type="radio" name="q28" value="D"> D &nbsp; the lecturers' technical ability</label>
+                    </div>
+                </div>
+                <div class="question" data-question="29">
+                    <div class="question-text">29 &nbsp; When referring to <em>The Hitchhiker's Guide to the Galaxy</em>, the writer suggests that</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q29" value="A"> A &nbsp; the Babel fish was considered undesirable at the time.</label>
+                        <label class="option"><input type="radio" name="q29" value="B"> B &nbsp; this book was not seriously intending to predict the future.</label>
+                        <label class="option"><input type="radio" name="q29" value="C"> C &nbsp; artificial speech translation was not a surprising development.</label>
+                        <label class="option"><input type="radio" name="q29" value="D"> D &nbsp; some speech translation techniques are better than others.</label>
+                    </div>
+                </div>
+                <div class="question" data-question="30">
+                    <div class="question-text">30 &nbsp; What does the writer say about sharing earpieces?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q30" value="A"> A &nbsp; It is something people will get used to doing.</label>
+                        <label class="option"><input type="radio" name="q30" value="B"> B &nbsp; The reluctance to do this is understandable.</label>
+                        <label class="option"><input type="radio" name="q30" value="C"> C &nbsp; The equipment will be unnecessary in the future.</label>
+                        <label class="option"><input type="radio" name="q30" value="D"> D &nbsp; It is something few people need to worry about.</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q31вЂ“34: Sentence endings -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 31вЂ“34</div>
+                <p><em>Complete each sentence with the correct ending, <strong>AвЂ“F</strong>, below.</em><br>Write the correct letter, AвЂ“F, in boxes 31вЂ“34 on your answer sheet.</p>
+
+                <div class="sentence-ending-box">
+                    <div class="sentence-ending-item"><strong>A</strong> &nbsp; but there are concerns about this.</div>
+                    <div class="sentence-ending-item"><strong>B</strong> &nbsp; as systems do not need to conform to standard practices.</div>
+                    <div class="sentence-ending-item"><strong>C</strong> &nbsp; but they are far from perfect.</div>
+                    <div class="sentence-ending-item"><strong>D</strong> &nbsp; despite the noise issues.</div>
+                    <div class="sentence-ending-item"><strong>E</strong> &nbsp; because translation is immediate.</div>
+                    <div class="sentence-ending-item"><strong>F</strong> &nbsp; and have an awareness of good manners.</div>
+                </div>
+
+                <div class="question" data-question="31" style="margin-top:10px;">
+                    <div class="question-text">31 &nbsp; Speech translation methods are developing fast in Japan</div>
+                    <div class="options"><select name="q31"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+                </div>
+                <div class="question" data-question="32">
+                    <div class="question-text">32 &nbsp; TV interviews that use translation voiceover methods are successful</div>
+                    <div class="options"><select name="q32"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+                </div>
+                <div class="question" data-question="33">
+                    <div class="question-text">33 &nbsp; Future translation systems should address people appropriately</div>
+                    <div class="options"><select name="q33"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+                </div>
+                <div class="question" data-question="34">
+                    <div class="question-text">34 &nbsp; Users may be able to maintain their local customs</div>
+                    <div class="options"><select name="q34"><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option></select></div>
+                </div>
+            </div>
+
+            <!-- Q35вЂ“40: YES/NO/NOT GIVEN -->
+            <div class="question-group">
+                <div class="question-group-title">Questions 35вЂ“40</div>
+                <p>Do the following statements agree with the views of the writer in Reading Passage 3?</p>
+                <p style="margin-top:5px;"><em>In boxes 35вЂ“40 on your answer sheet, write</em></p>
+                <p style="margin-top:4px;"><strong>YES</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if the statement agrees with the views of the writer<br>
+                <strong>NO</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if the statement contradicts the views of the writer<br>
+                <strong>NOT GIVEN</strong> &nbsp; if it is impossible to say what the writer thinks about this</p>
+
+                <div class="question" data-question="35">
+                    <div class="question-text">35 &nbsp; Language translation systems will be seen as very useful throughout the academic and professional worlds.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q35" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q35" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q35" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="36">
+                    <div class="question-text">36 &nbsp; The overall value of automated translation to family life is yet to be shown.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q36" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q36" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q36" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="37">
+                    <div class="question-text">37 &nbsp; Automated translation could make life more difficult for immigrant families.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q37" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q37" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q37" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="38">
+                    <div class="question-text">38 &nbsp; Visual aspects of language translation are being considered by scientists.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q38" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q38" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q38" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="39">
+                    <div class="question-text">39 &nbsp; International scientists have found English easier to translate into other languages than Latin.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q39" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q39" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q39" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="question" data-question="40">
+                    <div class="question-text">40 &nbsp; As far as language is concerned, there is a difference between people's social and practical needs.</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q40" value="YES"> YES</label>
+                        <label class="option"><input type="radio" name="q40" value="NO"> NO</label>
+                        <label class="option"><input type="radio" name="q40" value="NOT GIVEN"> NOT GIVEN</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /main-content -->
+
+    <div class="progress-container">
+        <div class="progress-nav">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex:1;">
+                <div id="bottomPartTabs" style="display:flex;gap:14px;justify-content:center;width:100%;align-items:center;flex-wrap:wrap;"></div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn" id="prev-btn" disabled><i class="fas fa-arrow-left"></i> Previous</button>
+                <button class="btn" id="next-btn">Next <i class="fas fa-arrow-right"></i></button>
+                <button class="btn btn-submit" id="submit-all-btn">Submit All <i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="results-modal">
+    <div class="modal-content">
+        <h2>Test Results</h2>
+        <div class="score-display" id="score-display">0/0</div>
+        <div class="score-breakdown" id="score-breakdown"></div>
+        <div class="modal-buttons">
+            <button class="btn" id="close-modal">Close</button>
+            <button class="btn" id="review-answers">Review Answers</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const PARTS = [
+    { id:1, title:'Passage 1', qStart:1,  qEnd:13, passagePanel:'p1_passagePanel', questionsPanel:'p1_questionsPanel' },
+    { id:2, title:'Passage 2', qStart:14, qEnd:26, passagePanel:'p2_passagePanel', questionsPanel:'p2_questionsPanel' },
+    { id:3, title:'Passage 3', qStart:27, qEnd:40, passagePanel:'p3_passagePanel', questionsPanel:'p3_questionsPanel' },
+];
+
+/* ====== ANSWER KEY ====== */
+const correctAnswers = {
+    // Passage 1 вЂ“ Archaeologists discover evidence of prehistoric island settlers
+    q1:'FALSE', q2:'FALSE', q3:'TRUE', q4:'NOT GIVEN', q5:'TRUE', q6:'NOT GIVEN', q7:'FALSE',
+    q8:'caves', q9:'stone', q10:'bones', q11:'beads', q12:'pottery', q13:'spices',
+    // Passage 2 вЂ“ The global importance of wetlands
+    q14:'G', q15:'A', q16:'H', q17:'B',
+    q18:'carbon', q19:'fires', q20:'biodiversity', q21:'ditches', q22:'subsidence',
+    q23:'A', q24:'C', q25:'D', q26:'B',
+    // Passage 3 вЂ“ Is the era of artificial speech translation upon us?
+    q27:'D', q28:'A', q29:'C', q30:'B',
+    q31:'C', q32:'E', q33:'F', q34:'B',
+    q35:'NO', q36:'YES', q37:'NO', q38:'NOT GIVEN', q39:'NOT GIVEN', q40:'YES'
+};
+
+let currentPart=1, currentQuestion=1, seconds=3600, timerInterval;
+function el(id){ return document.getElementById(id); }
+
+function renderBottomTabs(){
+    const tabs=el('bottomPartTabs'); tabs.innerHTML='';
+    PARTS.forEach(p=>{
+        const btn=document.createElement('button');
+        btn.className='btn'; btn.style.fontWeight=(p.id===currentPart)?'900':'600';
+        btn.innerHTML=(p.id===currentPart)?`<strong>${p.title}</strong>`:p.title;
+        btn.onclick=()=>switchPart(p.id); tabs.appendChild(btn);
+        const rail=document.createElement('div');
+        rail.id=`rail-part-${p.id}`;
+        rail.style.cssText=`display:${p.id===currentPart?'flex':'none'};gap:5px;flex-wrap:wrap;align-items:center;`;
+        for(let q=p.qStart;q<=p.qEnd;q++){
+            const chip=document.createElement('div');
+            chip.textContent=q; chip.className='progress-item'+(q===currentQuestion&&p.id===currentPart?' current':'');
+            chip.dataset.question=q; chip.onclick=()=>scrollToQuestion(q); rail.appendChild(chip);
+        }
+        tabs.appendChild(rail);
+    });
+}
+
+function switchPart(partId){
+    if(currentPart===partId) return;
+    PARTS.forEach(p=>{ el(p.passagePanel).classList.add('hidden'); el(p.questionsPanel).classList.add('hidden'); const r=el(`rail-part-${p.id}`); if(r) r.style.display='none'; });
+    currentPart=partId; const p=PARTS[currentPart-1]; currentQuestion=p.qStart;
+    el(p.passagePanel).classList.remove('hidden'); el(p.questionsPanel).classList.remove('hidden');
+    const r=el(`rail-part-${p.id}`); if(r) r.style.display='flex';
+    el('headerPassageTitle').textContent=`Passage ${currentPart} of 3`;
+    scrollToQuestion(currentQuestion,false); renderBottomTabs();
+}
+
+function scrollToQuestion(num,smooth=true){
+    const target=document.querySelector(`[data-question="${num}"]:not([style*="display:none"])`)||document.querySelector(`[data-question="${num}"]`);
+    if(target) target.scrollIntoView({behavior:smooth?'smooth':'auto',block:'center'});
+    updateCurrentQuestion(num);
+}
+function updateCurrentQuestion(num){
+    currentQuestion=num;
+    document.querySelectorAll(`#rail-part-${currentPart} .progress-item`).forEach(it=>{ it.classList.toggle('current',parseInt(it.dataset.question,10)===num); });
+}
+function attachAnsweredListeners(){
+    document.querySelectorAll('input[type="radio"],input[type="text"],select').forEach(inp=>{
+        inp.addEventListener('change',()=>{
+            const m=inp.name&&inp.name.match(/^q(\d+)$/); if(!m) return;
+            const q=parseInt(m[1],10);
+            const chip=document.querySelector(`.progress-item[data-question="${q}"]`);
+            if(chip){ const v=inp.type==='text'?inp.value.trim():inp.value; if(v) chip.classList.add('answered'); }
+        });
+    });
+}
+
+/* ===== SUBMIT ===== */
+el('submit-all-btn').addEventListener('click',()=>{
+    if(!confirm('Submit the entire test?')) return;
+    let score=0; const results={};
+    const norm=s=>String(s).trim().toLowerCase();
+
+    function getA(q){
+        const radios=document.querySelectorAll(`input[name="q${q}"][type="radio"]`);
+        const text=document.querySelector(`input[name="q${q}"][type="text"]`);
+        const sel=document.querySelector(`select[name="q${q}"]`);
+        if(radios.length){ const c=Array.from(radios).find(r=>r.checked); return c?c.value:null; }
+        if(text) return text.value.trim()||null;
+        if(sel) return sel.value||null;
+        return null;
+    }
+
+    // Q1вЂ“7 radio (TRUE/FALSE/NOT GIVEN)
+    for(let q=1;q<=7;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        document.querySelectorAll(`input[name="q${q}"]`).forEach(r=>r.disabled=true);
+    }
+    // Q8вЂ“13 text
+    for(let q=8;q<=13;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&norm(user)===norm(corr); if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        const inp=document.querySelector(`input[name="q${q}"]`); if(inp) inp.disabled=true;
+    }
+    // Q14вЂ“17 select
+    for(let q=14;q<=17;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        const sel=document.querySelector(`select[name="q${q}"]`); if(sel) sel.disabled=true;
+    }
+    // Q18вЂ“22 text
+    for(let q=18;q<=22;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&norm(user)===norm(corr); if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        const inp=document.querySelector(`input[name="q${q}"]`); if(inp) inp.disabled=true;
+    }
+    // Q23вЂ“26 select
+    for(let q=23;q<=26;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        const sel=document.querySelector(`select[name="q${q}"]`); if(sel) sel.disabled=true;
+    }
+    // Q27вЂ“30 radio
+    for(let q=27;q<=30;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        document.querySelectorAll(`input[name="q${q}"]`).forEach(r=>r.disabled=true);
+    }
+    // Q31вЂ“34 select
+    for(let q=31;q<=34;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        const sel=document.querySelector(`select[name="q${q}"]`); if(sel) sel.disabled=true;
+    }
+    // Q35вЂ“40 radio
+    for(let q=35;q<=40;q++){
+        const user=getA(q); const corr=correctAnswers[`q${q}`];
+        const ok=user&&user===corr; if(ok) score++;
+        results[`q${q}`]={userAnswer:user||'No answer',correct:corr,isCorrect:!!ok};
+        document.querySelectorAll(`input[name="q${q}"]`).forEach(r=>r.disabled=true);
+    }
+
+    // Color chips
+    for(let q=1;q<=40;q++){
+        const res=results[`q${q}`];
+        const ch=document.querySelector(`.progress-item[data-question="${q}"]`);
+        if(ch&&res){ ch.classList.remove('current','answered'); ch.classList.add(res.isCorrect?'correct':'incorrect'); }
+    }
+
+    el('score-display').textContent=`${score}/40`;
+    el('score-breakdown').innerHTML=PARTS.map(p=>{
+        const pts=Array.from({length:p.qEnd-p.qStart+1},(_,i)=>results[`q${p.qStart+i}`]).filter(r=>r&&r.isCorrect).length;
+        return `<div class="score-item"><span>Passage ${p.id}:</span><span>${pts}/${p.qEnd-p.qStart+1}</span></div>`;
+    }).join('');
+    el('results-modal').style.display='flex';
+
+    el('review-answers').onclick=()=>{ el('results-modal').style.display='none'; showIndicators(results); };
+});
+
+function showIndicators(results){
+    document.querySelectorAll('.answer-indicator').forEach(e=>e.remove());
+    for(let q=1;q<=40;q++){
+        const res=results[`q${q}`]; if(!res) continue;
+        let target=document.querySelector(`[data-question="${q}"]:not([style*="display:none"]) .options`)
+            ||document.querySelector(`[data-question="${q}"] .options`);
+        if(!target){ const inp=document.querySelector(`input[name="q${q}"]`); if(inp) target=inp.closest('.question')||inp.parentNode; }
+        if(!target){ const sel=document.querySelector(`select[name="q${q}"]`); if(sel) target=sel.parentNode; }
+        if(!target) continue;
+        const box=document.createElement('div');
+        box.className='answer-indicator '+(res.isCorrect?'correct':'incorrect');
+        box.innerHTML=res.isCorrect?`<i class="fas fa-check"></i> Correct!`
+            :`<i class="fas fa-times"></i> Your answer: <strong>${res.userAnswer}</strong> &nbsp; <strong>Correct:</strong> ${res.correct}`;
+        target.appendChild(box);
+    }
+}
+
+// Timer
+const timerSpan=document.querySelector('#globalTimer span'), timerCont=document.querySelector('#globalTimer');
+function updateTimer(){ seconds--; const m=Math.floor(seconds/60),s=seconds%60; timerSpan.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; if(seconds<=120) timerCont.classList.add('warning'); if(seconds<=0){ clearInterval(timerInterval); alert('Time is up!'); el('submit-all-btn').click(); } }
+function startTest(){ el('startScreen').classList.add('hidden'); el('testContainer').classList.remove('hidden'); timerInterval=setInterval(updateTimer,1000); }
+window.startTest=startTest;
+
+// Init
+setTimeout(()=>{ el('loadingScreen').classList.add('hidden'); el('startScreen').classList.remove('hidden'); },900);
+PARTS.forEach(p=>{ if(p.id===1){el(p.passagePanel).classList.remove('hidden');el(p.questionsPanel).classList.remove('hidden');}else{el(p.passagePanel).classList.add('hidden');el(p.questionsPanel).classList.add('hidden');} });
+renderBottomTabs(); attachAnsweredListeners();
+
+// Resizer
+let isResizing=false;
+el('resizer').addEventListener('mousedown',()=>{ isResizing=true; document.body.style.cursor='col-resize'; document.body.style.userSelect='none'; });
+document.addEventListener('mousemove',e=>{ if(!isResizing) return; const cont=document.querySelector('.main-content'); const rect=cont.getBoundingClientRect(); const pct=((e.clientX-rect.left)/rect.width)*100; if(pct>=30&&pct<=70){ const vis=cont.querySelector('.passage-container:not(.hidden)'); const visQ=cont.querySelector('.questions-container:not(.hidden)'); if(vis) vis.style.flex=pct+'%'; if(visQ) visQ.style.width=(100-pct)+'%'; } });
+document.addEventListener('mouseup',()=>{ if(isResizing){ isResizing=false; document.body.style.cursor=''; document.body.style.userSelect=''; } });
+
+// Highlight
+const hBtn=el('highlight-btn'),rBtn=el('remove-highlight-btn');
+const pPanels=PARTS.map(p=>el(p.passagePanel)),qPanels=PARTS.map(p=>el(p.questionsPanel));
+let lastSel=null,hTarget=null;
+function getVSel(){ const s=window.getSelection(); if(!s.rangeCount||s.isCollapsed) return null; const r=s.getRangeAt(0); if(pPanels.some(p=>p&&p.contains(r.commonAncestorContainer))||qPanels.some(p=>p&&p.contains(r.commonAncestorContainer))) return r; return null; }
+hBtn.addEventListener('click',()=>{ if(lastSel){ const sp=document.createElement('span'); sp.className='highlight'; sp.appendChild(lastSel.extractContents()); lastSel.insertNode(sp); window.getSelection().removeAllRanges(); hBtn.style.display='none'; } });
+rBtn.addEventListener('click',()=>{ if(hTarget){ const p=hTarget.parentNode; while(hTarget.firstChild) p.insertBefore(hTarget.firstChild,hTarget); p.removeChild(hTarget); rBtn.style.display='none'; hTarget=null; } });
+document.addEventListener('selectionchange',()=>{ hBtn.style.display='none'; rBtn.style.display='none'; hTarget=null; const r=getVSel(); if(r){ lastSel=r; const rc=r.getBoundingClientRect(); hBtn.style.top=(window.scrollY+rc.top-35)+'px'; hBtn.style.left=(window.scrollX+rc.left)+'px'; hBtn.style.display='block'; }else{ lastSel=null; } });
+document.addEventListener('mousedown',e=>{ if(e.target!==hBtn&&e.target!==rBtn){hBtn.style.display='none';rBtn.style.display='none';} });
+document.addEventListener('click',e=>{ if(e.target.classList&&e.target.classList.contains('highlight')){ e.preventDefault(); const rc=e.target.getBoundingClientRect(); rBtn.style.top=(window.scrollY+rc.top-35)+'px'; rBtn.style.left=(window.scrollX+rc.left)+'px'; rBtn.style.display='block'; hTarget=e.target; } });
+
+el('close-modal').addEventListener('click',()=>{ el('results-modal').style.display='none'; });
+</script>
+
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

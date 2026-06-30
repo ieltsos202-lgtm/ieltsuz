@@ -1,0 +1,1172 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTSUZ - IELTS Reading Test 3</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{--bg-color:#ffffff;--text-color:#333333;--passage-bg:#f8f9fa;--questions-bg:#ffffff;--border-color:#e0e0e0;--highlight-yellow:#FFEB3B;--highlight-green:#4CAF50;--header-bg:#F8F8F8;--header-text:#333333;--telegram-blue:#0088CC;--button-bg:#CC0000;--button-hover:#A30000;--correct-color:#28a745;--incorrect-color:#dc3545;--progress-complete:#28a745;--progress-incomplete:#bdbdbd;--timer-bg:#ffffff;--timer-text:#CC0000;--timer-border:#ffebee;--footer-bg:#f5f5f5;}
+        .night-mode{--bg-color:#121212;--text-color:#e0e0e0;--passage-bg:#1e1e1e;--questions-bg:#1e1e1e;--border-color:#424242;--highlight-yellow:#FFA000;--highlight-green:#388E3C;--header-bg:#1a1a1a;--header-text:#ffffff;--button-bg:#990000;--button-hover:#7a0000;--correct-color:#218838;--incorrect-color:#c82333;--progress-complete:#218838;--progress-incomplete:#616161;--timer-bg:#1e1e1e;--timer-text:#ff5252;--timer-border:#424242;--footer-bg:#121212;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg-color);color:var(--text-color);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+        header{background:var(--header-bg);color:var(--header-text);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:100;}
+        .logo-area a{display:flex;align-items:center;gap:8px;background:var(--telegram-blue);color:white;padding:8px 15px;border-radius:50px;text-decoration:none;font-weight:600;font-size:14px;}
+        .header-controls{display:flex;gap:15px;align-items:center;}
+        .timer-container{background:var(--timer-bg);color:var(--timer-text);border:2px solid var(--timer-border);border-radius:50px;padding:6px 12px;display:flex;align-items:center;gap:12px;font-weight:600;}
+        .timer-display{font-family:'Courier New',monospace;font-weight:bold;font-size:16px;min-width:56px;}
+        .timer-controls button{background:none;border:none;color:var(--timer-text);cursor:pointer;font-size:14px;}
+        .mode-toggle{background:none;border:none;color:var(--header-text);font-size:20px;cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+        .passage-tabs{display:flex;gap:0;padding:0 20px;background:var(--header-bg);border-bottom:1px solid var(--border-color);}
+        .passage-tab{padding:10px 20px;cursor:pointer;border-bottom:3px solid transparent;font-weight:600;font-size:14px;color:var(--text-color);transition:all 0.2s;}
+        .passage-tab.active{border-bottom-color:var(--button-bg);color:var(--button-bg);}
+        .passage-tab:hover{background:rgba(0,0,0,0.05);}
+        main{display:flex;flex:1;overflow:hidden;}
+        .passage-container,.questions-container{height:100%;overflow-y:auto;padding:20px;}
+        .passage-container{width:50%;background:var(--passage-bg);border-right:1px solid var(--border-color);}
+        .questions-container{width:50%;background:var(--questions-bg);}
+        .passage-pane{display:none;}.passage-pane.active{display:block;}
+        .passage-title{font-size:22px;font-weight:700;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--border-color);}
+        .passage-text p{margin-bottom:16px;text-align:justify;line-height:1.7;}
+        .para-label{font-weight:700;}
+        .highlight-yellow{background:var(--highlight-yellow);padding:0 2px;}
+        .highlight-green{background:var(--highlight-green);padding:0 2px;color:white;}
+        .section-title{font-size:17px;font-weight:600;margin:25px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border-color);}
+        .question{margin-bottom:22px;padding:14px;background:var(--passage-bg);border-left:4px solid var(--border-color);border-radius:8px;}
+        .question-number{display:inline-block;width:28px;height:28px;background:var(--progress-incomplete);color:white;border-radius:50%;text-align:center;line-height:28px;margin-right:10px;font-size:14px;font-weight:bold;}
+        .question.answered .question-number{background:var(--progress-complete);}
+        .instructions{background:#fff8c5;padding:12px 16px;border-left:4px solid var(--button-bg);border-radius:6px;margin:15px 0;font-weight:600;line-height:1.5;}
+        .night-mode .instructions{background:#5d4c00;color:#fff;}
+        .fill-in-the-blank{width:180px;height:38px;padding:0 12px;font-size:15px;border:2px solid var(--border-color);border-radius:50px;text-align:center;background:transparent;outline:none;color:var(--text-color);}
+        select.select-answer{padding:8px 12px;font-size:15px;border-radius:6px;width:100%;max-width:380px;border:1px solid var(--border-color);background:white;color:var(--text-color);}
+        .night-mode select.select-answer{background:#333;color:#e0e0e0;}
+        .radio-group{margin-top:10px;}.radio-option{margin-bottom:8px;padding:8px;background:var(--questions-bg);border-radius:4px;border:1px solid var(--border-color);}
+        .radio-option label{margin-left:8px;cursor:pointer;}.radio-option input[type="radio"]{cursor:pointer;}
+        .table-q{width:100%;border-collapse:collapse;margin:10px 0;}
+        .table-q th,.table-q td{padding:8px 10px;border:1px solid var(--border-color);font-size:14px;}
+        .table-q th{background:var(--header-bg);font-weight:600;}
+        footer{background:var(--footer-bg);padding:10px 20px;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+        .progress-wrapper{flex:1;overflow-x:auto;padding:5px 0;white-space:nowrap;scrollbar-width:thin;}
+        .progress-container{display:inline-flex;gap:8px;}
+        .progress-item{width:34px;height:34px;border-radius:50%;background:var(--progress-incomplete);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;font-weight:bold;transition:all 0.2s;}
+        .progress-item:hover{transform:scale(1.15);}.progress-item.completed{background:var(--progress-complete);}
+        .action-buttons{display:flex;gap:12px;}
+        .btn-primary{background:var(--button-bg);color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-weight:600;}
+        .btn-primary:hover{background:var(--button-hover);}
+        .btn-secondary{background:transparent;border:1px solid var(--button-bg);color:var(--button-bg);padding:10px 20px;border-radius:4px;cursor:pointer;}
+        .btn-secondary:hover{background:rgba(204,0,0,0.1);}
+        .feedback-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:none;justify-content:center;align-items:center;z-index:1000;}
+        .feedback-container{background:var(--passage-bg);width:90%;max-width:900px;height:90%;border-radius:10px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);}
+        .feedback-header{padding:20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;background:var(--header-bg);}
+        .feedback-body{padding:20px;overflow-y:auto;}
+        .feedback-item{margin-bottom:18px;padding:14px;background:var(--questions-bg);border-radius:8px;border:1px solid var(--border-color);}
+        .correct{color:var(--correct-color);font-weight:600;}.incorrect{color:var(--incorrect-color);font-weight:600;}
+        .score-display{background:var(--button-bg);color:white;padding:3px 12px;border-radius:20px;margin-left:10px;}
+        .highlight-toolbar{position:fixed;background:#333;border-radius:4px;padding:4px;display:flex;gap:4px;z-index:10000;box-shadow:0 2px 5px rgba(0,0,0,0.3);}
+        .highlight-btn{width:24px;height:24px;border:none;border-radius:2px;cursor:pointer;}
+        .highlight-yellow-btn{background:var(--highlight-yellow);}.highlight-green-btn{background:var(--highlight-green);}
+        .highlight-remove-btn{background:#f44336;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;}
+        .q-pane{display:none;}.q-pane.active{display:block;}
+        .sentence-complete p{line-height:2.2;}
+        @media(max-width:900px){main{flex-direction:column;}.passage-container,.questions-container{width:100%;height:50%;border:none;border-bottom:1px solid var(--border-color);}}
+    
+
+/* === IELTSUZ THEME NORMALIZER === */
+:root {
+  --os-bg: #ffffff;
+  --os-fg: #0f172a;
+  --os-muted: #334155;
+  --os-border: #e2e8f0;
+  --os-input-bg: #ffffff;
+  --os-input-border: #94a3b8;
+  --os-nav-bg: #f8fafc;
+  --os-nav-border: #e2e8f0;
+  --os-accent: #6366f1;
+}
+html.dark, html[data-theme="dark"] {
+  --os-bg: #0a0a0f;
+  --os-fg: #f8fafc;
+  --os-muted: #94a3b8;
+  --os-border: #2d2d3a;
+  --os-input-bg: #1a1a24;
+  --os-input-border: #475569;
+  --os-nav-bg: #111118;
+  --os-nav-border: #2d2d3a;
+  --os-accent: #6366f1;
+}
+
+/* Base overrides */
+html, body {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* All major containers */
+.header, .main-container, .content, .test-content,
+.question-area, .passage, .container, .main-area,
+.section, .modal-content, .questions-panel, .intro-card {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Navigation bars */
+.nav-row, .nav-fixed, .bottom-nav, .nav-row-cdi,
+#top-nav, .floating-audio-bar, .audio-bar {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-nav-border) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Audio player shell */
+.audio-shell, .audio-shell-hdr {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+
+/* Inputs */
+input[type="text"], input[type="number"], .blank,
+.answer-input, .ldm-slot, .ldm-option,
+.multi-choice-option, .word-bank-box, select, textarea {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+  font-size: 16px !important;
+}
+
+/* Placeholders */
+input::placeholder, textarea::placeholder {
+  color: #999 !important;
+}
+html.dark input::placeholder, html[data-theme="dark"] input::placeholder {
+  color: #64748b !important;
+}
+
+/* Text elements */
+p, li, td, th, label, h1, h2, h3, h4, h5, h6,
+.question-text, .instruction, .subtitle, .hint,
+.test-info, .time-info, .section-prefix, .sectionNr {
+  color: var(--os-fg) !important;
+}
+
+/* Muted text */
+.test-info, .subtitle, .instruction, .hint,
+.attemptedCount, .time-text, .zoom-lbl-hdr {
+  color: var(--os-muted) !important;
+}
+
+/* Question number badges */
+.question-number, .inline-qno, .qbadge, .q-num,
+.flow-inline-qno {
+  background-color: #eef5ff !important;
+  border-color: #4a90e2 !important;
+  color: #2563eb !important;
+}
+html.dark .question-number, html[data-theme="dark"] .question-number,
+html.dark .inline-qno, html[data-theme="dark"] .inline-qno,
+html.dark .qbadge, html[data-theme="dark"] .qbadge,
+html.dark .q-num, html[data-theme="dark"] .q-num {
+  background-color: #1e3a5f !important;
+  border-color: #64b5f6 !important;
+  color: #90caf9 !important;
+}
+
+/* Sub-question buttons */
+.subQuestion, .fqsub-wrap .subQuestion {
+  background-color: #ffffff !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .subQuestion, html[data-theme="dark"] .subQuestion {
+  background-color: var(--os-input-bg) !important;
+  border-color: var(--os-input-border) !important;
+  color: var(--os-fg) !important;
+}
+.subQuestion.answered {
+  background-color: #e6f7ff !important;
+  border-color: #1890ff !important;
+  color: #096dd9 !important;
+}
+html.dark .subQuestion.answered, html[data-theme="dark"] .subQuestion.answered {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+  color: #60a5fa !important;
+}
+
+/* Section tabs */
+.section-tabs, .part-tabs, .part-tab, .nav-btn,
+.nav-button, .fqno-btn {
+  background-color: var(--os-nav-bg) !important;
+  border-color: var(--os-border) !important;
+  color: var(--os-fg) !important;
+}
+.section-tabs .active, .part-tab.active, .nav-btn.active,
+.nav-button.active, .fqw.selected .fqno-btn {
+  background-color: var(--os-accent) !important;
+  color: #ffffff !important;
+}
+
+/* Navigation arrows */
+.nav-arrow, .nav-arrow-btn {
+  background-color: #333 !important;
+  color: #fff !important;
+}
+html.dark .nav-arrow, html[data-theme="dark"] .nav-arrow,
+html.dark .nav-arrow-btn, html[data-theme="dark"] .nav-arrow-btn {
+  background-color: #3b3b4f !important;
+  color: #fff !important;
+}
+.nav-arrow:disabled, .nav-arrow-btn:disabled {
+  background-color: #ccc !important;
+  color: #666 !important;
+}
+html.dark .nav-arrow:disabled, html[data-theme="dark"] .nav-arrow:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+}
+
+/* Intro overlay */
+#intro-overlay, #introOverlay {
+  background: #e8edf5 !important;
+}
+html.dark #intro-overlay, html[data-theme="dark"] #intro-overlay,
+html.dark #introOverlay, html[data-theme="dark"] #introOverlay {
+  background: rgba(0,0,0,0.7) !important;
+}
+#intro-overlay .intro-card, #introOverlay .intro-card {
+  background: #ffffff !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+html.dark #intro-overlay .intro-card, html[data-theme="dark"] #intro-overlay .intro-card,
+html.dark #introOverlay .intro-card, html[data-theme="dark"] #introOverlay .intro-card {
+  background: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+}
+
+/* Start test button */
+#start-test-btn, #startTestBtn, .start-btn {
+  background: #1a2340 !important;
+  color: #fff !important;
+}
+html.dark #start-test-btn, html[data-theme="dark"] #start-test-btn,
+html.dark #startTestBtn, html[data-theme="dark"] #startTestBtn {
+  background: var(--os-accent) !important;
+  color: #fff !important;
+}
+
+/* Tables */
+table, .test-table, .mcq-table {
+  background-color: var(--os-bg) !important;
+  border-color: var(--os-border) !important;
+}
+.test-table td, .test-table th, .mcq-table td, .mcq-table th {
+  background-color: var(--os-bg) !important;
+  color: var(--os-fg) !important;
+  border-color: var(--os-border) !important;
+}
+.mcq-table tr:nth-child(even) td {
+  background-color: #f8faff !important;
+}
+html.dark .mcq-table tr:nth-child(even) td, html[data-theme="dark"] .mcq-table tr:nth-child(even) td {
+  background-color: var(--os-nav-bg) !important;
+}
+
+/* Timer display */
+.timer-display {
+  background: #f0f0f0 !important;
+  color: #333 !important;
+  border-color: #ccc !important;
+}
+html.dark .timer-display, html[data-theme="dark"] .timer-display {
+  background: #444 !important;
+  color: #e0e0e0 !important;
+  border-color: #555 !important;
+}
+
+/* Highlight marks */
+mark.hl-y { background: #FEF08A !important; color: #000 !important; }
+mark.hl-g { background: #BBF7D0 !important; color: #000 !important; }
+mark.hl-p { background: #FBCFE8 !important; color: #000 !important; }
+mark.hl-b { background: #BFDBFE !important; color: #000 !important; }
+html.dark mark.hl-y, html[data-theme="dark"] mark.hl-y { background: #854d0e !important; color: #fef08a !important; }
+html.dark mark.hl-g, html[data-theme="dark"] mark.hl-g { background: #14532d !important; color: #bbf7d0 !important; }
+html.dark mark.hl-p, html[data-theme="dark"] mark.hl-p { background: #831843 !important; color: #fbcfe8 !important; }
+html.dark mark.hl-b, html[data-theme="dark"] mark.hl-b { background: #1e3a5f !important; color: #bfdbfe !important; }
+
+/* Section banners */
+.section-banner, .test-table th {
+  background: #f0f4ff !important;
+  color: #1e3a5f !important;
+}
+html.dark .section-banner, html[data-theme="dark"] .section-banner {
+  background: #3a3a3a !important;
+  color: #e0e0e0 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--os-bg); }
+::-webkit-scrollbar-thumb { background: var(--os-border); border-radius: 4px; }
+
+/* L6 specific */
+.brand-tp { color: #0088cc !important; }
+html.dark .brand-tp, html[data-theme="dark"] .brand-tp { color: #64b5f6 !important; }
+.hdr-pill-btn, .circle-btn, .zoom-controls-hdr {
+  background: #f0f0f0 !important;
+  border-color: #ccc !important;
+  color: #333 !important;
+}
+html.dark .hdr-pill-btn, html[data-theme="dark"] .hdr-pill-btn,
+html.dark .circle-btn, html[data-theme="dark"] .circle-btn,
+html.dark .zoom-controls-hdr, html[data-theme="dark"] .zoom-controls-hdr {
+  background: #444 !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
+}
+.skip-btn, .skip-btn-hdr {
+  color: #4b5563 !important;
+}
+html.dark .skip-btn, html[data-theme="dark"] .skip-btn,
+html.dark .skip-btn-hdr, html[data-theme="dark"] .skip-btn-hdr {
+  color: #e0e0e0 !important;
+}
+
+
+/* === BRANDING === */
+.ielts-logo,[id*="ielts-logo"],[class*="ielts-logo"],img[src*="ielts"],img[alt*="IELTS"],.header img,.header .logo{display:none!important}
+.header::before{content:"IELTSUZ";font-size:20px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-family:Inter,Arial,sans-serif;letter-spacing:-0.02em;display:block}
+.header{background:var(--os-bg,#fff)!important;border-bottom:1px solid var(--os-border,#e2e8f0)!important;color:var(--os-fg,#0f172a)!important;height:60px!important;padding:12px 20px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;position:fixed!important;top:0;left:0;right:0;z-index:100!important}
+html.dark .header{background:var(--os-bg,#0a0a0f)!important;border-bottom-color:var(--os-border,#2d2d3a)!important}
+.audio-player-container,.audio-shell,.floating-audio-bar,.fab-inner{background:var(--os-bg,#fff)!important;border:1px solid var(--os-border,#e2e8f0)!important;border-radius:12px!important;padding:8px 16px!important;margin:8px!important}
+html.dark .audio-player-container,html.dark .audio-shell,html.dark .floating-audio-bar,html.dark .fab-inner{background:var(--os-nav-bg,#111118)!important;border-color:var(--os-nav-border,#2d2d3a)!important}
+.player-btn,.audio-play,.audio-play-hdr,.circle-btn{background:#6366f1!important;color:#fff!important;border:none!important;border-radius:50%!important;width:40px!important;height:40px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer!important}
+.player-btn:hover,.audio-play:hover{background:#4f46e5!important}
+input[type="range"],#progress-bar,#progressSlider{accent-color:#6366f1!important}
+.timer-display,#timerDisplay{background:#f1f5f9!important;color:#0f172a!important;border:1px solid #e2e8f0!important;border-radius:18px!important;padding:5px 14px!important;font-size:15px!important;font-weight:500!important}
+html.dark .timer-display,html.dark #timerDisplay{background:#1a1a24!important;color:#f8fafc!important;border-color:#475569!important}
+.section-banner,.part-header{background:#f0f4ff!important;border-left:4px solid #6366f1!important;padding:16px 20px!important;margin:16px 0!important;border-radius:0 8px 8px 0!important}
+html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;border-left-color:#6366f1!important}
+.question-text,.question p,.passage p{font-size:17px!important;line-height:1.7!important}
+.answer-input,input[type="text"],.blank,.ldm-slot{background:var(--os-input-bg,#fff)!important;border:2px solid var(--os-input-border,#94a3b8)!important;color:var(--os-fg,#0f172a)!important;border-radius:6px!important;padding:6px 10px!important;font-size:16px!important;min-width:80px!important;text-align:center!important}
+.subQuestion.active{background:#6366f1!important;color:#fff!important;border-color:#6366f1!important}
+
+</style>
+
+<style data-theme-injected>
+/* Light mode defaults (already in files) */
+/* Dark mode overrides */
+[data-theme="dark"] body {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .header,
+[data-theme="dark"] header {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .passage,
+[data-theme="dark"] .passage-container,
+[data-theme="dark"] .question-area,
+[data-theme="dark"] .questions-container,
+[data-theme="dark"] .main-container,
+[data-theme="dark"] .left-column,
+[data-theme="dark"] .right-column,
+[data-theme="dark"] .text-content,
+[data-theme="dark"] .reading-passage,
+[data-theme="dark"] .passage-text,
+[data-theme="dark"] .section-content,
+[data-theme="dark"] .container,
+[data-theme="dark"] .wrapper,
+[data-theme="dark"] .inner,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .card,
+[data-theme="dark"] .question-card,
+[data-theme="dark"] .part-header,
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-container,
+[data-theme="dark"] .test-area,
+[data-theme="dark"] .test-content,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .test-panel,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-container,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .page-area,
+[data-theme="dark"] .page-panel,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .question-panel,
+[data-theme="dark"] .question-content,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .passage-panel,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .reading-panel,
+[data-theme="dark"] .reading-content,
+[data-theme="dark"] .reading-container,
+[data-theme="dark"] .listening-container,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .listening-panel,
+[data-theme="dark"] .listening-content,
+[data-theme="dark"] .ielts-container,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .ielts-panel,
+[data-theme="dark"] .ielts-content,
+[data-theme="dark"] .exam-container,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .exam-panel,
+[data-theme="dark"] .exam-content,
+[data-theme="dark"] .practice-container,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .practice-panel,
+[data-theme="dark"] .practice-content,
+[data-theme="dark"] .mock-container,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .mock-panel,
+[data-theme="dark"] .mock-content,
+[data-theme="dark"] .test-section,
+[data-theme="dark"] .reading-section,
+[data-theme="dark"] .listening-section,
+[data-theme="dark"] .ielts-section,
+[data-theme="dark"] .exam-section,
+[data-theme="dark"] .practice-section,
+[data-theme="dark"] .mock-section,
+[data-theme="dark"] .question-section,
+[data-theme="dark"] .passage-section,
+[data-theme="dark"] .content-section,
+[data-theme="dark"] .page-section,
+[data-theme="dark"] .area-section,
+[data-theme="dark"] .panel-section,
+[data-theme="dark"] .box-section,
+[data-theme="dark"] .wrapper-section,
+[data-theme="dark"] .container-section,
+[data-theme="dark"] .main-section,
+[data-theme="dark"] .sub-section,
+[data-theme="dark"] .inner-section,
+[data-theme="dark"] .outer-section,
+[data-theme="dark"] .top-section,
+[data-theme="dark"] .bottom-section,
+[data-theme="dark"] .left-section,
+[data-theme="dark"] .right-section,
+[data-theme="dark"] .center-section,
+[data-theme="dark"] .middle-section,
+[data-theme="dark"] .full-section,
+[data-theme="dark"] .half-section,
+[data-theme="dark"] .third-section,
+[data-theme="dark"] .quarter-section,
+[data-theme="dark"] .fifth-section,
+[data-theme="dark"] .sixth-section,
+[data-theme="dark"] .seventh-section,
+[data-theme="dark"] .eighth-section,
+[data-theme="dark"] .ninth-section,
+[data-theme="dark"] .tenth-section,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .page-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .answer-wrapper,
+[data-theme="dark"] .instruction-wrapper,
+[data-theme="dark"] .direction-wrapper,
+[data-theme="dark"] .title-wrapper,
+[data-theme="dark"] .section-wrapper,
+[data-theme="dark"] .part-wrapper,
+[data-theme="dark"] .test-wrapper,
+[data-theme="dark"] .reading-wrapper,
+[data-theme="dark"] .listening-wrapper,
+[data-theme="dark"] .ielts-wrapper,
+[data-theme="dark"] .exam-wrapper,
+[data-theme="dark"] .practice-wrapper,
+[data-theme="dark"] .mock-wrapper,
+[data-theme="dark"] .question-wrapper,
+[data-theme="dark"] .passage-wrapper,
+[data-theme="dark"] .content-wrapper,
+[data-theme="dark"] .text-wrapper,
+[data-theme="dark"] .area-wrapper,
+[data-theme="dark"] .panel-wrapper,
+[data-theme="dark"] .box-wrapper,
+[data-theme="dark"] .card-wrapper,
+[data-theme="dark"] .inner-wrapper,
+[data-theme="dark"] .outer-wrapper,
+[data-theme="dark"] .top-wrapper,
+[data-theme="dark"] .bottom-wrapper,
+[data-theme="dark"] .left-wrapper,
+[data-theme="dark"] .right-wrapper,
+[data-theme="dark"] .center-wrapper,
+[data-theme="dark"] .middle-wrapper,
+[data-theme="dark"] .full-wrapper,
+[data-theme="dark"] .half-wrapper,
+[data-theme="dark"] .third-wrapper,
+[data-theme="dark"] .quarter-wrapper,
+[data-theme="dark"] .fifth-wrapper,
+[data-theme="dark"] .sixth-wrapper,
+[data-theme="dark"] .seventh-wrapper,
+[data-theme="dark"] .eighth-wrapper,
+[data-theme="dark"] .ninth-wrapper,
+[data-theme="dark"] .tenth-wrapper,
+[data-theme="dark"] div[style*="background-color: rgb(255, 255, 255)"],
+[data-theme="dark"] div[style*="background-color: #ffffff"],
+[data-theme="dark"] div[style*="background-color: #fff"] {
+  background-color: #1e293b !important;
+}
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] li,
+[data-theme="dark"] td,
+[data-theme="dark"] th,
+[data-theme="dark"] label,
+[data-theme="dark"] div {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .part-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .example-box,
+[data-theme="dark"] .info-box,
+[data-theme="dark"] .note-box,
+[data-theme="dark"] .highlight-box,
+[data-theme="dark"] .passage-box,
+[data-theme="dark"] .reading-box,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .text-box,
+[data-theme="dark"] .question-box,
+[data-theme="dark"] .answer-box,
+[data-theme="dark"] .instruction-box,
+[data-theme="dark"] .directions-box,
+[data-theme="dark"] .title-box,
+[data-theme="dark"] .section-box,
+[data-theme="dark"] .part-box,
+[data-theme="dark"] .test-box,
+[data-theme="dark"] .page-box,
+[data-theme="dark"] .area-box,
+[data-theme="dark"] .panel-box,
+[data-theme="dark"] .wrapper-box,
+[data-theme="dark"] .container-box,
+[data-theme="dark"] .inner-box,
+[data-theme="dark"] .outer-box,
+[data-theme="dark"] .top-box,
+[data-theme="dark"] .bottom-box,
+[data-theme="dark"] .left-box,
+[data-theme="dark"] .right-box,
+[data-theme="dark"] .center-box,
+[data-theme="dark"] .middle-box,
+[data-theme="dark"] .full-box,
+[data-theme="dark"] .half-box,
+[data-theme="dark"] .third-box,
+[data-theme="dark"] .quarter-box,
+[data-theme="dark"] .fifth-box,
+[data-theme="dark"] .sixth-box,
+[data-theme="dark"] .seventh-box,
+[data-theme="dark"] .eighth-box,
+[data-theme="dark"] .ninth-box,
+[data-theme="dark"] .tenth-box {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .answer-input,
+[data-theme="dark"] .answer-select,
+[data-theme="dark"] input[type="text"] {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .subQuestion,
+[data-theme="dark"] .question-number,
+[data-theme="dark"] .question-btn,
+[data-theme="dark"] .footer__questionNo___3WNct {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .subQuestion:hover,
+[data-theme="dark"] .question-btn:hover,
+[data-theme="dark"] .footer__questionNo___3WNct:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .subQuestion.active,
+[data-theme="dark"] .question-btn.active {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.correct,
+[data-theme="dark"] .question-btn.correct {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .subQuestion.incorrect,
+[data-theme="dark"] .question-btn.incorrect {
+  background-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .drop-zone {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .drop-zone.drag-over {
+  background-color: #1e3a5f !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .drop-zone.correct {
+  background-color: #14532d !important;
+  border-color: #22c55e !important;
+}
+[data-theme="dark"] .drop-zone.incorrect {
+  background-color: #7f1d1d !important;
+  border-color: #ef4444 !important;
+}
+[data-theme="dark"] .highlight,
+[data-theme="dark"] .text-highlight {
+  background-color: #854d0e !important;
+  color: #fef3c7 !important;
+}
+[data-theme="dark"] .comment-highlight {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .resizer {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .context-menu {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .context-menu-item:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .modal-panel {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .timer-display,
+[data-theme="dark"] .timer-container {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07 {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .footer__deliverButton___3FM07:hover {
+  background-color: #475569 !important;
+}
+[data-theme="dark"] #goto-btn,
+[data-theme="dark"] .goto-btn {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .tf-question-line {
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .tf-question.correct .tf-question-line {
+  background-color: #14532d !important;
+}
+[data-theme="dark"] .tf-question.incorrect .tf-question-line {
+  background-color: #7f1d1d !important;
+}
+[data-theme="dark"] .matching-question-container {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .matching-item,
+[data-theme="dark"] .matching-option {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .matching-item:hover,
+[data-theme="dark"] .matching-option:hover {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] .summary-blank,
+[data-theme="dark"] .gap-input {
+  background-color: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .part-title,
+[data-theme="dark"] .test-title,
+[data-theme="dark"] .page-title {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .instruction-text,
+[data-theme="dark"] .direction-text,
+[data-theme="dark"] .note-text,
+[data-theme="dark"] .hint-text,
+[data-theme="dark"] .tip-text {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] a {
+  color: #60a5fa !important;
+}
+[data-theme="dark"] a:hover {
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .check-answers-btn,
+[data-theme="dark"] .submit-btn,
+[data-theme="dark"] .next-btn,
+[data-theme="dark"] .prev-btn {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+[data-theme="dark"] .check-answers-btn:hover,
+[data-theme="dark"] .submit-btn:hover,
+[data-theme="dark"] .next-btn:hover,
+[data-theme="dark"] .prev-btn:hover {
+  background-color: #2563eb !important;
+}
+[data-theme="dark"] .audio-player,
+[data-theme="dark"] .audio-controls,
+[data-theme="dark"] .player-controls {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .progress-bar,
+[data-theme="dark"] .volume-slider {
+  background-color: #334155 !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569 !important;
+  border-radius: 4px;
+}
+[data-theme="dark"] table {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] th {
+  background-color: #334155 !important;
+}
+</style>
+
+</head>
+<body>
+<header>
+    <div class="logo-area">IELTSUZ</div>
+    <div class="header-controls">
+        <div class="timer-container">
+            <div><i class="fas fa-clock"></i> <span id="timer">60:00</span></div>
+            <div class="timer-controls">
+                <button id="start-timer"><i class="fas fa-play"></i></button>
+                <button id="pause-timer"><i class="fas fa-pause"></i></button>
+                <button id="reset-timer"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+        <button class="mode-toggle" id="night-mode-toggle"><i class="fas fa-moon"></i></button>
+    </div>
+</header>
+
+<div class="passage-tabs">
+    <div class="passage-tab active" data-passage="1">Passage 1</div>
+    <div class="passage-tab" data-passage="2">Passage 2</div>
+    <div class="passage-tab" data-passage="3">Passage 3</div>
+</div>
+
+<main>
+  <div class="passage-container">
+
+    <!-- PASSAGE 1 -->
+    <div class="passage-pane active" id="ptext-1">
+        <div class="passage-title">Early Photographic Processes</div>
+        <div class="passage-text" id="passage-text-1">
+            <p>Answer Questions 1вЂ“13, which are based on the text below.</p>
+            <p>The decades following photography's experimental beginnings in the 1820s and the public availability of a practical photographic process from 1839 were characterized by the introduction of a wide number of photographic processes. The following are a few of the most significant.</p>
+            <p><strong>Daguerreotype:</strong> Announced in Paris in 1839, the daguerreotype was the first publicly available photographic process. The daguerreotype image was created on a silvered metal plate exposed to iodine fumes, forming a light-sensitive surface of silver iodide. Development was achieved by exposing the plate to fumes of heated mercury and then fixing the image in a salt solution. The daguerreotype produced remarkably sharp pictures, but unlike competing processes, each daguerreotype was unique. This proved to be its major drawback, compared to other processes from which unlimited copies could be made.</p>
+            <p><strong>Cyanotype:</strong> One of the oldest and longest surviving photographic processes, the cyanotype or blue-print, was invented by Sir John Herschel in 1840, using a mixture of ferric ammonium citrate and potassium ferricyanide to produce a light sensitive paper. As a relatively simple process to prepare and manipulate вЂ“ it required no development or fixing other than washing вЂ“ it was popular among amateurs throughout the nineteenth century and has also been widely used by engineers and architects for reproducing technical drawings (blueprints).</p>
+            <p><strong>Calotype:</strong> William Henry Fox Talbot's calotype process, the first practical negative-positive photographic process, was patented by him in 1841. A sheet of good quality paper was first treated with light-sensitive silver compounds before exposure in the camera. This produced an image in reverse, known as a negative, which was then developed in gallo-nitrate of silver and fixed. This concept of photography, allowing the production of an unlimited number of prints from a single image, has formed the basis of photographic practice until recently, when it started being challenged by digital imagery. The calotype negative was the subject of many refinements in the 1840s and 50s, and it was common practice for photographers to apply heated wax in order to increase printing transparency and lessen the visibility of the paper fibres.</p>
+            <p><strong>Wet Collodion Process:</strong> Frederick Scott Archer's wet collodion process, announced in 1851, became the standard photographic process for both amateurs and professionals from the mid-1850s until the early 1880s. The process proved immediately popular, and within a decade had superseded both the daguerreotype and the calotype processes. To prepare the negative for exposure, a sheet of glass was coated with a solution of iodised collodion (a syrupy liquid composed of soluble gun-cotton, ether and alcohol) and then made light-sensitive by immersion in a bath of silver nitrate. Known as a wet process because the glass negative required sensitising, exposing and processing while the chemicals were still damp, it required significant skill to manipulate, but produced a negative of unsurpassed sharpness and a broad tonal range.</p>
+            <p><strong>Albumen Print:</strong> The albumen print, announced by the French photographer and publisher Louis-DГ©sirГ© Blanquart-Г‰vrard in 1850, was the most widespread print medium in use between the mid-1850s and the 1890s. While the printing process was chemically similar to an earlier process which was called the 'salted paper process', the albumen print was generally distinguishable by the glossy sheen imparted by a preliminary sizing of the paper with albumen (egg white) and salt. After the albumen coating had been applied, the paper was made light sensitive by the addition of silver nitrate, and printed in contact with the negative. The fixed print could then be toned to create a wide variety of colours, ranging from purple-black to a rich chocolate brown. Although it continued to be used well into the twentieth century, its popularity declined after the mid-1890s, in favour of a variety of manufactured papers.</p>
+            <p><strong>Carbon Process:</strong> The fact that all silver-based photographic images tended to fade was a source of concern from the earliest days of photography, and considerable research was carried out in attempts to produce permanent images. Perhaps the most successful of these was the carbon process. First patented by A L Poitevin in 1855, the process utilised the fact that gelatin mixed with an alkaline bichromate becomes insoluble when exposed to light. When printing from a negative, those parts of the image representing shadow tones were hardened by the exposure to light, while light areas, protected from exposure, remained unhardened and could be subsequently washed away. Carbon and other pigments could be used as colouring agents to obtain an almost unlimited range of tones in the final image. Because the process does not employ compounds derived from silver, the resulting image is less likely to fade and was widely used in book illustration in the 1870s and 1880s.</p>
+        </div>
+    </div>
+
+    <!-- PASSAGE 2 -->
+    <div class="passage-pane" id="ptext-2">
+        <div class="passage-title">The Remarkable Power of Placebos</div>
+        <div class="passage-text" id="passage-text-2">
+            <p>Answer Questions 14вЂ“26, which are based on the text below.</p>
+            <p><span class="para-label">A.</span> It's one of our most powerful medical treatments, and certainly our most widely effective. In recent years, it's been found to help eliminate or lessen the symptoms associated with clinical depression, irritable bowel syndrome, panic attacks, coughing and ADHD, among other conditions. The name of this wonderful treatment? It's the 'placebo effect', the remarkable power of the human brain to unconsciously influence the functioning and perception of the body.</p>
+            <p><span class="para-label">B.</span> The term, which is Latin for 'I shall please', was first used some time during the 1700s, but the concept itself dates back centuries. Historically, doctors believed that one of their key duties, in addition to curing a patient, was to console him or her, providing a boost to the morale that could help them to get better faster вЂ“ sometimes in the form of a dummy medicine that had no effect beyond instilling the expectation of improvement in the patient's brain. It's now widely recognised that, while largely ineffective in improving objective symptoms, such as high blood pressure or an infection, for instance, placebos are genuinely effective in treating subjective, self-reported symptoms, including all sorts of pain. Placebos can take all sorts of forms: inert sugar pills, sham surgeries and saline injections.</p>
+            <p><span class="para-label">C.</span> The singular power of expectations has been demonstrated in a variety of studies. In one, for example, patients given a placebo pill that is referred to as a muscle relaxer will experience muscle relaxation, while those given a placebo called a muscle stimulator will experience muscle tension. The flip side of the placebo, the nocebo effect, is just as powerful вЂ“ negative expectations can cause as much harm as positive ones can do good. In other studies, it's been shown that pills which are red, yellow or orange in colour are more likely to provide a stimulating effect, while blue and green ones are more often perceived as sedating. One study even found that bigger pills are better when it comes to placebo performance.</p>
+            <p><span class="para-label">D.</span> The science that underlies all of these studies isn't well understood at this point. Scientists have conducted some imaging research into the brain on placebos, and they've found that ingestion of a placebo billed as a painkiller leads to increased activity in several areas of the cerebral cortex, as compared to an actual painkiller. These areas are involved in so-called 'higher' functions like memory, attention, thought and consciousness. A pain-killing placebo, it seems, works differently from a painkiller.</p>
+            <p><span class="para-label">E.</span> In a recent headache study, conducted by researchers at Harvard Medical School, 66 participants who suffer from chronic migraines were given six envelopes, each containing a pill to be taken after their next migraine attack. Two envelopes were labelled 'Maxalt' вЂ“ the brand name for the widely-used migraine drug rizatriptan вЂ“ in order to generate positive expectations, while two had no label, to produce neutral expectations, and two were labelled 'placebo,' to generate negative expectations. But for each of the three labels, one envelope held a genuine rizatriptan pill, and one contained a placebo. This allowed the researchers to cross-compare the effectiveness of rizatriptan + positive expectations, rizatriptan alone, and rizatriptan + negative expectations, as well as positive, neutral and negative expectations in isolation.</p>
+            <p><span class="para-label">F.</span> When the scientists analysed the participants' self-reported pain reductions after taking the pills, the power of the placebo was proven yet again. People who'd taken a placebo pill labelled Maxalt got just as much pain relief as those who'd taken a Maxalt pill labelled as a placebo. In other words, in treating a complex, chronic form of pain like migraine, the effectiveness of pure expectations was roughly equal to the effectiveness of the pharmaceutical itself.</p>
+            <p><span class="para-label">G.</span> For a doctor, harnessing the placebo's power doesn't mean intentionally mislabelling pills. Instead, a doctor could simply provide a slightly more positive message about a treatment, lending the power of expectations to that of pharmaceuticals. 'When doctors set patients' expectations high, Maxalt becomes more effective,' lead author of the study Rami Burstein said. Of course, this sort of intentional expectation-setting needs to be done carefully. Doctors have an ethical obligation not to mislead patients or withhold important information. But that doesn't mean that making sure to provide subtle positive cues about the effectiveness of a medication is a bad idea. As Ted Kaptchuk, one of the study's co-authors, put it, 'the placebo effect is an unacknowledged partner for powerful medications.'</p>
+        </div>
+    </div>
+
+    <!-- PASSAGE 3 -->
+    <div class="passage-pane" id="ptext-3">
+        <div class="passage-title">Planet Earth's Blue Heart</div>
+        <div class="passage-text" id="passage-text-3">
+            <p>Answer Questions 27вЂ“40, which are based on the text below.</p>
+            <p>Water covers over 97 percent of the habitable 'living space' on our planet, yet it could be argued that we know more about distant stars than we do about the deep blue ocean. We understand why it is important to reach for the stars, to look at ourselves in perspective, and to ask big questions such as 'where did we come from?' And we have devoted a great amount of resources to making progress in this area, but meanwhile we have neglected understanding how the heart of our life support system really functions.</p>
+            <p>Ocean exploration and the need to alert people to the ocean's plight are critical to a better understanding of the planetary systems that support us. Never before has the need been so great to dive below the surface of the sea to explore and to understand the significance of our actions, or to be more precise, the significant scale of current inactions and the consequences they hold for all of us. It is like trying to understand your own body вЂ“ is it good enough to only look at the skin? Do we not have to delve in and understand how the lungs work, or do we just take that for granted? Most people are still under the impression that the ocean is so vast and so resilient that humans do not have the capacity to harm it вЂ“ and if we do, that it does not matter.</p>
+            <p>We look at the scale and how unchanging the ocean seems to be and decide it is not really something we should worry about. What has become increasingly clear, though, is our ability to really undermine the way the ocean works by what we take out and by what we put in.</p>
+            <p>People ask вЂ“ what is the biggest threat to the ocean? Overfishing, pollution, or climate change are all usually mentioned. But by far the biggest threat to the ocean is a lack of understanding that what we put in and take out matters вЂ“ not just to the ocean, but to other aspects of our lives. The ocean cannot be regarded as the planet's ultimate dumpster or the ultimate place to get free food. It is our life support system, and not being aware of the importance of the ocean to every breath we take, every drop of water we drink, to a benign set of conditions that make the planet work вЂ“ that is the biggest threat.</p>
+            <p>By exploring the ocean we now understand better than ever before the consequences of what is happening and how the ocean is being damaged. In a sense we now realise that we are sleepwalking into a nightmare. This is because changes are slow but progressive, and at some point occur to a level where we have to sit up and take notice. However, given the nature of progressive change, this point is often reached when it is no longer possible to do anything about it.</p>
+            <p>The ocean is difficult to study, much more so than dry land, but really there are no shortcuts to gaining knowledge. The advent of SCUBA diving in the 1950s provided the current generation with new tools to explore the shallowest margins of our watery world, and an explosion of knowledge quickly followed. But what of the deep ocean? Our temptation is to turn to machines as we have done in most aspects of our daily lives. But are machines good enough to take the place of humans? James Cameron вЂ“ one of only a few people alive today who have travelled to the deepest part of the ocean вЂ“ believes that humans lie at the centre of ocean science.</p>
+            <p>It is therefore unfortunate that just as we reach an era when we have the analytical powers to start to make sense of how our planet works we see a reduction in funding of manned exploration of the ocean. It wasn't until Florida International University stepped in that the US National Oceanic and Atmospheric Administration's Aquarius underwater laboratory, located off Key Largo, Florida, was saved from closure. However, the number of countries with submarine research capabilities continues to shrink. With the vast majority of the ocean yet to be explored this is a mistake, and the hopes are that private donors will step forward to balance out the loss of government funding for underwater exploration.</p>
+            <p>The value of seeing beneath the ocean surface is immense. It helps us understand how our wellbeing is linked to the wellbeing of the ocean. We now know that since the mid-1900s about half of the world's coral reefs have either gone or are in serious decline. Coral reefs are important ecosystems with approximately one quarter of all ocean species depending on them for food and shelter. Ninety percent of many of the big fish that we consume are gone вЂ“ down to about ten percent of what they were 50 years ago. And we are changing the very nature of the blue part of our world that sets us apart from any other planet we have so far discovered in the universe. Excessive carbon dioxide emissions from our activities are not just changing the climate, they are driving the balance of the ocean waters towards more acidic conditions with as yet unclear but likely significant consequences.</p>
+            <p>The impacts of these changes will be felt by people around the world вЂ“ not just by those who live by the sea but, with our super-efficient supply systems, people in inland areas too. It matters because we cannot be blind to the fact that we are degrading the very part of our planet that enables us to live here.</p>
+        </div>
+    </div>
+  </div>
+
+  <!-- QUESTIONS SIDE -->
+  <div class="questions-container">
+
+    <!-- Q PANE 1 -->
+    <div class="q-pane active" id="qpane-1">
+        <div class="section-title">Questions 1вЂ“7</div>
+        <div class="instructions">Complete the table below. Choose ONE WORD ONLY from the passage for each answer.</div>
+
+        <table class="table-q">
+            <tr><th>Process</th><th>Advantage</th><th>Disadvantage</th></tr>
+            <tr>
+                <td>daguerreotype</td>
+                <td>images were very <div class="question" id="q1" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">1</span><input type="text" name="q1" class="fill-in-the-blank" placeholder="1" style="width:120px" oninput="markAnswered(1,this)"></div></td>
+                <td>each image was <div class="question" id="q2" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">2</span><input type="text" name="q2" class="fill-in-the-blank" placeholder="2" style="width:120px" oninput="markAnswered(2,this)"></div></td>
+            </tr>
+            <tr>
+                <td>cyanotype</td>
+                <td>was comparatively <div class="question" id="q3" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">3</span><input type="text" name="q3" class="fill-in-the-blank" placeholder="3" style="width:120px" oninput="markAnswered(3,this)"></div> to use</td>
+                <td>вЂ”</td>
+            </tr>
+            <tr>
+                <td>calotype</td>
+                <td>first process which created an image called <div class="question" id="q4" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">4</span><input type="text" name="q4" class="fill-in-the-blank" placeholder="4" style="width:120px" oninput="markAnswered(4,this)"></div>, from which unlimited copies could be made</td>
+                <td>вЂ”</td>
+            </tr>
+            <tr>
+                <td>wet collodion process</td>
+                <td>produced high-quality images</td>
+                <td>needed considerable <div class="question" id="q5" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">5</span><input type="text" name="q5" class="fill-in-the-blank" placeholder="5" style="width:100px" oninput="markAnswered(5,this)"></div> to use</td>
+            </tr>
+            <tr>
+                <td>albumen print</td>
+                <td>produced glossy images in a range of <div class="question" id="q6" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">6</span><input type="text" name="q6" class="fill-in-the-blank" placeholder="6" style="width:100px" oninput="markAnswered(6,this)"></div></td>
+                <td>вЂ”</td>
+            </tr>
+            <tr>
+                <td>carbon process</td>
+                <td>produced permanent images because it did not use any products based on <div class="question" id="q7" style="display:inline-block;border:none;padding:4px;background:none;"><span class="question-number" style="width:22px;height:22px;font-size:12px;line-height:22px;">7</span><input type="text" name="q7" class="fill-in-the-blank" placeholder="7" style="width:100px" oninput="markAnswered(7,this)"></div></td>
+                <td>вЂ”</td>
+            </tr>
+        </table>
+
+        <div class="section-title">Questions 8вЂ“13</div>
+        <div class="instructions">Do the following statements agree with the information given in the text?<br>Write <strong>TRUE</strong>, <strong>FALSE</strong>, or <strong>NOT GIVEN</strong>.</div>
+
+        <div class="question" id="q8"><span class="question-number">8</span>The cyanotype has proved helpful in professional fields outside that of photography.
+        <select name="q8" class="select-answer" onchange="markAnswered(8,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q9"><span class="question-number">9</span>The calotype process was modified and improved upon a number of times in the years following its invention.
+        <select name="q9" class="select-answer" onchange="markAnswered(9,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q10"><span class="question-number">10</span>The wet collodion process took many years to achieve success.
+        <select name="q10" class="select-answer" onchange="markAnswered(10,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q11"><span class="question-number">11</span>From the mid 1850s to the 1890s, more photographers used the albumen print process than any other print medium.
+        <select name="q11" class="select-answer" onchange="markAnswered(11,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q12"><span class="question-number">12</span>The inventor of the carbon process solved a long-standing problem by taking advantage of a particular feature of gelatin.
+        <select name="q12" class="select-answer" onchange="markAnswered(12,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q13"><span class="question-number">13</span>The carbon process greatly increased the sales of illustrated books during the 1870s and 1890s.
+        <select name="q13" class="select-answer" onchange="markAnswered(13,this)"><option value="">-- Select --</option><option>TRUE</option><option>FALSE</option><option>NOT GIVEN</option></select></div>
+    </div>
+
+    <!-- Q PANE 2 -->
+    <div class="q-pane" id="qpane-2">
+        <div class="section-title">Questions 14вЂ“17</div>
+        <div class="instructions">The text has seven paragraphs, AвЂ“G. Which paragraph contains the following information? (You may use any letter more than once.)</div>
+
+        <div class="question" id="q14"><span class="question-number">14</span>An explanation of the neurological process by which placebos work
+        <select name="q14" class="select-answer" onchange="markAnswered(14,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+
+        <div class="question" id="q15"><span class="question-number">15</span>The origin of the word 'placebo'
+        <select name="q15" class="select-answer" onchange="markAnswered(15,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+
+        <div class="question" id="q16"><span class="question-number">16</span>A recommendation as to how medical professionals can take advantage of the placebo effect
+        <select name="q16" class="select-answer" onchange="markAnswered(16,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+
+        <div class="question" id="q17"><span class="question-number">17</span>Mention of how the appearance of placebos can affect how well they work
+        <select name="q17" class="select-answer" onchange="markAnswered(17,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></div>
+
+        <div class="section-title">Questions 18вЂ“24</div>
+        <div class="instructions">Complete the sentences below. Choose ONE WORD ONLY from the passage for each answer.</div>
+
+        <div class="question" id="q18"><span class="question-number">18</span>It appears that placebos can treat or reduce the <input type="text" name="q18" class="fill-in-the-blank" placeholder="18" oninput="markAnswered(18,this)"> of a wide range of conditions.</div>
+
+        <div class="question" id="q19"><span class="question-number">19</span>The placebo effect happens when our <input type="text" name="q19" class="fill-in-the-blank" placeholder="19" oninput="markAnswered(19,this)"> has an effect on how our body feels.</div>
+
+        <div class="question" id="q20"><span class="question-number">20</span>Doctors have long believed it to be their responsibility not only to treat patients' medical conditions, but also to improve their <input type="text" name="q20" class="fill-in-the-blank" placeholder="20" oninput="markAnswered(20,this)">.</div>
+
+        <div class="question" id="q21"><span class="question-number">21</span>An example of a situation where a placebo has little or no effect is if a patient has an <input type="text" name="q21" class="fill-in-the-blank" placeholder="21" oninput="markAnswered(21,this)">.</div>
+
+        <div class="question" id="q22"><span class="question-number">22</span>It has been shown that patients will feel <input type="text" name="q22" class="fill-in-the-blank" placeholder="22" oninput="markAnswered(22,this)"> in their muscles if they are given a placebo called a muscle stimulator.</div>
+
+        <div class="question" id="q23"><span class="question-number">23</span>A related phenomenon, known as the <input type="text" name="q23" class="fill-in-the-blank" placeholder="23" oninput="markAnswered(23,this)"> effect, convinces people that a treatment will do them harm.</div>
+
+        <div class="question" id="q24"><span class="question-number">24</span>Two factors which influence the effectiveness of a placebo pill are its <input type="text" name="q24" class="fill-in-the-blank" placeholder="24" oninput="markAnswered(24,this)"> and its size.</div>
+
+        <div class="section-title">Questions 25вЂ“26</div>
+        <div class="instructions">Choose TWO letters, AвЂ“E. Which TWO findings were observed in the Harvard Medical School study?<br>
+        <em>A вЂ“ Placebos taken knowingly were less effective &nbsp;|&nbsp; B вЂ“ People who took Maxalt unknowingly reported less pain relief than those aware of taking it &nbsp;|&nbsp; C вЂ“ Where pills had misleading labels, placebo and drug appeared equally effective &nbsp;|&nbsp; D вЂ“ Maxalt without a label and Maxalt labelled as a placebo appeared equally effective &nbsp;|&nbsp; E вЂ“ People given no indication reported the lowest levels of pain relief</em></div>
+
+        <div class="question" id="q25"><span class="question-number">25</span>First finding:
+        <select name="q25" class="select-answer" onchange="markAnswered(25,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div>
+
+        <div class="question" id="q26"><span class="question-number">26</span>Second finding:
+        <select name="q26" class="select-answer" onchange="markAnswered(26,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div>
+    </div>
+
+    <!-- Q PANE 3 -->
+    <div class="q-pane" id="qpane-3">
+        <div class="section-title">Questions 27вЂ“30</div>
+        <div class="instructions">Choose the correct letter, A, B, C or D.</div>
+
+        <div class="question" id="q27"><span class="question-number">27</span>What point does the writer make in the first paragraph?
+        <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="q27" value="A" onchange="markAnswered(27,this)"><label>A вЂ“ People fail to agree on the purpose of ocean exploration</label></div>
+            <div class="radio-option"><input type="radio" name="q27" value="B" onchange="markAnswered(27,this)"><label>B вЂ“ The ocean reduces the amount of habitable space on our planet</label></div>
+            <div class="radio-option"><input type="radio" name="q27" value="C" onchange="markAnswered(27,this)"><label>C вЂ“ Ocean exploration receives less support than exploration of space</label></div>
+            <div class="radio-option"><input type="radio" name="q27" value="D" onchange="markAnswered(27,this)"><label>D вЂ“ It is likely that progress will be made in important areas of marine research</label></div>
+        </div></div>
+
+        <div class="question" id="q28"><span class="question-number">28</span>What does the writer say about the ocean in the second paragraph?
+        <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="q28" value="A" onchange="markAnswered(28,this)"><label>A вЂ“ We need to find out what impact our neglect of the ocean has had</label></div>
+            <div class="radio-option"><input type="radio" name="q28" value="B" onchange="markAnswered(28,this)"><label>B вЂ“ The ocean has a more important role than any organ in humans</label></div>
+            <div class="radio-option"><input type="radio" name="q28" value="C" onchange="markAnswered(28,this)"><label>C вЂ“ Ocean exploration has produced a range of contrasting findings</label></div>
+            <div class="radio-option"><input type="radio" name="q28" value="D" onchange="markAnswered(28,this)"><label>D вЂ“ Problems facing the ocean have been receiving increasing publicity</label></div>
+        </div></div>
+
+        <div class="question" id="q29"><span class="question-number">29</span>The writer suggests that the apparent lack of change in the ocean
+        <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="q29" value="A" onchange="markAnswered(29,this)"><label>A вЂ“ has been disputed by some scientists</label></div>
+            <div class="radio-option"><input type="radio" name="q29" value="B" onchange="markAnswered(29,this)"><label>B вЂ“ is a sign that pollution levels are relatively low</label></div>
+            <div class="radio-option"><input type="radio" name="q29" value="C" onchange="markAnswered(29,this)"><label>C вЂ“ is linked to recent developments in ocean conservation</label></div>
+            <div class="radio-option"><input type="radio" name="q29" value="D" onchange="markAnswered(29,this)"><label>D вЂ“ encourages people to assume the ocean cannot easily be damaged</label></div>
+        </div></div>
+
+        <div class="question" id="q30"><span class="question-number">30</span>Why does the writer use the phrase 'sleepwalking into a nightmare'?
+        <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="q30" value="A" onchange="markAnswered(30,this)"><label>A вЂ“ to describe how the ocean has become degraded</label></div>
+            <div class="radio-option"><input type="radio" name="q30" value="B" onchange="markAnswered(30,this)"><label>B вЂ“ to imply that the pace of ocean damage has been slow</label></div>
+            <div class="radio-option"><input type="radio" name="q30" value="C" onchange="markAnswered(30,this)"><label>C вЂ“ to suggest that it may soon be too late to protect the oceans</label></div>
+            <div class="radio-option"><input type="radio" name="q30" value="D" onchange="markAnswered(30,this)"><label>D вЂ“ to illustrate how little ocean exploration has taken place</label></div>
+        </div></div>
+
+        <div class="section-title">Questions 31вЂ“35</div>
+        <div class="instructions">Do the following statements agree with the claims of the writer?<br>Write <strong>YES</strong>, <strong>NO</strong>, or <strong>NOT GIVEN</strong>.</div>
+
+        <div class="question" id="q31"><span class="question-number">31</span>James Cameron has contributed more than any other scientist to our understanding of the ocean.
+        <select name="q31" class="select-answer" onchange="markAnswered(31,this)"><option value="">-- Select --</option><option>YES</option><option>NO</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q32"><span class="question-number">32</span>Ocean exploration is best carried out by unmanned machines.
+        <select name="q32" class="select-answer" onchange="markAnswered(32,this)"><option value="">-- Select --</option><option>YES</option><option>NO</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q33"><span class="question-number">33</span>The involvement of Florida International University prevented the closure of the Key Largo underwater laboratory.
+        <select name="q33" class="select-answer" onchange="markAnswered(33,this)"><option value="">-- Select --</option><option>YES</option><option>NO</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q34"><span class="question-number">34</span>Our knowledge of the oceans has grown to such an extent that international marine research capabilities can be reduced.
+        <select name="q34" class="select-answer" onchange="markAnswered(34,this)"><option value="">-- Select --</option><option>YES</option><option>NO</option><option>NOT GIVEN</option></select></div>
+
+        <div class="question" id="q35"><span class="question-number">35</span>Private donors are more likely to fund underwater exploration if they have a scientific background.
+        <select name="q35" class="select-answer" onchange="markAnswered(35,this)"><option value="">-- Select --</option><option>YES</option><option>NO</option><option>NOT GIVEN</option></select></div>
+
+        <div class="section-title">Questions 36вЂ“40</div>
+        <div class="instructions">Complete the summary below. Choose the correct letter, AвЂ“H.<br>
+        <em>A вЂ“ fishing vessels &nbsp;|&nbsp; B вЂ“ habitable place &nbsp;|&nbsp; C вЂ“ coastal communities &nbsp;|&nbsp; D вЂ“ distant stars &nbsp;|&nbsp; E вЂ“ weather patterns &nbsp;|&nbsp; F вЂ“ marine creatures &nbsp;|&nbsp; G вЂ“ extinct species &nbsp;|&nbsp; H вЂ“ chemical composition</em></div>
+
+        <div class="question" id="q36"><span class="question-number">36</span>We now know that many coral reefs, which provide food and shelter for a range of ________, have disappeared or been damaged.
+        <select name="q36" class="select-answer" onchange="markAnswered(36,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+
+        <div class="question" id="q37"><span class="question-number">37</span>As well as the impact it is having on the ________ we experience, pollution is also altering
+        <select name="q37" class="select-answer" onchange="markAnswered(37,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+
+        <div class="question" id="q38"><span class="question-number">38</span>The ________ of the ocean.
+        <select name="q38" class="select-answer" onchange="markAnswered(38,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+
+        <div class="question" id="q39"><span class="question-number">39</span>It is not only ________ that will be affected by these changes.
+        <select name="q39" class="select-answer" onchange="markAnswered(39,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+
+        <div class="question" id="q40"><span class="question-number">40</span>We need to realise that our world will cease to be a ________ if we do not protect our ocean.
+        <select name="q40" class="select-answer" onchange="markAnswered(40,this)"><option value="">-- Select --</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option></select></div>
+
+        <div style="margin-top:20px;text-align:center;">
+            <button class="btn-primary" onclick="showFeedback()">Submit Answers</button>
+        </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+    <div class="progress-wrapper"><div class="progress-container" id="progress-container"></div></div>
+    <div class="action-buttons"><button class="btn-secondary" onclick="resetAll()"><i class="fas fa-redo"></i> Reset</button></div>
+</footer>
+
+<div class="feedback-overlay" id="feedback-overlay">
+    <div class="feedback-container">
+        <div class="feedback-header">
+            <div class="feedback-title"><i class="fas fa-chart-bar"></i> Your Results <span id="score-display" class="score-display">0/40</span></div>
+            <button onclick="closeFeedback()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-color);">вњ•</button>
+        </div>
+        <div class="feedback-body" id="feedback-body"></div>
+    </div>
+</div>
+
+<div class="highlight-toolbar" id="highlight-toolbar" style="display:none;">
+    <button class="highlight-btn highlight-yellow-btn" onclick="applyHighlight('yellow')"></button>
+    <button class="highlight-btn highlight-green-btn" onclick="applyHighlight('green')"></button>
+    <button class="highlight-btn highlight-remove-btn" onclick="removeHighlight()">вњ•</button>
+</div>
+
+<script>
+const answers = {
+    1:'sharp',2:'unique',3:'simple',4:'negative',5:'skill',6:'colours',7:'silver',
+    8:'TRUE',9:'TRUE',10:'FALSE',11:'TRUE',12:'TRUE',13:'NOT GIVEN',
+    14:'D',15:'B',16:'G',17:'C',
+    18:'symptoms',19:'brain',20:'morale',21:'infection',22:'tension',23:'nocebo',24:'colour',
+    25:'B',26:'C',
+    27:'C',28:'A',29:'D',30:'C',
+    31:'NOT GIVEN',32:'NO',33:'YES',34:'NO',35:'NOT GIVEN',
+    36:'F',37:'E',38:'H',39:'C',40:'B'
+};
+
+let timeLeft=3600,timerInterval=null;
+const timerDisplay=document.getElementById('timer');
+function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+document.getElementById('start-timer').onclick=()=>{if(!timerInterval)timerInterval=setInterval(()=>{if(timeLeft>0){timeLeft--;timerDisplay.textContent=formatTime(timeLeft);}else clearInterval(timerInterval);},1000);};
+document.getElementById('pause-timer').onclick=()=>{clearInterval(timerInterval);timerInterval=null;};
+document.getElementById('reset-timer').onclick=()=>{clearInterval(timerInterval);timerInterval=null;timeLeft=3600;timerDisplay.textContent=formatTime(timeLeft);};
+
+function buildProgress(){const c=document.getElementById('progress-container');c.innerHTML='';for(let i=1;i<=40;i++){const d=document.createElement('div');d.className='progress-item';d.id='prog-'+i;d.textContent=i;d.onclick=()=>scrollToQuestion(i);c.appendChild(d);}}
+buildProgress();
+
+function markAnswered(n,el){const val=el.value||(el.type==='radio'?el.value:'');const item=document.getElementById('prog-'+n);const q=document.getElementById('q'+n);if(val){item.classList.add('completed');if(q)q.classList.add('answered');}else{item.classList.remove('completed');if(q)q.classList.remove('answered');}}
+
+function scrollToQuestion(n){const q=document.getElementById('q'+n);if(!q)return;const pane=n<=13?1:n<=26?2:3;switchPassage(pane);setTimeout(()=>q.scrollIntoView({behavior:'smooth',block:'center'}),100);}
+
+function switchPassage(n){document.querySelectorAll('.passage-pane').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.q-pane').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.passage-tab').forEach(t=>t.classList.remove('active'));document.getElementById('ptext-'+n).classList.add('active');document.getElementById('qpane-'+n).classList.add('active');document.querySelector(`.passage-tab[data-passage="${n}"]`).classList.add('active');}
+document.querySelectorAll('.passage-tab').forEach(tab=>{tab.onclick=()=>switchPassage(parseInt(tab.dataset.passage));});
+
+document.getElementById('night-mode-toggle').onclick=()=>{document.body.classList.toggle('night-mode');const ico=document.querySelector('#night-mode-toggle i');ico.className=document.body.classList.contains('night-mode')?'fas fa-sun':'fas fa-moon';};
+
+function showFeedback(){let score=0;const body=document.getElementById('feedback-body');body.innerHTML='';for(let i=1;i<=40;i++){let userVal='';const sel=document.querySelector(`select[name="q${i}"]`);const radios=document.querySelectorAll(`input[name="q${i}"]`);const txt=document.querySelector(`input[type="text"][name="q${i}"]`);if(sel)userVal=sel.value;else if(radios.length){radios.forEach(r=>{if(r.checked)userVal=r.value;});}else if(txt)userVal=txt.value.trim().toLowerCase();const correct=answers[i];const isRight=txt?userVal.toLowerCase()===correct.toLowerCase():userVal===correct;if(isRight)score++;const div=document.createElement('div');div.className='feedback-item';div.innerHTML=`<strong>Q${i}:</strong> Your answer: <span class="${isRight?'correct':'incorrect'}">${userVal||'(blank)'}</span>${!isRight?` &nbsp; Correct: <span class="correct">${correct}</span>`:''}`;body.appendChild(div);}document.getElementById('score-display').textContent=`${score}/40`;document.getElementById('feedback-overlay').style.display='flex';}
+function closeFeedback(){document.getElementById('feedback-overlay').style.display='none';}
+function resetAll(){document.querySelectorAll('select.select-answer').forEach(s=>s.value='');document.querySelectorAll('input[type="text"]').forEach(i=>i.value='');document.querySelectorAll('input[type="radio"]').forEach(r=>r.checked=false);document.querySelectorAll('.progress-item').forEach(p=>p.classList.remove('completed'));document.querySelectorAll('.question').forEach(q=>q.classList.remove('answered'));}
+
+let selectedRange=null;
+['passage-text-1','passage-text-2','passage-text-3'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('mouseup',handleSelect);});
+function handleSelect(e){const sel=window.getSelection();if(sel&&sel.toString().length>0){selectedRange=sel.getRangeAt(0);const toolbar=document.getElementById('highlight-toolbar');toolbar.style.display='flex';toolbar.style.left=(e.pageX-20)+'px';toolbar.style.top=(e.pageY-40)+'px';}else document.getElementById('highlight-toolbar').style.display='none';}
+document.addEventListener('click',e=>{if(!e.target.closest('.highlight-toolbar')&&!e.target.closest('.passage-text'))document.getElementById('highlight-toolbar').style.display='none';});
+function applyHighlight(color){if(!selectedRange)return;const span=document.createElement('span');span.className=color==='yellow'?'highlight-yellow':'highlight-green';try{selectedRange.surroundContents(span);}catch(e){}document.getElementById('highlight-toolbar').style.display='none';window.getSelection().removeAllRanges();}
+function removeHighlight(){if(!selectedRange)return;const node=selectedRange.commonAncestorContainer;const span=node.nodeType===3?node.parentElement:node;if(span&&(span.classList.contains('highlight-yellow')||span.classList.contains('highlight-green'))){span.replaceWith(...span.childNodes);}document.getElementById('highlight-toolbar').style.display='none';}
+</script>
+
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

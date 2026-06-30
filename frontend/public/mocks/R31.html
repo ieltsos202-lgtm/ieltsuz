@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTSUZ Reading Practice</title>
+<style>
+
+:root{
+  --bg:#ffffff;--text:#000000;--muted:#666;--border:#e0e0e0;--blue:#4a90e2;--focus:#3581d8;
+  --green:#28a745;--red:#dc3545;--panel:#ffffff;--soft:#f7f7f7;--part:#f1f2ec;--timer:#f0f0f0;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:Arial,sans-serif;font-size:16px;line-height:1.4;background:var(--bg);color:var(--text);
+}
+button,input,select,textarea{font:inherit}
+a{color:inherit}
+.hidden{display:none!important}
+#appHeader{
+  position:fixed;top:0;left:0;right:0;height:60px;background:#fff;border-bottom:1px solid var(--border);z-index:100;
+  display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:10px;
+}
+.header-left{font-size:16px;font-weight:700;white-space:nowrap}
+.header-center,.header-right{display:flex;align-items:center;gap:8px}
+.timer-box{display:flex;align-items:center;gap:8px;background:var(--timer);border:1px solid #ccc;border-radius:999px;padding:4px 8px}
+#timerDisplay{min-width:54px;text-align:center;font-weight:500;color:#333}
+.control-btn,.night-btn,.icon-btn{
+  width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background:#f0f0f0;cursor:pointer;display:grid;place-items:center;
+}
+.control-btn:hover,.night-btn:hover,.icon-btn:hover{background:#e0e0e0}
+#notesBtn{
+  height:32px;border-radius:4px;border:1px solid #ccc;background:#f0f0f0;padding:0 12px;font-size:14px;font-weight:600;cursor:pointer
+}
+#notesBtn:hover{background:#e0e0e0}
+.tg-pill-btn{
+  display:inline-flex;align-items:center;gap:8px;color:#3e3e3e;background:#fff;border:2px solid #3e3e3e;border-radius:9999px;
+  padding:6px 14px;font-size:14px;font-weight:700;text-decoration:none;line-height:1;transition:background-color .2s;
+}
+.tg-pill-btn:hover{background:#f5f5f5;text-decoration:underline}
+.tg-icon{
+  width:18px;height:18px;background:currentColor;display:inline-block;background-repeat:no-repeat;background-size:contain;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M21.5 4.5 18.3 19c-.2 1-.8 1.3-1.7.8l-4.7-3.4-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.9-8c.4-.4-.1-.6-.6-.3L6.2 12.8l-4.7-1.5c-1-.3-1-1 .2-1.4L20 2.8c.9-.3 1.8.2 1.5 1.7Z'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M21.5 4.5 18.3 19c-.2 1-.8 1.3-1.7.8l-4.7-3.4-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.8 8.9-8c.4-.4-.1-.6-.6-.3L6.2 12.8l-4.7-1.5c-1-.3-1-1 .2-1.4L20 2.8c.9-.3 1.8.2 1.5 1.7Z'/%3E%3C/svg%3E");
+}
+#mainArea{position:fixed;top:60px;bottom:80px;left:0;right:0;display:flex;background:var(--bg)}
+.panel{height:100%;overflow:auto;background:var(--panel)}
+#passagePanel{width:50%;border-right:1px solid var(--border);padding:14px}
+#divider{width:8px;cursor:col-resize;background:#ececec;position:relative;flex:0 0 8px}
+#divider::after{content:"";position:absolute;top:50%;left:2px;transform:translateY(-50%);width:4px;height:52px;border-radius:3px;background:#b7b7b7}
+#questionsPanel{flex:1;padding:14px}
+.passage-tabs{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.passage-tab,.part-tab{
+  border:none;background:none;color:#333;padding:10px 15px;cursor:pointer;border-radius:4px
+}
+.passage-tab.active,.part-tab.active{font-weight:700;color:#000;border-bottom:2px solid var(--blue)}
+.part-header{
+  background:var(--part);border:1px solid var(--border);padding:12px 14px;border-radius:6px;margin-bottom:16px
+}
+.passage-content h4,.passage-content h2{font-size:20px;font-weight:700;text-align:center;margin:8px 0 8px}
+.passage-content h3{font-size:18px;margin:22px 0 8px}
+.passage-content p,.passage-content div{font-size:16px}
+.passage-content p{margin:0 0 1.1em}
+.passage-content .passage-paragraph{margin-bottom:1.1em}
+.passage-content em,.passage-content p[style*="italic"]{color:#666}
+.question-section{display:none}
+.question-section.active{display:block}
+.question{
+  border:1px solid var(--border);border-radius:8px;padding:16px;margin:0 0 18px;background:#fff
+}
+.question-rubric{margin-bottom:14px}
+.question-rubric h3{margin:0 0 8px}
+.question-rubric p{margin:4px 0}
+.question-item{margin:12px 0}
+.question-number,strong.question-badge{
+  display:inline-block;border:1px solid #d0d7e2;border-radius:6px;padding:2px 6px;background:#fff;font-weight:700;margin-right:6px
+}
+.answer-input,.summary-input,select{
+  border:1px solid #bfbfbf;border-radius:4px;background:#fff;padding:4px 8px;font-size:16px;font-weight:700;transition:border-color .2s ease;min-width:110px
+}
+.answer-input:focus,.summary-input:focus,select:focus,textarea:focus{
+  border-color:var(--focus);outline:none;border-width:2px
+}
+.answer-input.correct,.summary-input.correct,select.correct,.summary-drop-zone.correct{border-color:var(--green)!important;background:#e9f7ef!important}
+.answer-input.incorrect,.summary-input.incorrect,select.incorrect,.summary-drop-zone.incorrect{border-color:var(--red)!important;background:#f8d7da!important}
+.summary-text{line-height:2.2}
+.summary-input{display:inline-block;vertical-align:middle;height:28px}
+.question-options,.tfng-group{display:grid;gap:8px}
+.tf-option,.tfng-option,.mcq-option,.multi-choice-option{
+  display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border);border-radius:6px;padding:8px 10px;background:#fff;cursor:pointer
+}
+.tf-option:hover,.tfng-option:hover,.mcq-option:hover,.multi-choice-option:hover{background:#f1f7ff}
+.tf-option.checked,.tfng-option.checked,.mcq-option.checked,.multi-choice-option.checked{background:#cfe3f9;border-color:#7db3f5}
+.tf-option.correct-choice,.tfng-option.correct-choice,.mcq-option.correct-choice,.multi-choice-option.correct-choice{background:#d4edda!important;border-color:var(--green)!important}
+.tf-option.incorrect-choice,.tfng-option.incorrect-choice,.mcq-option.incorrect-choice,.multi-choice-option.incorrect-choice{background:#f8d7da!important;border-color:var(--red)!important}
+.matching-box,.list-box,.summary-options-bank{
+  background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:14px;margin:0 0 12px
+}
+.matching-option{margin:10px 0}
+.correct-answer-note{display:block;margin-top:6px;font-size:13px;color:#555}
+.correct-answer-note strong{color:var(--green)}
+.question-item.result-correct > p:first-child,.question-item.result-correct > h4:first-child{background:#eef9f0}
+.question-item.result-incorrect > p:first-child,.question-item.result-incorrect > h4:first-child{background:#fff2f2}
+.summary-drop-zone{
+  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;min-width:120px;min-height:30px;padding:2px 8px;
+  border:2px dashed #999;border-radius:6px;margin:0 6px;background:#fff;font-weight:700
+}
+.summary-drop-zone.filled{border-style:solid;background:#eef5ff;border-color:#8eb6f1}
+.drag-item{
+  display:inline-flex;align-items:center;justify-content:center;padding:8px 10px;border:1px solid #cfcfcf;border-radius:6px;background:#fff;cursor:grab;
+  user-select:none
+}
+.drag-item.dragging{opacity:.6}
+.drop-hover{background:#f1f7ff!important;border-color:var(--blue)!important}
+#bottomNav{
+  position:fixed;left:0;right:0;bottom:0;height:80px;background:#fff;border-top:1px solid var(--border);z-index:100;
+  display:flex;align-items:center;gap:10px;padding:8px 12px
+}
+.nav-arrows{display:flex;gap:8px}
+.arrow-btn{
+  width:48px;height:48px;border-radius:50%;border:none;color:#fff;font-size:18px;cursor:pointer
+}
+#prevBtn{background:#4b5563}
+#nextBtn{background:#000}
+.arrow-btn:hover{transform:translateY(-1px)}
+.part-tabs{display:flex;gap:2px;min-width:max-content}
+.question-row-wrap{flex:1;overflow:hidden}
+.question-row{display:flex;gap:6px;overflow:auto;padding-bottom:4px}
+.subQuestion{
+  width:32px;height:32px;border-radius:2px;border:1px solid #ccc;background:#fff;color:#333;font-size:14px;font-weight:500;cursor:pointer;flex:0 0 auto
+}
+.subQuestion.answered{background:#e9ecef;border-color:#ddd}
+.subQuestion.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.subQuestion.correct{background:var(--green);color:#fff;border-color:var(--green)}
+.subQuestion.incorrect{background:var(--red);color:#fff;border-color:var(--red)}
+.subQuestion:hover{background:#f0f0f0;border-color:#999}
+.bottom-right{display:flex;align-items:center;gap:12px;white-space:nowrap}
+#checkAnswersBtn{
+  background:#f3f4f6;color:#111827;border:1px solid #d1d5db;border-radius:4px;font-size:15px;font-weight:700;padding:10px 16px;min-width:160px;cursor:pointer
+}
+#checkAnswersBtn:hover{background:#ebedf0;border-color:#c7ccd4}
+#checkAnswersBtn.result-btn{background:#4CAF50;color:#fff;border-color:#4CAF50}
+.hl-floating-toolbar{
+  position:fixed;z-index:9999;background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:10px 12px;
+  display:none;flex-direction:column;gap:8px;min-width:150px;box-shadow:0 8px 32px rgba(0,0,0,.18)
+}
+.hl-floating-toolbar.show{display:flex;animation:toolbarPop .15s cubic-bezier(.34,1.56,.64,1)}
+@keyframes toolbarPop{from{opacity:0;transform:translateY(8px) scale(.93)}to{opacity:1;transform:translateY(0) scale(1)}}
+.hl-section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#999;opacity:.8;padding:0 2px}
+.hl-colors-row{display:flex;gap:7px;align-items:center}
+.hl-dot{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.hl-dot:hover{transform:scale(1.25);border-color:#e0e0e0;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.hl-dot.cy{background:#FEF08A}.hl-dot.cg{background:#BBF7D0}.hl-dot.cp{background:#FBCFE8}.hl-dot.cb{background:#BFDBFE}
+.hl-divider{height:1px;background:#e0e0e0;margin:0 -2px}
+.hl-text-btn{display:flex;align-items:center;gap:7px;padding:6px 10px;border:none;border-radius:4px;background:none;color:#333;cursor:pointer;font-size:13px;font-weight:500;text-align:left;width:100%;transition:all .15s}
+.hl-text-btn.note-btn:hover{color:#4a90e2;background:#f1f7ff}
+.hl-text-btn.remove-btn:hover{color:#F59E0B;background:#fffbeb}
+.hl-text-btn.clear-btn:hover{color:#dc3545;background:#fff5f5}
+mark.hl-y{background:#FEF08A} mark.hl-g{background:#BBF7D0} mark.hl-p{background:#FBCFE8} mark.hl-b{background:#BFDBFE}
+mark.hl-y,mark.hl-g,mark.hl-p,mark.hl-b{border-radius:3px;padding:1px 0;cursor:pointer;color:#000}
+.answer-source{background:#d9f2da;border-bottom:2px solid var(--green);padding:1px 0}
+.answer-source[data-q]{cursor:pointer}
+.question-source-badge{
+  display:inline-block;margin-left:6px;padding:2px 6px;border-radius:999px;background:#eef7ee;color:#1f7a34;font-size:12px;font-weight:700
+}
+#watermark{
+  position:fixed;inset:auto auto 120px 50%;transform:translateX(-50%) rotate(-18deg);font-size:42px;font-weight:700;opacity:.08;
+  pointer-events:none;z-index:20;color:#000;white-space:nowrap
+}
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10000
+}
+.modal-overlay.show{display:flex}
+.modal{
+  width:min(92vw,560px);max-height:84vh;overflow:auto;background:#fff;border-radius:14px;padding:22px
+}
+.modal h3{margin:0 0 12px}
+.modal textarea{width:100%;min-height:90px;border:1.5px solid #bfbfbf;border-radius:8px;padding:10px;resize:vertical}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.btn{border:none;border-radius:4px;padding:8px 16px;cursor:pointer;font-weight:700}
+.btn.primary{background:#4a90e2;color:#fff}
+.btn.secondary{background:#f3f4f6;color:#111827;border:1px solid #d1d5db}
+.notes-list{display:grid;gap:10px}
+.note-card{border:1px solid var(--border);border-radius:10px;padding:12px}
+.note-excerpt{font-size:13px;background:#FEF08A;padding:8px 10px;border-radius:6px;margin-bottom:8px}
+.result-summary{display:grid;gap:8px;margin-top:12px}
+.result-row{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);padding:8px 10px;border-radius:8px}
+.answers-table-wrap{margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:42vh}
+.answers-table{width:100%;border-collapse:collapse;background:#fff}
+.answers-table th,.answers-table td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;font-size:14px}
+.answers-table th{position:sticky;top:0;background:#f5f5f5;z-index:1}
+.answers-table tr:last-child td{border-bottom:none}
+.answer-status-ok{color:var(--green);font-weight:700}
+.answer-status-bad{color:var(--red);font-weight:700}
+.answer-status-empty{color:#b7791f;font-weight:700}
+[data-theme="dark"]{
+  --bg:#1a1a1a;--panel:#2d2d2d;--text:#e0e0e0;--border:#444;--soft:#3a3a3a;--timer:#444;--part:#3a3a3a;
+}
+[data-theme="dark"] body,[data-theme="dark"] #appHeader,[data-theme="dark"] #bottomNav,[data-theme="dark"] .panel,[data-theme="dark"] .question,[data-theme="dark"] .modal{background:var(--panel);color:var(--text)}
+[data-theme="dark"] #appHeader,[data-theme="dark"] #bottomNav,[data-theme="dark"] .question,[data-theme="dark"] .part-header,[data-theme="dark"] .matching-box,[data-theme="dark"] .list-box,[data-theme="dark"] .summary-options-bank,[data-theme="dark"] .note-card,[data-theme="dark"] .answers-table-wrap{border-color:var(--border)}
+[data-theme="dark"] .timer-box,[data-theme="dark"] .control-btn,[data-theme="dark"] .night-btn,[data-theme="dark"] .icon-btn,[data-theme="dark"] #notesBtn,[data-theme="dark"] #checkAnswersBtn,[data-theme="dark"] .summary-drop-zone,[data-theme="dark"] .answer-input,[data-theme="dark"] .summary-input,[data-theme="dark"] select,[data-theme="dark"] .drag-item,[data-theme="dark"] .tg-pill-btn,[data-theme="dark"] .subQuestion,[data-theme="dark"] .passage-tab,[data-theme="dark"] .part-tab{background:#3a3a3a;color:#e0e0e0;border-color:#555}
+[data-theme="dark"] .tg-pill-btn{background:transparent;color:#e0e0e0;border-color:#e0e0e0}
+[data-theme="dark"] .tf-option,[data-theme="dark"] .tfng-option,[data-theme="dark"] .mcq-option,[data-theme="dark"] .multi-choice-option,[data-theme="dark"] .question-options>li{background:#343434;color:#e0e0e0;border-color:#555}
+[data-theme="dark"] .tf-option:hover,[data-theme="dark"] .tfng-option:hover,[data-theme="dark"] .mcq-option:hover,[data-theme="dark"] .multi-choice-option:hover{background:#404b59}
+[data-theme="dark"] .tf-option.checked,[data-theme="dark"] .tfng-option.checked,[data-theme="dark"] .mcq-option.checked,[data-theme="dark"] .multi-choice-option.checked{background:#24466b;border-color:#5c9ded;color:#fff}
+[data-theme="dark"] .tf-option.correct-choice,[data-theme="dark"] .tfng-option.correct-choice,[data-theme="dark"] .mcq-option.correct-choice,[data-theme="dark"] .multi-choice-option.correct-choice{background:#1f4d2a!important;color:#fff;border-color:#31a24c!important}
+[data-theme="dark"] .tf-option.incorrect-choice,[data-theme="dark"] .tfng-option.incorrect-choice,[data-theme="dark"] .mcq-option.incorrect-choice,[data-theme="dark"] .multi-choice-option.incorrect-choice{background:#5a2228!important;color:#fff;border-color:#dc3545!important}
+[data-theme="dark"] .correct-answer-note,[data-theme="dark"] #timerDisplay,[data-theme="dark"] .passage-tab,[data-theme="dark"] .part-tab,[data-theme="dark"] .subQuestion,[data-theme="dark"] .question label{color:#e0e0e0}
+[data-theme="dark"] .matching-box,[data-theme="dark"] .list-box,[data-theme="dark"] .summary-options-bank,[data-theme="dark"] .question-item.result-correct > p:first-child,[data-theme="dark"] .question-item.result-correct > h4:first-child,[data-theme="dark"] .question-item.result-incorrect > p:first-child,[data-theme="dark"] .question-item.result-incorrect > h4:first-child{background:#2f2f2f}
+[data-theme="dark"] .hl-floating-toolbar{background:#2d2d2d;border-color:#444}
+[data-theme="dark"] .hl-text-btn{color:#e0e0e0}
+[data-theme="dark"] mark.hl-y{background:#854D0E;color:#fff}
+[data-theme="dark"] mark.hl-g{background:#166534;color:#fff}
+[data-theme="dark"] mark.hl-p{background:#9D174D;color:#fff}
+[data-theme="dark"] mark.hl-b{background:#1E3A5F;color:#fff}
+[data-theme="dark"] .answer-source{background:#234628;color:#fff}
+[data-theme="dark"] .answers-table{background:#2d2d2d;color:#e0e0e0}
+[data-theme="dark"] .answers-table th{background:#383838;color:#fff}
+[data-theme="dark"] .answers-table td,[data-theme="dark"] .answers-table th{border-color:#4a4a4a}
+.timer-warning{color:#dc3545!important;animation:timerBlink 1s steps(1) infinite}
+@keyframes timerBlink{0%,100%{opacity:1}50%{opacity:.3}}
+@media (max-width:1100px){
+  #appHeader{padding:0 8px}
+  .header-right .tg-pill-btn span:last-child{display:none}
+  #notesBtn{padding:0 8px}
+}
+
+/* explanation modal + clickable questions */
+.question-item.explain-ready > p:first-child,
+.question-content .summary-text p.explain-ready,
+.answers-table tr.explain-ready,
+.correct-answer-note[data-q]{cursor:pointer}
+.question-item.explain-ready > p:first-child:hover,
+.question-content .summary-text p.explain-ready:hover{
+  box-shadow:inset 0 0 0 1px rgba(59,130,246,.25);
+}
+.explain-chip{
+  display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:3px 8px;border-radius:999px;border:1px solid #bfdbfe;
+  background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle
+}
+.explain-chip:hover{background:#dbeafe}
+.answers-table tr.explain-ready{cursor:pointer}
+.answers-table tr.explain-ready:hover{background:#f8fbff}
+#explanationModalOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:20000;padding:18px
+}
+#explanationModalOverlay.show{display:flex}
+.explanation-modal{
+  width:min(860px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.28);padding:22px 22px 16px
+}
+.explanation-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:10px}
+.explanation-top h3{margin:0;font-size:22px;color:#111827}
+.explanation-sub{margin:6px 0 0;color:#6b7280;font-size:13px}
+.explanation-close{border:none;background:#f3f4f6;color:#111827;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700}
+.explanation-card{border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;background:#fafafa}
+.explanation-card h4{margin:0 0 8px;font-size:15px;color:#111827}
+.explanation-card p{margin:0 0 10px;line-height:1.65}
+.explanation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.explanation-pill{border:1px solid #dbeafe;background:#eff6ff;border-radius:12px;padding:10px 12px}
+.explanation-pill .k{display:block;font-size:12px;color:#1d4ed8;font-weight:700;margin-bottom:4px}
+.explanation-evidence{margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px}
+.explanation-evidence ul{margin:8px 0 0 18px;padding:0}
+.explanation-evidence li{margin:0 0 8px;line-height:1.65}
+.explanation-tip{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f9fafb;border:1px dashed #d1d5db;color:#374151;font-size:13px}
+[data-theme="dark"] #explanationModalOverlay{background:rgba(0,0,0,.6)}
+[data-theme="dark"] .explanation-modal{background:#0f172a;color:#e5e7eb;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+[data-theme="dark"] .explanation-top h3{color:#f8fafc}
+[data-theme="dark"] .explanation-sub{color:#94a3b8}
+[data-theme="dark"] .explanation-close{background:#1f2937;color:#f8fafc}
+[data-theme="dark"] .explanation-card{background:#111827;border-color:#334155}
+[data-theme="dark"] .explanation-card h4{color:#f8fafc}
+[data-theme="dark"] .explanation-pill{background:#0b2447;border-color:#1d4ed8}
+[data-theme="dark"] .explanation-pill .k{color:#93c5fd}
+[data-theme="dark"] .explanation-evidence{border-top-color:#334155}
+[data-theme="dark"] .explanation-tip{background:#0b1220;border-color:#334155;color:#cbd5e1}
+[data-theme="dark"] .explain-chip{background:#10243f;border-color:#1d4ed8;color:#93c5fd}
+[data-theme="dark"] .answers-table tr.explain-ready:hover{background:#0f2438}
+
+
+.matching-table-container{overflow:auto;margin-top:12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.matching-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#fff}
+.matching-table th,.matching-table td{border:1px solid var(--border);padding:10px 8px;text-align:center;vertical-align:middle}
+.matching-table th{background:#f8fafc;font-weight:700}
+.matching-table td.statement{text-align:left;font-weight:700;min-width:220px;background:#fbfbfb}
+.clickable-cell{min-width:52px;width:52px;height:52px;cursor:pointer;user-select:none;position:relative;font-weight:700;background:#fff;transition:background-color .15s,border-color .15s,transform .08s,color .15s;line-height:1}
+.clickable-cell::before{content:attr(data-value);display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#f3f4f6;color:#374151;font-size:14px;font-weight:800}
+.clickable-cell:hover{background:#eef6ff}
+.clickable-cell:hover::before{background:#dbeafe;color:#1d4ed8}
+.clickable-cell.selected{background:#dbeafe;border-color:#60a5fa;box-shadow:inset 0 0 0 2px #60a5fa}
+.clickable-cell.selected::before{background:#2563eb;color:#fff}
+.clickable-cell.correct{background:#dcfce7!important;border-color:#22c55e!important}
+.clickable-cell.correct::before{background:#16a34a!important;color:#fff!important}
+.clickable-cell.incorrect{background:#fee2e2!important;border-color:#ef4444!important}
+.clickable-cell.incorrect::before{background:#dc2626!important;color:#fff!important}
+.review-explanations{margin-top:16px;display:grid;gap:14px}
+.review-pass-block{border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff}
+.review-pass-title{margin:0 0 10px;font-size:16px;font-weight:800}
+.review-explanations .explanation-card{background:#fff}
+.review-explanations .explanation-card h4{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.review-q-tag{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:2px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:800}
+[data-theme="dark"] .matching-table-container,[data-theme="dark"] .matching-table,[data-theme="dark"] .review-pass-block,[data-theme="dark"] .review-explanations .explanation-card{background:#2d2d2d;border-color:#4a4a4a;color:#e0e0e0}
+[data-theme="dark"] .matching-table th,[data-theme="dark"] .matching-table td.statement{background:#383838;color:#fff;border-color:#4a4a4a}
+[data-theme="dark"] .matching-table td{border-color:#4a4a4a}
+[data-theme="dark"] .clickable-cell{background:#2d2d2d;color:#e0e0e0}
+[data-theme="dark"] .clickable-cell::before{background:#1f2937;color:#e5e7eb}
+[data-theme="dark"] .clickable-cell:hover{background:#17324d}
+[data-theme="dark"] .clickable-cell:hover::before{background:#1d4ed8;color:#fff}
+[data-theme="dark"] .clickable-cell.selected{background:#17324d;border-color:#60a5fa;box-shadow:inset 0 0 0 2px #60a5fa}
+[data-theme="dark"] .clickable-cell.selected::before{background:#2563eb;color:#fff}
+[data-theme="dark"] .clickable-cell.correct{background:#1f4d2a!important;border-color:#31a24c!important}
+[data-theme="dark"] .clickable-cell.incorrect{background:#5a2228!important;border-color:#dc3545!important}
+[data-theme="dark"] .review-q-tag{background:#10243f;color:#93c5fd}
+
+
+
+.heading-table{width:100%;border-collapse:collapse;margin:16px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.heading-table th,.heading-table td{border:1px solid var(--border);padding:10px 12px;vertical-align:top}
+.heading-table th{background:#f8fafc;text-align:left}
+[data-theme="dark"] .heading-table{background:#2d2d2d;border-color:#4a4a4a}
+[data-theme="dark"] .heading-table th,[data-theme="dark"] .heading-table td{border-color:#4a4a4a;color:#e0e0e0}
+[data-theme="dark"] .heading-table th{background:#383838;color:#fff}
+.explanation-chip{margin-left:8px;border:1px solid #dbeafe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer}
+.answer-source{position:relative;background:#dff3e3;border-radius:6px;padding:2px 4px}
+.answer-source::before{content:"Q" attr(data-q);display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:18px;margin-right:6px;border-radius:999px;background:#1d4ed8;color:#fff;font-size:11px;font-weight:800;padding:0 6px;vertical-align:middle}
+.question-source-badge{display:inline-flex;align-items:center;justify-content:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:800;text-transform:uppercase}
+#explanationModalOverlay .modal{width:min(94vw,860px);max-height:88vh}
+#explanationModalOverlay h3{margin-bottom:6px}
+#explanationSubtitle{color:#6b7280;font-size:13px;margin-bottom:8px}
+[data-theme="dark"] #explanationSubtitle{color:#94a3b8}
+.questions-container .question-item.explain-ready{cursor:pointer}
+.questions-container .question-item.explain-ready:hover,
+.questions-container .summary-text p.explain-ready:hover{background:rgba(74,144,226,.08)}
+
+</style>
+<style data-ieltsuz-fix>#cdBlurGuard{display:none!important}</style>
+
+</head>
+<body>
+<div id="appHeader">
+<div class="header-left"><div class="header-title">IELTS Reading Test</div></div>
+<div class="header-center">
+<div class="timer-box">
+<button aria-label="Start pause timer" class="control-btn" id="toggleTimerBtn"></button>
+<div id="timerDisplay">60:00</div>
+<button aria-label="Reset timer" class="control-btn" id="resetTimerBtn"></button>
+</div>
+</div>
+<div class="header-right">
+<button id="notesBtn">📝 Notes</button>
+<button aria-label="Toggle night mode" class="night-btn" id="themeToggleBtn">🌙</button>
+
+</div>
+</div>
+<div id="watermark">IELTSUZ</div>
+<div id="mainArea">
+<div class="panel" id="passagePanel">
+<div class="passage-tabs">
+<button class="passage-tab active" data-part="1">Passage 1</button>
+<button class="passage-tab" data-part="2">Passage 2</button>
+<button class="passage-tab" data-part="3">Passage 3</button>
+</div>
+<section class="passage-section active" data-part="1">
+<div class="part-header"><strong>Part 1</strong><div>You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1.</div></div>
+<div class="passage-content" id="passage-content-1">
+<h4 class="text-center">The Origins of Weather Forecasting</h4>
+<p><strong></strong> The world's first public weather forecast appeared in <em>The Times</em> newspaper over 150 years ago: the beginning of a service that gives everyone something to comment on.</p>
+<p><strong></strong> The pioneering forecast on August 1, 1861, was introduced with a deceptively simple heading: ‘General weather probable during next two days.’ But those few words started an ongoing controversy that still continues today – after all, everyone remembers the forecasts that go wrong, but rarely the ones that are right.</p>
+<p><strong></strong> The first forecast was the idea of Admiral Robert FitzRoy, head of the newly founded Meteorological Department, and one of Britain's greatest but least-known heroes. It was a brave undertaking, because in those days predicting the weather had gained a reputation similar to astrology or fortune-telling. The few people who attempted it had become a national joke when their forecasts inevitably went wrong.</p>
+<p><strong></strong> FitzRoy was different, though. His background was faultless, most famously his captaining of the ship HMS Beagle on Charles Darwin's voyage around the world, which eventually led to the publication of Darwin's well-known book <em>On the Origin of Species.</em> When FitzRoy retired from active service as an admiral in Britain's navy, he was looking for a new direction. He subsequently secured a job as chief statistician at the Meteorological Department, part of the Board of Trade.</p>
+<p><strong></strong> Parliament had voted to set up and fund the Meteorological Department on June 30, 1854, to chart the safest sailing routes across the Atlantic Ocean. However, the British Government was not impressed with the idea of collecting weather reports and establishing a weather forecast, and the suggestion by one Member of Parliament for this was met with laughter from the other MPs.</p>
+<p><strong></strong> FitzRoy was given a staff of three clerks in a small office in London, but he soon grew bored with the tedium of transcribing thousands of ships’ reports. Instead, he focused on a much more pressing issue – the huge loss of life at sea from storms. This problem came to a head in 1859, when gale-force winds sank the ship named Royal Charter, with the loss of 430 lives, within sight of the shore. Even in those days when ships regularly sank in storms, the loss of the Royal Charter was considered a national tragedy. FitzRoy stirred up feelings even further when he wrote a letter to <em>The Times</em> newspaper explaining that the storm had been entirely predictable.</p>
+<p><strong></strong> That same year, a total of 1,645 lives were lost off the British coast, and FitzRoy wrote repeatedly to <em>The Times</em> pushing for a storm-warning service for shipping. This was just the right moment for a national forecasting service. Knowledge of the weather was improving, barometer readings gave warning of approaching storms, and the invention of the electric telegraph and Morse code in 1844 gave instant communication for the first time.</p>
+<p><strong></strong> So in February 1861, FitzRoy pressed ahead with a storm-warning service. Previous weather reports had been unreliable, but FitzRoy's innovation was to issue ships with standardised instruments which allowed for accurate weather reports. At exactly the same time each day the information was sent to him by telegraph, and he was able to draw up more detailed weather maps. The approach of an incoming storm could be recognised, and from London, FitzRoy could telegraph warnings to ports on the coast, where an ingenious system of flags was hoisted up high for passing ships to read. This represented the biggest advance in shipping safety after the introduction of the lifeboat, and in subsequent years the number of lives lost around Britain fell by about a third. FitzRoy became a hero to the fishing and maritime fleets.</p>
+<p><strong></strong> Encouraged by his storm-warning success, FitzRoy then started a public weather forecasting service. As he had a close connection with <em>The Times</em>, this newspaper introduced his daily forecast in August 1861. It attracted huge attention, including from Queen Victoria, who regularly sent messengers to FitzRoy's office to get a forecast for the sea crossing over the Solent to an island which she liked to visit off the south coast of England. He was also popular with ordinary fishermen, who were happy not to be out at sea in bad weather. The owners of fishing vessels, however, were not supportive of FitzRoy's forecasts, which often caused delays for them when bad weather was forecast.</p>
+<p><strong></strong> Nevertheless, weather forecasting at that time was very difficult, and one mistake could result in much bad publicity. It wasn't long before some forecasts turned out wrong, and the letters pages of <em>The Times</em> were full of heated correspondence.</p>
+<p><strong></strong> It is indisputable that FitzRoy was way ahead of his time, but it is only in recent years that he has been recognised as a towering figure in meteorology, with the honour of an area of sea being given his name in the shipping forecast (a radio broadcast of weather reports for the seas around Britain). His extraordinary determination to get forecasting established cost him dearly though, and he died prematurely. But his legacy lives on, because late in his life he published a book about weather forecasting which was recognised by other scientists to be well ahead of its time.</p>
+</div>
+</section><section class="passage-section hidden" data-part="2">
+<div class="part-header"><strong>Part 2</strong><div>You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2.</div></div>
+<div class="passage-content" id="passage-content-2">
+<h4 class="text-center">How do plants talk to each other?</h4>
+<p><strong>Research shows that plants communicate and interact with each other in surprisingly subtle and sophisticated ways.</strong></p>
+<p><strong>A</strong> In 1983, plant scientists Jack Schultz and Ian Baldwin reported that the leaves of young maple trees increased their defense systems when exposed to maples that had been damaged by plant-eating (herbivorous) insects. The injured trees, they suggested, were alerting neighbors to the presence of a predator by releasing chemical signals into the air. But the plant research community did not accept this. The results were difficult to replicate, critics pointed out. Many also questioned how it could be evolutionarily stable if it benefited neighboring plants but not the plant releasing the signal. By the late 1980s, most ecologists felt that Schultz and Baldwin’s idea had been discredited.</p>
+<p><strong>B</strong> A decade later, however, a number of more carefully designed experiments began to yield convincing indications to the contrary. In 2000, evolutionary ecologist Richard Karban showed that wild tobacco plants became resistant to herbivores when grown in close proximity to sagebrush plants whose leaves had been damaged by cutting. This change appeared to be in response to chemicals – known as volatile organic compounds or VOCs – released by the sagebrush plants. Other researchers soon reported similar VOC-induced defense responses in several other plants, including lima bean, broad bean, barley, and corn. And in 2006, Karban showed that VOCs released by damaged sagebrush induce herbivore resistance in plants growing at distances of up to 60 cm, well within the range of sagebrush neighbors in nature.</p>
+<p><strong>C</strong> But the question still remains: ‘Why should a plant waste valuable resources on a function which has no obvious advantage for it?’ One hypothesis is that external communication channels are merely an extension of within-plant signaling. In sagebrush, lima bean, and poplar, VOCs released from damaged parts of a plant induce resistance in intact sections of the same plant, suggesting that each individual plant uses the signals to coordinate its own physiological responses to protect itself. Karban agrees, saying: ‘The interplant signaling we see may be a result of plants co-opting that process.’ Alternatively, VOC-based signaling between plants may have been favored because it enhances the ‘extended fitness’ of the sender by aiding related plants of the same species: a strategy known as kin selection.</p>
+<p><strong>D</strong> Over the past few years, a team led by Ariel Novoplansky of Ben-Gurion University of the Negev in Israel seems to have found proof that distress signals can be passed through the plants’ roots. They planted garden pea plants in rows and subjected the first in each row to conditions similar to those experienced in a drought. They then evaluated the response by measuring the microscopic holes on leaves, known as pores, which react when there is a shortage of water. After fifteen minutes, the stressed plant was seen to be closing its pores, followed by all of its neighbors, one by one. Importantly, in a control setup where root contact between neighboring plants was blocked, pores stayed open. Meanwhile, David Johnson’s team at the University of Aberdeen in Scotland have been studying the labyrinths of hair-like fungi that occur around the roots of most plants. These fungi are involved in an important two-way relationship: in exchange for sugars, they provide plants with much-needed phosphorus and nitrogen. Research in which broad bean plants were infested with aphids – small herbivorous insects – revealed that these networks also served as a channel for warning neighboring plants of the infestation.</p>
+<p><strong>E</strong> Monica Gagliano of the University of Western Australia believes that plants may even use sounds to alert their neighbors. In one study, she demonstrated that chili plants growing next to fennel plants developed more quickly than seedlings grown with other chili plants. Gagliano and her colleagues suspect the chili plants were compensating for the presence of the fennel, which is known to release chemicals that inhibit the growth of other plants. Remarkably, however, when plant communication pathways – airborne volatiles, root contact, and common fungal networks – were blocked, the results begged for an alternative explanation. ‘We think this other channel of communication might be acoustic,’ says Gagliano. But behavioral ecologist Carel ten Cate of the University of Leiden in the Netherlands points out that taking advantage of such benefits would require sensory mechanisms yet to be described in plants. Despite widespread skepticism, Gagliano has received some encouragement. Richard Karban, for example, is cautiously enthusiastic. ‘Whether or not the explanation she favors is the right one,’ he says, ‘I think that she’s gotten results that, as a field, we need to come to grips with.’</p>
+<p><strong>F</strong> Researchers believe that knowledge of this phenomenon could eventually be applied to agriculture, and lead to the cultivation of hardier crops. But all agree that there is still much work to be done: applying our limited knowledge of plant-communication mechanisms to agriculture is a big jump, says Johnson, ‘but it is definitely on the horizon.’ Nevertheless, one message has emerged loud and clear from those studying this new realm of botanical interaction: despite not possessing eyes, ears, or a nervous system, plants are anything but uncommunicative. ‘When I started my PhD (in the late 1980s), all this stuff was considered very weird,’ recalls Ariel Novoplansky. ‘Today, there is no doubt. We now recognise that plants are capable of some very sophisticated exchanges of information with other plants. This idea is not strange anymore.’</p>
+</div>
+</section><section class="passage-section hidden" data-part="3">
+<div class="part-header"><strong>Part 3</strong><div>You should spend about 20 minutes on Questions 27-40, which are based on Reading Passage 3.</div></div>
+<div class="passage-content" id="passage-content-3">
+<h4 class="text-center">The Dunedin study</h4>
+<p><strong>A</strong> The New Zealand city of Dunedin in the early 1970s can easily be made to sound idyllic. There was next to no unemployment and people left their doors unlocked at night. New Zealand was then the ninth richest country in the world and many residents believed that, as a place to bring up children, this was a city without rival. However, Phil Silva, an educational psychologist, was not so certain and decided to take a closer look. Silva identified those children born in the year from April 1, 1972 whose mothers were still living in the city three years later. The parents were asked if they would mind bringing their children in for a health and development assessment. Incredibly, no fewer than 91% agreed to help and 1037 three-year-olds completed half a day of tests and experiments. In the process, the Dunedin Multidisciplinary Health and Development Study was born.</p>
+<p><strong>B</strong> There was precious little money at Silva's disposal, so the assessments were done in a church with the help of dozens of volunteers. Each child was assessed against a range of measures such as height, weight, and head circumference. Language skills were assessed and profiles of behaviour were compiled. However, one set of assessments was never going to satisfy Silva’s curiosity, so when the children were five, his same team asked the parents to bring the children back for a second study. Of the original 1037 children, 96% came. The data gathered at age three was updated and new measurement criteria - discipline, nutrition, dental health - were introduced.</p>
+<p><strong>C</strong> By 1978, Silva was able to shock the nation with his findings: one in four children had delayed language development; 15% had ear problems; the researchers had identified one child who was blind and another who might have died from undetected skin cancer. New Zealanders, Silva declared, were more diligent about their cars than their children. Cars were required by law to be regularly checked; if children were treated similarly, ideally at behavioural clinics in schools, problems could be picked up in time to prevent lasting damage.</p>
+<p><strong>D</strong> The parents were asked to bring their children back at ages seven, nine and 11 to the old church for further assessments. Crucially for the study’s survival, the politicians were finally starting to take note and government funding began to trickle in. By the time the children returned at age 13, the study had taken up residence in an abandoned building tucked behind the dental school. It wouldn’t have been the researchers’ first choice, and was certainly not grand, but it was at least a site for the long term and its acquisition represented a landmark in the study’s development. It was to this building that the participants returned at ages 15, 18, 21, 26 and, most recently, at 32.</p>
+<p><strong>E</strong> Among the most recent findings are that birth complications – a focus of Silva’s original research - don’t necessarily set children up for problems as they mature in later life, although the amount a newborn infant weighs is associated with IQ. Paediatric textbooks had insisted for years that breast-feeding protected against medical problems like asthma and allergies. The Dunedin study has shown that assumption to be incorrect. Other findings that challenged the received wisdom include the fact that thumb-sucking does no harm; birth order makes no difference to later development; and pre-schoolers whose mothers work are not disadvantaged. Overall, the study has confirmed the notion that broad personality traits are laid down by the age of three. Along the way, the Dunedin researchers have been able to contradict old assumptions and explode medical myths long held by the profession.</p>
+<p><strong>F</strong> The Dunedin study is important not only because of its findings, however. It also provides a model because of the extraordinary commitment of study members. No other longitudinal research project in the world matches its retention rate of 96% at age 32. Silva concedes that luck has a lot to do with this: Dunedin city was, and largely still is, close-knit, homogeneous and devoted to its university and medical school. It is large enough to produce a study population that produces findings that can be generalised to New Zealand and other developed countries, yet small enough that one in every 10 households has had a child or relative in the study.</p>
+<p><strong>G</strong> More important than circumstance, though, was the approach taken by the researchers. Silva recalls that by year 13, participation had dropped off - only 82% came in for assessments. He realised the most important asset they had was the sample group and these people must be nurtured at all costs. He spent many long hours out in the field, finding those participants who had gone adrift and persuading them to come in. Study members are kept up to date with the steady flow of findings to which they have contributed. Privacy is absolutely paramount: Silva won't even say how many of the study members are now in prison: nothing must erode the trust that's been built up over the years.</p>
+<p><strong>H</strong> Today, more than a quarter of the sample live overseas so the study also has its own travel agent, who does her best to accommodate requests to spend Christmas in Dunedin with family. This is just one example of the enormous effort that goes into maintaining contact and removing obstacles to participation. With such diligence and care, researchers hope the Dunedin study will continue for many years, perhaps generations, to come.</p>
+</div>
+</section>
+</div>
+<div aria-hidden="true" id="divider"></div>
+<div class="panel" id="questionsPanel">
+<section class="question-section active" data-part="1">
+<div class="questions-container">
+<div class="questions-container">
+<!-- Questions 1-5: TRUE/FALSE/NOT GIVEN -->
+<div class="question question-item" data-q-end="5" data-q-start="1">
+<div class="question-prompt">
+<p><strong>Questions 1-5</strong></p>
+<p>Do the following statements agree with the information given in Reading Passage 1?</p>
+<p>In boxes 1-5 on your answer sheet write:</p>
+<ul>
+<li><strong>TRUE</strong> if a statement agrees</li>
+<li><strong>FALSE</strong> if it contradicts</li>
+<li><strong>NOT GIVEN</strong> if there is no information</li>
+</ul>
+</div>
+<div class="tf-question question-item" data-q-end="1" data-q-start="1">
+<div class="tf-question-line"><span class="tf-question-number">1</span><span class="tf-question-text">In Robert FitzRoy's time, weather forecasting was a respected skill.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q1" type="radio" value="TRUE"/> TRUE</label>
+<label class="tf-option"><input name="q1" type="radio" value="FALSE"/> FALSE</label>
+<label class="tf-option"><input name="q1" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="2" data-q-start="2">
+<div class="tf-question-line"><span class="tf-question-number">2</span><span class="tf-question-text">When FitzRoy retired from the navy, he had already had a successful career at sea.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q2" type="radio" value="TRUE"/> TRUE</label>
+<label class="tf-option"><input name="q2" type="radio" value="FALSE"/> FALSE</label>
+<label class="tf-option"><input name="q2" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="3" data-q-start="3">
+<div class="tf-question-line"><span class="tf-question-number">3</span><span class="tf-question-text">FitzRoy faced competition from other applicants for the chief statistician's job.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q3" type="radio" value="TRUE"/> TRUE</label>
+<label class="tf-option"><input name="q3" type="radio" value="FALSE"/> FALSE</label>
+<label class="tf-option"><input name="q3" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="4" data-q-start="4">
+<div class="tf-question-line"><span class="tf-question-number">4</span><span class="tf-question-text">The British Parliament supported the idea of regular weather forecasts in 1854.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q4" type="radio" value="TRUE"/> TRUE</label>
+<label class="tf-option"><input name="q4" type="radio" value="FALSE"/> FALSE</label>
+<label class="tf-option"><input name="q4" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="5" data-q-start="5">
+<div class="tf-question-line"><span class="tf-question-number">5</span><span class="tf-question-text">Progress in technology made it a good time for publicly available weather forecasting to begin.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q5" type="radio" value="TRUE"/> TRUE</label>
+<label class="tf-option"><input name="q5" type="radio" value="FALSE"/> FALSE</label>
+<label class="tf-option"><input name="q5" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+</div>
+<!-- Questions 6-13: Notes Completion -->
+<div class="question question-item" data-q-end="13" data-q-start="6">
+<div class="question-prompt">
+<p><strong>Questions 6-13</strong></p>
+<p>Complete the notes below.</p>
+<p>Write <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+</div>
+<div class="summary-text">
+<p><strong>February 1861: Storm warning service</strong></p>
+<p>- FitzRoy received weather reports produced by ships using reliable <input class="answer-input" id="q6" placeholder="6" type="text"/>.</p>
+<p>- simultaneous weather reports were taken daily</p>
+<p>- storm warnings were telegraphed to <input class="answer-input" id="q7" placeholder="7" type="text"/> along the shore</p>
+<p>- signals for ships were displayed using raised <input class="answer-input" id="q8" placeholder="8" type="text"/></p>
+<p>- the storm warning service was the greatest development in sea safety since the <input class="answer-input" id="q9" placeholder="9" type="text"/> was introduced</p>
+<p><strong>August 1861: Public weather forecasting service</strong></p>
+<p>- very popular in <em>The Times</em> newspaper</p>
+<p>- frequently used by the English Queen for safe trips to a favourite <input class="answer-input" id="q10" placeholder="10" type="text"/></p>
+<p>- FitzRoy's forecasts were popular with fishermen but not with boat <input class="answer-input" id="q11" placeholder="11" type="text"/></p>
+<p>- in modern times FitzRoy's <input class="answer-input" id="q12" placeholder="12" type="text"/> is used for a marine area</p>
+<p>- FitzRoy produced a <input class="answer-input" id="q13" placeholder="13" type="text"/> which was respected by the scientific community</p>
+</div>
+</div>
+</div>
+</div>
+</section><section class="question-section" data-part="2">
+<div class="questions-container">
+ Questions 14-19: Matching Headings 
+<div class="question question-item" data-q-end="19" data-q-start="14">
+<div class="question-prompt">
+<p><strong>Questions 14–19</strong></p>
+<p>Reading Passage 2 has six paragraphs, A–F.</p>
+<p>Choose the correct heading for each paragraph from the list of headings below.</p>
+<p>Write the correct number, i–viii, in boxes 14–19 on your answer sheet.</p>
+</div>
+<table class="heading-table">
+<thead>
+<tr>
+<th>List of Headings</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>i Sending messages underground</td>
+<td></td>
+</tr>
+<tr>
+<td>ii Potential advantages for farmers</td>
+<td></td>
+</tr>
+<tr>
+<td>iii The widespread rejection of an idea</td>
+<td></td>
+</tr>
+<tr>
+<td>iv One species accelerating growth in another</td>
+<td></td>
+</tr>
+<tr>
+<td>v Some obstacles to plant communication</td>
+<td></td>
+</tr>
+<tr>
+<td>vi Evidence leading to renewed belief in a theory</td>
+<td></td>
+</tr>
+<tr>
+<td>vii New technologies which helped researchers</td>
+<td></td>
+</tr>
+<tr>
+<td>viii A suggested benefit to the sender of plant communication</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="summary-text">
+<p><strong>14</strong> Paragraph A 
+                                <select class="answer-input" id="q14" name="q14">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+<p><strong>15</strong> Paragraph B 
+                                <select class="answer-input" id="q15" name="q15">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+<p><strong>16</strong> Paragraph C 
+                                <select class="answer-input" id="q16" name="q16">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+<p><strong>17</strong> Paragraph D 
+                                <select class="answer-input" id="q17" name="q17">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+<p><strong>18</strong> Paragraph E 
+                                <select class="answer-input" id="q18" name="q18">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+<p><strong>19</strong> Paragraph F 
+                                <select class="answer-input" id="q19" name="q19">
+<option value="">Select</option>
+<option value="i">i</option>
+<option value="ii">ii</option>
+<option value="iii">iii</option>
+<option value="iv">iv</option>
+<option value="v">v</option>
+<option value="vi">vi</option>
+<option value="vii">vii</option>
+<option value="viii">viii</option>
+</select>
+</p>
+</div>
+</div>
+ Questions 20-23: Summary Completion 
+<div class="question question-item" data-q-end="23" data-q-start="20">
+<div class="question-prompt">
+<p><strong>Questions 20–23</strong></p>
+<p>Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.</p>
+<p>Write your answers in boxes 20–23 on your answer sheet.</p>
+</div>
+<div class="summary-text">
+<p><strong>Plant communication research in Israel and Scotland</strong></p>
+<p>Plants may send messages via their <input class="answer-input" id="q20" placeholder="20" type="text"/> according to Ariel Novoplansky of Ben-Gurion University in Israel. In one study, Novoplansky’s team planted rows of garden peas, and created conditions like a <input class="answer-input" id="q21" placeholder="21" type="text"/> around the first plant in each row. The plants responded by closing the tiny holes on their leaf surfaces, known as pores. They then appeared to signal to other plants nearby, causing them to respond in a similar way.</p>
+<p>Research at the University of Aberdeen in Scotland, meanwhile, has focused on the networks of <input class="answer-input" id="q22" placeholder="22" type="text"/> which connect the plants beneath the soil. These structures, which extract sugars from the plants and supply them with phosphorus and nitrogen, also seem to play a key role in plant communication. Experiments involving broad bean plants and plant-eating insects called <input class="answer-input" id="q23" placeholder="23" type="text"/> have also produced some interesting results.</p>
+</div>
+</div>
+ Questions 24-26: Matching Researchers 
+<div class="question question-item" data-q-end="26" data-q-start="24">
+<div class="question-prompt">
+<p><strong>Questions 24–26</strong></p>
+<p>Look at the following statements (Questions 24–26) and the list of researchers below.</p>
+<p>Match each statement with the correct researcher, A–E.</p>
+<p>Write the correct letter, A–E, in boxes 24–26 on your answer sheet.</p>
+</div>
+<table class="matching-table">
+<thead>
+<tr>
+<th>List of researchers</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+<th>E</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="statement"><strong>24</strong> It is likely that research into plant communication will one day help to improve our food supply.</td>
+<td class="clickable-cell" data-question="24" data-value="A">A</td>
+<td class="clickable-cell" data-question="24" data-value="B">B</td>
+<td class="clickable-cell" data-question="24" data-value="C">C</td>
+<td class="clickable-cell" data-question="24" data-value="D">D</td>
+<td class="clickable-cell" data-question="24" data-value="E">E</td>
+</tr>
+<tr>
+<td class="statement"><strong>25</strong> Plant communication could occur as a consequence of internal mechanisms intended to help a single plant.</td>
+<td class="clickable-cell" data-question="25" data-value="A">A</td>
+<td class="clickable-cell" data-question="25" data-value="B">B</td>
+<td class="clickable-cell" data-question="25" data-value="C">C</td>
+<td class="clickable-cell" data-question="25" data-value="D">D</td>
+<td class="clickable-cell" data-question="25" data-value="E">E</td>
+</tr>
+<tr>
+<td class="statement"><strong>26</strong> Attitudes towards plant communication have changed greatly in recent decades.</td>
+<td class="clickable-cell" data-question="26" data-value="A">A</td>
+<td class="clickable-cell" data-question="26" data-value="B">B</td>
+<td class="clickable-cell" data-question="26" data-value="C">C</td>
+<td class="clickable-cell" data-question="26" data-value="D">D</td>
+<td class="clickable-cell" data-question="26" data-value="E">E</td>
+</tr>
+</tbody>
+</table>
+<div class="question-prompt" style="margin-top:10px;">
+<p><strong>List of researchers</strong></p>
+<p><strong>A</strong> Richard Karban</p>
+<p><strong>B</strong> Ariel Novoplansky</p>
+<p><strong>C</strong> David Johnson</p>
+<p><strong>D</strong> Monica Gagliano</p>
+<p><strong>E</strong> Carel ten Cate</p>
+</div>
+</div>
+</div>
+</section><section class="question-section" data-part="3">
+<div class="questions-container">
+<div class="questions-container">
+<!-- Questions 27–32: Multiple Choice -->
+<div class="question question-item" data-q-end="32" data-q-start="27">
+<div class="question-prompt">
+<p><strong>Questions 27–32</strong></p>
+<p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+</div>
+<div class="multi-choice-question question-item" data-q-end="27" data-q-start="27">
+<div class="question-prompt"><p><strong>27</strong> What does the writer say about Dunedin in the 1970s?</p></div>
+<div class="multi-choice-option"><label><input name="q27" type="radio" value="A"/> A It was extremely wealthy compared to other cities.</label></div>
+<div class="multi-choice-option"><label><input name="q27" type="radio" value="B"/> B There was a high level of violent crime.</label></div>
+<div class="multi-choice-option"><label><input name="q27" type="radio" value="C"/> C It was considered an ideal place to raise children.</label></div>
+<div class="multi-choice-option"><label><input name="q27" type="radio" value="D"/> D The unemployment rate was rising quickly.</label></div>
+</div>
+<div class="multi-choice-question question-item" data-q-end="28" data-q-start="28">
+<div class="question-prompt"><p><strong>28</strong> What does the writer find surprising about Phil Silva’s original study?</p></div>
+<div class="multi-choice-option"><label><input name="q28" type="radio" value="A"/> A That the parents were willing to participate.</label></div>
+<div class="multi-choice-option"><label><input name="q28" type="radio" value="B"/> B That Silva could find enough volunteers.</label></div>
+<div class="multi-choice-option"><label><input name="q28" type="radio" value="C"/> C That so many parents agreed to take part.</label></div>
+<div class="multi-choice-option"><label><input name="q28" type="radio" value="D"/> D That the study continued for so long.</label></div>
+</div>
+<div class="multi-choice-question question-item" data-q-end="29" data-q-start="29">
+<div class="question-prompt"><p><strong>29</strong> What problem did Silva face when conducting the original study?</p></div>
+<div class="multi-choice-option"><label><input name="q29" type="radio" value="A"/> A A lack of suitable equipment.</label></div>
+<div class="multi-choice-option"><label><input name="q29" type="radio" value="B"/> B A shortage of funding.</label></div>
+<div class="multi-choice-option"><label><input name="q29" type="radio" value="C"/> C Difficulty finding participants.</label></div>
+<div class="multi-choice-option"><label><input name="q29" type="radio" value="D"/> D Opposition from the medical profession.</label></div>
+</div>
+<div class="multi-choice-question question-item" data-q-end="30" data-q-start="30">
+<div class="question-prompt"><p><strong>30</strong> What was different about the first and second studies?</p></div>
+<div class="multi-choice-option"><label><input name="q30" type="radio" value="A"/> A The age of the children involved.</label></div>
+<div class="multi-choice-option"><label><input name="q30" type="radio" value="B"/> B The number of children assessed.</label></div>
+<div class="multi-choice-option"><label><input name="q30" type="radio" value="C"/> C The location where they took place.</label></div>
+<div class="multi-choice-option"><label><input name="q30" type="radio" value="D"/> D The range of measurements taken.</label></div>
+</div>
+<div class="multi-choice-question question-item" data-q-end="31" data-q-start="31">
+<div class="question-prompt"><p><strong>31</strong> What was Silva's main finding in 1978?</p></div>
+<div class="multi-choice-option"><label><input name="q31" type="radio" value="A"/> A That many children had undiagnosed illnesses.</label></div>
+<div class="multi-choice-option"><label><input name="q31" type="radio" value="B"/> B That New Zealand had a high child mortality rate.</label></div>
+<div class="multi-choice-option"><label><input name="q31" type="radio" value="C"/> C That children’s health was being neglected.</label></div>
+<div class="multi-choice-option"><label><input name="q31" type="radio" value="D"/> D That parents were unaware of health risks.</label></div>
+</div>
+<div class="multi-choice-question question-item" data-q-end="32" data-q-start="32">
+<div class="question-prompt"><p><strong>32</strong> The writer refers to the new building in the fourth paragraph in order to…</p></div>
+<div class="multi-choice-option"><label><input name="q32" type="radio" value="A"/> A illustrate the study's improved financial situation.</label></div>
+<div class="multi-choice-option"><label><input name="q32" type="radio" value="B"/> B highlight a key development in the study's history.</label></div>
+<div class="multi-choice-option"><label><input name="q32" type="radio" value="C"/> C contrast the study's early and later phases.</label></div>
+<div class="multi-choice-option"><label><input name="q32" type="radio" value="D"/> D explain why participant numbers increased.</label></div>
+</div>
+</div>
+<!-- Questions 33–36: YES/NO/NOT GIVEN -->
+<div class="question question-item" data-q-end="36" data-q-start="33">
+<div class="question-prompt">
+<p><strong>Questions 33–36</strong></p>
+<p>Do the following statements agree with the claims of the writer in Reading Passage 3?</p>
+<p>In boxes 33-36 on your answer sheet, write:</p>
+<p><strong>YES</strong> if the statement agrees with the claims of the writer<br/>
+<strong>NO</strong> if the statement contradicts the claims of the writer<br/>
+<strong>NOT GIVEN</strong> if it is impossible to say what the writer thinks about this</p>
+</div>
+<div class="tf-question question-item" data-q-end="33" data-q-start="33">
+<div class="tf-question-line"><span class="tf-question-number">33</span><span class="tf-question-text">Recent results suggest that intellectual development and birth weight are linked.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q33" type="radio" value="YES"/> YES</label>
+<label class="tf-option"><input name="q33" type="radio" value="NO"/> NO</label>
+<label class="tf-option"><input name="q33" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="34" data-q-start="34">
+<div class="tf-question-line"><span class="tf-question-number">34</span><span class="tf-question-text">Medical textbooks used to claim that breast-fed children were more intelligent.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q34" type="radio" value="YES"/> YES</label>
+<label class="tf-option"><input name="q34" type="radio" value="NO"/> NO</label>
+<label class="tf-option"><input name="q34" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="35" data-q-start="35">
+<div class="tf-question-line"><span class="tf-question-number">35</span><span class="tf-question-text">Children who suck their thumbs are prone to developmental problems.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q35" type="radio" value="YES"/> YES</label>
+<label class="tf-option"><input name="q35" type="radio" value="NO"/> NO</label>
+<label class="tf-option"><input name="q35" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+<div class="tf-question question-item" data-q-end="36" data-q-start="36">
+<div class="tf-question-line"><span class="tf-question-number">36</span><span class="tf-question-text">The findings of the Dunedin study have challenged some doctors' preconceptions.</span></div>
+<div class="tf-options">
+<label class="tf-option"><input name="q36" type="radio" value="YES"/> YES</label>
+<label class="tf-option"><input name="q36" type="radio" value="NO"/> NO</label>
+<label class="tf-option"><input name="q36" type="radio" value="NOT GIVEN"/> NOT GIVEN</label>
+</div>
+</div>
+</div>
+<!-- Questions 37–40: Summary Completion -->
+<div class="question question-item" data-q-end="40" data-q-start="37">
+<div class="question-prompt">
+<p><strong>Questions 37–40</strong></p>
+<p>Complete the summary using the list of words and phrases, <strong>A–H</strong>, below.</p>
+<p>Write the correct letter, <strong>A–H</strong>, in boxes 37-40 on your answer sheet.</p>
+</div>
+<div class="summary-text">
+<p><strong>A model study</strong></p>
+<p>The success of the Dunedin project has been put down to two principal factors: good fortune and Phil Silva’s methodology. The demographics of Dunedin mean that residents feel committed to the study, and that it also provides <select class="answer-input" id="q37" name="q37">
+<option value="">Select answer</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+<option value="F">F</option>
+<option value="G">G</option>
+<option value="H">H</option>
+</select> that can be applied both nationally and internationally. But even more important was Silva’s conviction that the <select class="answer-input" id="q38" name="q38">
+<option value="">Select answer</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+<option value="F">F</option>
+<option value="G">G</option>
+<option value="H">H</option>
+</select> must be looked after. Nothing should be done to threaten the study’s <select class="answer-input" id="q39" name="q39">
+<option value="">Select answer</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+<option value="F">F</option>
+<option value="G">G</option>
+<option value="H">H</option>
+</select> and as a result Silva is cautious when questioned. A lot of work is done to minimise <select class="answer-input" id="q40" name="q40">
+<option value="">Select answer</option>
+<option value="A">A</option>
+<option value="B">B</option>
+<option value="C">C</option>
+<option value="D">D</option>
+<option value="E">E</option>
+<option value="F">F</option>
+<option value="G">G</option>
+<option value="H">H</option>
+</select> in order to ensure that the study continues into the future.</p>
+<p><strong>Options:</strong><br/>
+A. study members<br/>
+B. government funding<br/>
+C. loyalty<br/>
+D. high costs<br/>
+E. assessments<br/>
+F. generalisable results<br/>
+G. confidentiality<br/>
+H. barriers to involvement</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<div id="bottomNav">
+<div class="nav-arrows">
+<button class="arrow-btn" id="prevBtn">◄</button>
+<button class="arrow-btn" id="nextBtn">►</button>
+</div>
+<div class="part-tabs">
+<button class="part-tab active" data-part="1">Part 1</button>
+<button class="part-tab" data-part="2">Part 2</button>
+<button class="part-tab" data-part="3">Part 3</button>
+</div>
+<div class="question-row-wrap"><div class="question-row" id="questionRow"></div></div>
+<div class="bottom-right">
+<div id="answeredCounter">0 of 40 answered</div>
+<button id="checkAnswersBtn">✓ Check Answers</button>
+</div>
+</div>
+<div class="hl-floating-toolbar" id="hlToolbar">
+<div class="hl-section-label">Highlight</div>
+<div class="hl-colors-row">
+<button class="hl-dot cy" data-color="y" title="Yellow"></button>
+<button class="hl-dot cg" data-color="g" title="Green"></button>
+<button class="hl-dot cp" data-color="p" title="Pink"></button>
+<button class="hl-dot cb" data-color="b" title="Blue"></button>
+</div>
+<div class="hl-divider"></div>
+<button class="hl-text-btn note-btn" id="hlNoteBtn">✏ Note</button>
+<button class="hl-text-btn remove-btn" id="hlRemoveBtn">🗑 Remove</button>
+<button class="hl-text-btn clear-btn" id="hlClearBtn">✕ Clear all</button>
+</div>
+<div class="modal-overlay" id="noteModalOverlay">
+<div class="modal">
+<h3>✏️ Add Note</h3>
+<div class="note-excerpt" id="noteExcerpt"></div>
+<textarea id="noteText" placeholder="Write your note here..."></textarea>
+<div class="modal-actions">
+<button class="btn secondary" id="cancelNoteBtn">Cancel</button>
+<button class="btn primary" id="saveNoteBtn">Save</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="notesPanelOverlay">
+<div class="modal">
+<h3>📝 My Notes</h3>
+<div class="notes-list" id="notesList"></div>
+<div class="modal-actions"><button class="btn secondary" id="closeNotesPanelBtn">Close</button></div>
+</div>
+</div>
+<div class="modal-overlay" id="resultModalOverlay">
+<div class="modal" style="width:min(96vw,1100px);max-height:88vh">
+<h3>My Result</h3>
+<div class="result-summary" id="resultSummary"></div>
+<div class="answers-table-wrap">
+<table class="answers-table" id="answersTable">
+<thead><tr><th>Q</th><th>Your answer</th><th>Correct answer</th><th>Status</th></tr></thead>
+<tbody id="answersTableBody"></tbody>
+</table>
+</div>
+<div class="review-explanations" id="reviewExplanations"></div>
+<div class="modal-actions"><button class="btn primary" id="closeResultBtn">Close</button></div>
+</div>
+</div>
+<div class="modal-overlay" id="explanationModalOverlay">
+<div class="modal explanation-modal">
+<button class="explanation-close" id="closeExplanationBtn" style="align-self:flex-end;background:none;border:none;font-size:28px;cursor:pointer">&times;</button>
+<h3 id="explanationTitle">Question explanation</h3>
+<div id="explanationSubtitle"></div>
+<div id="explanationBody"></div>
+</div>
+</div>
+<script>
+
+const correctAnswers = {"1": "FALSE", "2": "TRUE", "3": "NOT GIVEN", "4": "FALSE", "5": "TRUE", "6": "INSTRUMENTS", "7": "PORTS", "8": "FLAGS", "9": "LIFEBOAT", "10": "ISLAND", "11": "OWNERS", "12": "NAME", "13": "BOOK", "14": "iii", "15": "vi", "16": "viii", "17": "i", "18": "iv", "19": "ii", "20": "roots", "21": "drought", "22": "fungi", "23": "aphids", "24": "C", "25": "A", "26": "B", "27": "C", "28": "C", "29": "B", "30": "D", "31": "C", "32": "B", "33": "YES", "34": "NOT GIVEN", "35": "NO", "36": "YES", "37": "F", "38": "A", "39": "G", "40": "H"};
+const sourceMap = {"1": ["predicting the weather had gained a reputation similar to astrology or fortune-telling"], "2": ["his captaining of the ship HMS Beagle on Charles Darwin's voyage around the world"], "4": ["the suggestion by one Member of Parliament for this was met with laughter from the other MPs"], "5": ["barometer readings gave warning of approaching storms, and the invention of the electric telegraph and Morse code in 1844 gave instant communication"], "6": ["FitzRoy's innovation was to issue ships with standardised instruments"], "7": ["FitzRoy could telegraph warnings to ports on the coast"], "8": ["an ingenious system of flags was hoisted up high"], "9": ["the biggest advance in shipping safety after the introduction of the lifeboat"], "10": ["a forecast for the sea crossing over the Solent to an island which she liked to visit"], "11": ["The owners of fishing vessels, however, were not supportive of FitzRoy's forecasts"], "12": ["an area of sea being given his name in the shipping forecast"], "13": ["he published a book about weather forecasting which was recognised by other scientists"], "14": ["By the late 1980s, most ecologists felt that Schultz and Baldwinâs idea had been discredited"], "15": ["a number of more carefully designed experiments began to yield convincing indications to the contrary"], "16": ["Karban agrees, saying: âThe interplant signaling we see may be a result of plants co-opting that process.â Alternatively, VOC-based signaling between plants may have been favored because it enhances the âextended fitnessâ of the sender"], "17": ["distress signals can be passed through the plantsâ roots"], "18": ["chili plants growing next to fennel plants developed more quickly than seedlings grown with other chili plants"], "19": ["knowledge of this phenomenon could eventually be applied to agriculture, and lead to the cultivation of hardier crops"], "20": ["distress signals can be passed through the plantsâ roots"], "21": ["conditions similar to those experienced in a drought"], "22": ["labyrinths of hair-like fungi that occur around the roots of most plants"], "23": ["broad bean plants were infested with aphids â small herbivorous insects"], "24": ["applying our limited knowledge of plant-communication mechanisms to agriculture is a big jump, says Johnson, âbut it is definitely on the horizon.â"], "25": ["One hypothesis is that external communication channels are merely an extension of within-plant signaling"], "26": ["When I started my PhD (in the late 1980s), all this stuff was considered very weird,â recalls Ariel Novoplansky. âToday, there is no doubt"], "27": ["many residents believed that, as a place to bring up children, this was a city without rival"], "28": ["Incredibly, no fewer than 91% agreed to help"], "29": ["There was precious little money at Silva's disposal"], "30": ["new measurement criteria - discipline, nutrition, dental health - were introduced"], "31": ["New Zealanders, Silva declared, were more diligent about their cars than their children"], "32": ["its acquisition represented a landmark in the studyâs development"], "33": ["the amount a newborn infant weighs is associated with IQ"], "34": ["Paediatric textbooks had insisted for years that breast-feeding protected against medical problems like asthma and allergies"], "35": ["thumb-sucking does no harm"], "36": ["the Dunedin researchers have been able to contradict old assumptions and explode medical myths long held by the profession"], "37": ["findings that can be generalised to New Zealand and other developed countries"], "38": ["the most important asset they had was the sample group and these people must be nurtured at all costs"], "39": ["Privacy is absolutely paramount"], "40": ["removing obstacles to participation"]};
+const promptTextMap = {"1": "In Robert FitzRoy's time, weather forecasting was a respected skill.", "2": "When FitzRoy retired from the navy, he had already had a successful career at sea.", "3": "FitzRoy faced competition from other applicants for the chief statistician's job.", "4": "The British Parliament supported the idea of regular weather forecasts in 1854.", "5": "Progress in technology made it a good time for publicly available weather forecasting to begin.", "6": "- FitzRoy received weather reports produced by ships using reliable ___ .", "7": "- storm warnings were telegraphed to ___ along the shore", "8": "- signals for ships were displayed using raised ___", "9": "- the storm warning service was the greatest development in sea safety since the ___ was introduced", "10": "- frequently used by the English Queen for safe trips to a favourite ___", "11": "- FitzRoy's forecasts were popular with fishermen but not with boat ___", "12": "- in modern times FitzRoy's ___ is used for a marine area", "13": "- FitzRoy produced a ___ which was respected by the scientific community", "14": "Paragraph A ___", "15": "Paragraph B ___", "16": "Paragraph C ___", "17": "Paragraph D ___", "18": "Paragraph E ___", "19": "Paragraph F ___", "20": "… Plants may send messages via their ___ according to Ariel Novoplansky of Ben-Gurion University in …", "21": "… of garden peas, and created conditions like a ___ around the first plant in each row. The …", "22": "… Scotland, meanwhile, has focused on the networks of ___ which connect the plants beneath the soil. These …", "23": "… involving broad bean plants and plant-eating insects called ___ have also produced some interesting results. …", "24": "It is likely that research into plant communication will one day help to improve our food supply.", "25": "Plant communication could occur as a consequence of internal mechanisms intended to help a single plant.", "26": "Attitudes towards plant communication have changed greatly in recent decades.", "27": "What does the writer say about Dunedin in the 1970s?", "28": "What does the writer find surprising about Phil Silva’s original study?", "29": "What problem did Silva face when conducting the original study?", "30": "What was different about the first and second studies?", "31": "What was Silva's main finding in 1978?", "32": "The writer refers to the new building in the fourth paragraph in order to…", "33": "Recent results suggest that intellectual development and birth weight are linked.", "34": "Medical textbooks used to claim that breast-fed children were more intelligent.", "35": "Children who suck their thumbs are prone to developmental problems.", "36": "The findings of the Dunedin study have challenged some doctors' preconceptions.", "37": "… to the study, and that it also provides ___ that can be applied both nationally and internationally. …", "38": "… even more important was Silva’s conviction that the ___ must be looked after. Nothing should be done …", "39": "… Nothing should be done to threaten the study’s ___ and as a result Silva is cautious when …", "40": "… A lot of work is done to minimise ___ in order to ensure that the study continues …"};
+const questionTypeMap = {"1": "tfng", "2": "tfng", "3": "tfng", "4": "tfng", "5": "tfng", "6": "text", "7": "text", "8": "text", "9": "text", "10": "text", "11": "text", "12": "text", "13": "text", "14": "headings", "15": "headings", "16": "headings", "17": "headings", "18": "headings", "19": "headings", "20": "text", "21": "text", "22": "text", "23": "text", "24": "matching", "25": "matching", "26": "matching", "27": "mcq", "28": "mcq", "29": "mcq", "30": "mcq", "31": "mcq", "32": "mcq", "33": "ynng", "34": "ynng", "35": "ynng", "36": "ynng", "37": "matching-select", "38": "matching-select", "39": "matching-select", "40": "matching-select"};
+const answerLabelMap = {"1": {"TRUE": "TRUE", "FALSE": "FALSE", "NOT GIVEN": "NOT GIVEN"}, "2": {"TRUE": "TRUE", "FALSE": "FALSE", "NOT GIVEN": "NOT GIVEN"}, "3": {"TRUE": "TRUE", "FALSE": "FALSE", "NOT GIVEN": "NOT GIVEN"}, "4": {"TRUE": "TRUE", "FALSE": "FALSE", "NOT GIVEN": "NOT GIVEN"}, "5": {"TRUE": "TRUE", "FALSE": "FALSE", "NOT GIVEN": "NOT GIVEN"}, "6": {}, "7": {}, "8": {}, "9": {}, "10": {}, "11": {}, "12": {}, "13": {}, "14": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "15": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "16": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "17": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "18": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "19": {"i": "Sending messages underground", "ii": "Potential advantages for farmers", "iii": "The widespread rejection of an idea", "iv": "One species accelerating growth in another", "v": "Some obstacles to plant communication", "vi": "Evidence leading to renewed belief in a theory", "vii": "New technologies which helped researchers", "viii": "A suggested benefit to the sender of plant communication"}, "20": {}, "21": {}, "22": {}, "23": {}, "24": {"A": "Richard Karban", "B": "Ariel Novoplansky", "C": "David Johnson", "D": "Monica Gagliano", "E": "Carel ten Cate"}, "25": {"A": "Richard Karban", "B": "Ariel Novoplansky", "C": "David Johnson", "D": "Monica Gagliano", "E": "Carel ten Cate"}, "26": {"A": "Richard Karban", "B": "Ariel Novoplansky", "C": "David Johnson", "D": "Monica Gagliano", "E": "Carel ten Cate"}, "27": {"A": "It was extremely wealthy compared to other cities.", "B": "There was a high level of violent crime.", "C": "It was considered an ideal place to raise children.", "D": "The unemployment rate was rising quickly."}, "28": {"A": "That the parents were willing to participate.", "B": "That Silva could find enough volunteers.", "C": "That so many parents agreed to take part.", "D": "That the study continued for so long."}, "29": {"A": "A lack of suitable equipment.", "B": "A shortage of funding.", "C": "Difficulty finding participants.", "D": "Opposition from the medical profession."}, "30": {"A": "The age of the children involved.", "B": "The number of children assessed.", "C": "The location where they took place.", "D": "The range of measurements taken."}, "31": {"A": "That many children had undiagnosed illnesses.", "B": "That New Zealand had a high child mortality rate.", "C": "That children’s health was being neglected.", "D": "That parents were unaware of health risks."}, "32": {"A": "illustrate the study's improved financial situation.", "B": "highlight a key development in the study's history.", "C": "contrast the study's early and later phases.", "D": "explain why participant numbers increased."}, "33": {"YES": "YES", "NO": "NO", "NOT GIVEN": "NOT GIVEN"}, "34": {"YES": "YES", "NO": "NO", "NOT GIVEN": "NOT GIVEN"}, "35": {"YES": "YES", "NO": "NO", "NOT GIVEN": "NOT GIVEN"}, "36": {"YES": "YES", "NO": "NO", "NOT GIVEN": "NOT GIVEN"}, "37": {"A": "study members", "B": "government funding", "C": "loyalty", "D": "high costs", "E": "assessments", "F": "generalisable results", "G": "confidentiality", "H": "barriers to involvement"}, "38": {"A": "study members", "B": "government funding", "C": "loyalty", "D": "high costs", "E": "assessments", "F": "generalisable results", "G": "confidentiality", "H": "barriers to involvement"}, "39": {"A": "study members", "B": "government funding", "C": "loyalty", "D": "high costs", "E": "assessments", "F": "generalisable results", "G": "confidentiality", "H": "barriers to involvement"}, "40": {"A": "study members", "B": "government funding", "C": "loyalty", "D": "high costs", "E": "assessments", "F": "generalisable results", "G": "confidentiality", "H": "barriers to involvement"}};
+const dragOptionText = {};
+const parts = {
+  "1": {start:1,end:13},
+  "2": {start:14,end:26},
+  "3": {start:27,end:40}
+};
+let currentPart = "1";
+let currentQuestion = 1;
+let checked = false;
+let timerSeconds = 3600;
+let timerRunning = false;
+let timerInterval = null;
+let savedRange = null;
+let activeHLMark = null;
+let noteTargetText = '';
+let notesData = [];
+let noteIdCounter = 0;
+
+document.querySelectorAll('.drag-item').forEach(el=>{
+  dragOptionText[el.dataset.value] = el.textContent.trim();
+});
+
+// Clean imported passages/questions a bit
+document.querySelectorAll('link,script').forEach(n=>n.remove());
+document.querySelectorAll('.questions-container .question, .questions-container .tf-question, .questions-container .multi-choice-question').forEach(el=>el.classList.add('question-item'));
+document.querySelectorAll('.questions-container p > strong:first-child').forEach(n=>{ if(/^\d+$/.test((n.textContent||'').trim())) n.classList.add('question-badge'); });
+
+function iconPlay(){ return `<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path fill="#333" d="M6 4l10 6-10 6z"/></svg>`; }
+function iconPause(){ return `<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path fill="#333" d="M5 4h4v12H5zm6 0h4v12h-4z"/></svg>`; }
+function iconReset(){ return `<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path fill="#333" d="M10 3a7 7 0 1 1-6.3 9.9h2.2A5 5 0 1 0 10 5c-1.3 0-2.5.5-3.4 1.4L9 9H3V3l2.2 2.2A7 7 0 0 1 10 3z"/></svg>`; }
+function renderTimerButtons(){
+  document.getElementById('toggleTimerBtn').innerHTML = timerRunning ? iconPause() : iconPlay();
+  document.getElementById('resetTimerBtn').innerHTML = iconReset();
+}
+renderTimerButtons();
+
+function formatTime(s){
+  const m = Math.floor(s/60), sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+function updateTimerDisplay(){
+  const el = document.getElementById('timerDisplay');
+  el.textContent = formatTime(timerSeconds);
+  el.classList.toggle('timer-warning', timerSeconds <= 300);
+}
+function tickTimer(){
+  if(!timerRunning) return;
+  timerSeconds--;
+  if(timerSeconds <= 0){
+    timerSeconds = 0;
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    renderTimerButtons();
+    updateTimerDisplay();
+    if(!checked) checkAnswers();
+    return;
+  }
+  updateTimerDisplay();
+}
+document.getElementById('toggleTimerBtn').addEventListener('click', ()=>{
+  timerRunning = !timerRunning;
+  if(timerRunning && !timerInterval){ timerInterval = setInterval(tickTimer, 1000); }
+  if(!timerRunning && timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  renderTimerButtons();
+});
+document.getElementById('resetTimerBtn').addEventListener('click', ()=>{
+  timerRunning = false;
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  timerSeconds = 3600;
+  renderTimerButtons();
+  updateTimerDisplay();
+});
+updateTimerDisplay();
+
+document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
+  const html = document.documentElement;
+  if(html.getAttribute('data-theme') === 'dark'){
+    html.removeAttribute('data-theme');
+    document.getElementById('themeToggleBtn').textContent = '🌙';
+  } else {
+    html.setAttribute('data-theme','dark');
+    document.getElementById('themeToggleBtn').textContent = '☀️';
+  }
+});
+
+function switchPart(part){
+  currentPart = String(part);
+  document.querySelectorAll('.question-section').forEach(sec=>sec.classList.toggle('active', sec.dataset.part === currentPart));
+  document.querySelectorAll('.passage-section').forEach(sec=>sec.classList.toggle('hidden', sec.dataset.part !== currentPart));
+  document.querySelectorAll('.part-tab,.passage-tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.part === currentPart));
+  const bounds = parts[currentPart];
+  if(currentQuestion < bounds.start || currentQuestion > bounds.end) currentQuestion = bounds.start;
+  document.getElementById('questionsPanel').scrollTop = 0;
+  document.getElementById('passagePanel').scrollTop = 0;
+  renderQuestionRow();
+}
+document.querySelectorAll('.part-tab,.passage-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=> switchPart(btn.dataset.part));
+});
+
+function renderQuestionRow(){
+  const row = document.getElementById('questionRow');
+  row.innerHTML = '';
+  const {start,end} = parts[currentPart];
+  for(let i=start;i<=end;i++){
+    const btn = document.createElement('button');
+    btn.className = 'subQuestion';
+    btn.textContent = i;
+    btn.dataset.q = i;
+    btn.addEventListener('click', ()=> scrollToQuestion(i));
+    row.appendChild(btn);
+  }
+  updateQuestionRowStates();
+}
+function updateQuestionRowStates(){
+  document.querySelectorAll('#questionRow .subQuestion').forEach(btn=>{
+    const q = btn.dataset.q;
+    btn.classList.toggle('answered', isAnswered(q));
+    btn.classList.toggle('active', String(currentQuestion) === q);
+    if(checked){
+      btn.classList.toggle('correct', isCorrectAnswer(q));
+      btn.classList.toggle('incorrect', isAnswered(q) && !isCorrectAnswer(q));
+    }
+  });
+}
+function scrollToQuestion(qNum){
+  qNum = Number(qNum);
+  const part = qNum <= 13 ? '1' : qNum <= 26 ? '2' : '3';
+  if(part !== currentPart) switchPart(part);
+  currentQuestion = qNum;
+  updateQuestionRowStates();
+  const target = findQuestionAnchor(qNum);
+  if(target) target.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function findQuestionAnchor(qNum){
+  const sec = document.querySelector(`.question-section[data-part="${currentPart}"]`);
+  if(!sec) return null;
+  const direct = sec.querySelector(`#q${qNum}`);
+  if(direct) return direct.closest('.question-item,.question') || direct;
+  const radio = sec.querySelector(`[name="q${qNum}"]`);
+  if(radio) return radio.closest('.question-item,.question') || radio;
+  const dz = sec.querySelector(`.summary-drop-zone[data-q-start="${qNum}"]`);
+  if(dz) return dz.closest('.question-item,.question,.summary-completion-container') || dz;
+  const strong = [...sec.querySelectorAll('strong,span,p')].find(n=>n.textContent.trim()===String(qNum));
+  return strong ? strong.closest('.question-item,.question') || strong : null;
+}
+
+function getTextAnswer(q){
+  const input = document.getElementById('q'+q);
+  return input ? input.value.trim().toLowerCase() : '';
+}
+function getRadioAnswer(q){
+  const checkedEl = document.querySelector(`[name="q${q}"]:checked`);
+  return checkedEl ? checkedEl.value : '';
+}
+function getSelectAnswer(q){
+  const select = document.getElementById('q'+q);
+  return select ? select.value : '';
+}
+function getDropAnswer(q){
+  const dz = document.querySelector(`.summary-drop-zone[data-q-start="${q}"]`);
+  return dz ? (dz.dataset.value || '') : '';
+}
+function getMatchingTableAnswer(q){
+  const cell = document.querySelector(`.clickable-cell[data-question="${q}"].selected, .clickable-cell[data-question="${q}"][data-selected="true"]`);
+  return cell ? (cell.dataset.value || '') : '';
+}
+function getUserAnswer(q){
+  q = Number(q);
+  const byId = document.getElementById('q'+q);
+  if(byId && byId.tagName === 'INPUT') return getTextAnswer(q);
+  if(byId && byId.tagName === 'SELECT') return getSelectAnswer(q);
+  if(document.querySelector(`[name="q${q}"]`)) return getRadioAnswer(q);
+  if(document.querySelector(`.clickable-cell[data-question="${q}"]`)) return getMatchingTableAnswer(q);
+  if(document.querySelector(`.summary-drop-zone[data-q-start="${q}"]`)) return getDropAnswer(q);
+  return '';
+}
+function normalizedCorrect(q){
+  const v = correctAnswers[String(q)] ?? '';
+  return questionTypeMap[String(q)] === 'text' ? String(v).trim().toLowerCase() : String(v).trim();
+}
+function isAnswered(q){ return !!String(getUserAnswer(q) || '').trim(); }
+function isCorrectAnswer(q){
+  const ua = String(getUserAnswer(q) || '').trim();
+  return !!ua && ua === normalizedCorrect(q);
+}
+
+function updateAnsweredCounter(){
+  let count=0;
+  for(let i=1;i<=40;i++) if(isAnswered(i)) count++;
+  document.getElementById('answeredCounter').textContent = `${count} of 40 answered`;
+  updateQuestionRowStates();
+}
+document.addEventListener('input', e=>{ syncChoiceClasses(e.target); updateAnsweredCounter(); });
+document.addEventListener('change', e=>{ syncChoiceClasses(e.target); updateAnsweredCounter(); });
+
+function syncChoiceClasses(target){
+  if(!target) return;
+  if(target.type === 'radio' && target.name){
+    document.querySelectorAll(`[name="${target.name}"]`).forEach(r=>{
+      const lab = r.closest('.tf-option,.tfng-option,.mcq-option,.multi-choice-option');
+      if(lab) lab.classList.toggle('checked', r.checked);
+    });
+  }
+}
+function initChoiceClasses(){ document.querySelectorAll('input[type="radio"]').forEach(r=>syncChoiceClasses(r)); }
+initChoiceClasses();
+
+function initMatchingTable(){
+  document.querySelectorAll('.clickable-cell').forEach(cell=>{
+    cell.setAttribute('role','button');
+    cell.setAttribute('tabindex', checked ? '-1' : '0');
+    cell.setAttribute('aria-label', `Question ${cell.dataset.question} option ${cell.dataset.value}`);
+    if(cell.dataset.bound === '1') return;
+    cell.dataset.bound = '1';
+    const activate = ()=>{
+      if(checked) return;
+      const q = cell.dataset.question;
+      const rowCells = document.querySelectorAll(`.clickable-cell[data-question="${q}"]`);
+      rowCells.forEach(c=>{ c.classList.remove('selected','correct','incorrect'); delete c.dataset.selected; c.setAttribute('aria-pressed','false'); });
+      cell.classList.add('selected');
+      cell.dataset.selected = 'true';
+      cell.setAttribute('aria-pressed','true');
+      currentQuestion = Number(q);
+      updateAnsweredCounter();
+      updateQuestionRowStates();
+    };
+    cell.addEventListener('click', activate);
+    cell.addEventListener('keydown', e=>{
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        activate();
+      }
+    });
+  });
+}
+initMatchingTable();
+
+function addCorrectAnswerNote(anchor, q, text){
+  if(!anchor) return;
+  let note = anchor.querySelector('.correct-answer-note');
+  if(!note){ note = document.createElement('div'); note.className = 'correct-answer-note'; anchor.appendChild(note); }
+  note.dataset.q = q;
+  note.innerHTML = `<strong>Correct answer:</strong> ${text} <button type="button" class="explain-chip" data-explain-q="${q}">Explanation</button>`;
+}
+function removeAllAnswerNotes(){ document.querySelectorAll('.correct-answer-note').forEach(n=>n.remove()); }
+function addInlineAnswerNote(afterEl, q, text){
+  if(!afterEl) return;
+  let note = afterEl.nextElementSibling;
+  if(!(note && note.classList.contains('correct-answer-note'))){ note = document.createElement('span'); note.className = 'correct-answer-note'; afterEl.insertAdjacentElement('afterend', note); }
+  note.dataset.q = q;
+  note.innerHTML = ` <strong>Correct answer:</strong> ${text} <button type="button" class="explain-chip" data-explain-q="${q}">Explanation</button>`;
+}
+function labelTextForAnswer(q, value){
+  if(!value) return value;
+  const mapped = answerLabelMap[String(q)] || {};
+  if(mapped[value]){
+    const label = mapped[value];
+    if(label === value || label === `Paragraph ${value}`) return label;
+    return `${value} — ${label}`;
+  }
+  const radio = document.querySelector(`[name="q${q}"][value="${CSS.escape(String(value))}"]`);
+  if(radio){
+    const text = radio.parentElement ? radio.parentElement.textContent.replace(/\s+/g,' ').trim() : String(value);
+    return text || String(value);
+  }
+  return String(value);
+}
+function prettyUserAnswer(q){
+  const raw = getUserAnswer(q);
+  if(!raw) return '—';
+  return questionTypeMap[String(q)] === 'text' ? raw : labelTextForAnswer(q, raw);
+}
+function prettyCorrectAnswer(q){
+  return questionTypeMap[String(q)] === 'text' ? correctAnswers[String(q)] : labelTextForAnswer(q, correctAnswers[String(q)]);
+}
+function renderAnswersTable(){
+  const body = document.getElementById('answersTableBody');
+  if(!body) return;
+  let rows = '';
+  for(let i=1;i<=40;i++){
+    const answered = isAnswered(i);
+    const correct = isCorrectAnswer(i);
+    const statusClass = !answered ? 'answer-status-empty' : correct ? 'answer-status-ok' : 'answer-status-bad';
+    const statusText = !answered ? 'Not answered' : correct ? 'Correct' : 'Incorrect';
+    rows += `
+      <tr class="explain-ready" data-q="${i}" title="Click to open explanation">
+        <td><strong>${i}</strong></td>
+        <td>${prettyUserAnswer(i)}</td>
+        <td>${prettyCorrectAnswer(i)}</td>
+        <td class="${statusClass}">${statusText}</td>
+      </tr>`;
+  }
+  body.innerHTML = rows;
+}
+
+
+function escapeHtml(str){
+  return String(str ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function getQuestionType(q){ return questionTypeMap[String(q)] || 'text'; }
+function getQuestionPrompt(q){ return promptTextMap[String(q)] || `Question ${q}`; }
+function getReasonIntro(q){
+  const type = getQuestionType(q); const ans = correctAnswers[String(q)];
+  if(type === 'tfng' || type === 'ynng'){
+    if(ans === 'TRUE' || ans === 'YES') return 'The statement is supported directly by the passage.';
+    if(ans === 'FALSE' || ans === 'NO') return 'The passage gives the opposite idea, so this statement is incorrect.';
+    return 'The passage does not clearly state this, so the correct answer is NOT GIVEN.';
+  }
+  if(type === 'headings') return `Heading ${ans} is the best match because it captures the main idea of that section.`;
+  if(type === 'matching' || type === 'matching-select') return 'This option is correct because it matches the relevant person, feature, or phrase in the passage.';
+  if(type === 'mcq') return `Option ${ans} is correct because it matches the writer\'s point in the passage.`;
+  if(type === 'paragraph') return `Paragraph ${ans} contains the detail asked for in the question.`;
+  if(type === 'sentence-ending') return 'This ending completes the sentence accurately and matches the writer’s idea.';
+  if(type === 'select') return 'This option fits the summary or note-completion task and matches the passage wording.';
+  return 'This word or phrase fits the sentence and matches the wording or meaning used in the passage.';
+}
+function buildEvidenceHtml(q){
+  const snippets = sourceMap[String(q)] || [];
+  if(!snippets.length) return `<li>This answer is based on the overall meaning of the relevant part of the passage.</li>`;
+  return snippets.map(snippet => `<li>“${escapeHtml(snippet)}”</li>`).join('');
+}
+function explanationTip(q){
+  const type = getQuestionType(q);
+  if(type === 'tfng' || type === 'ynng') return 'Look for exact support, exact contradiction, or no clear information.';
+  if(type === 'headings') return 'Choose the heading that matches the paragraph’s main idea, not just one detail.';
+  if(type === 'matching' || type === 'matching-select') return 'Track the exact feature or person mentioned in the passage, then match it to the correct option.';
+  if(type === 'mcq') return 'Eliminate options that are too broad, opposite, or not stated, then choose the one supported by the passage.';
+  if(type === 'paragraph') return 'Scan for key words, then confirm the whole paragraph really contains that information.';
+  if(type === 'sentence-ending') return 'Check both grammar and meaning when matching the correct ending.';
+  if(type === 'select') return 'Choose the option that makes the summary accurate and consistent with the passage.';
+  return 'For word-completion tasks, the answer must fit both the grammar and the exact meaning in the passage.';
+}
+function buildExplanationHtml(q){
+  const correct = prettyCorrectAnswer(q);
+  const user = prettyUserAnswer(q);
+  const type = getQuestionType(q);
+  const prompt = getQuestionPrompt(q);
+  return `
+    <div class="explanation-card">
+      <h4>${escapeHtml(prompt)}</h4>
+      <p>${escapeHtml(getReasonIntro(q))}</p>
+      <div class="explanation-grid">
+        <div class="explanation-pill"><span class="k">Correct answer</span><span>${escapeHtml(correct)}</span></div>
+        <div class="explanation-pill"><span class="k">Your answer</span><span>${escapeHtml(user)}</span></div>
+      </div>
+      <div class="explanation-evidence">
+        <h4>Evidence from the passage</h4>
+        <ul>${buildEvidenceHtml(q)}</ul>
+      </div>
+      <div class="explanation-tip"><strong>How to read this type:</strong> ${escapeHtml(explanationTip(q))}</div>
+    </div>`;
+}
+function renderReviewExplanations(){
+  const holder = document.getElementById('reviewExplanations');
+  if(!holder) return;
+  const groups = [
+    {title:'Passage 1 review', start:1, end:13},
+    {title:'Passage 2 review', start:14, end:26},
+    {title:'Passage 3 review', start:27, end:40}
+  ];
+  holder.innerHTML = groups.map(group=>{
+    const cards = [];
+    for(let q=group.start; q<=group.end; q++){
+      cards.push(`
+        <div class="explanation-card" data-q="${q}">
+          <h4><span>${escapeHtml(getQuestionPrompt(q))}</span><span class="review-q-tag">Q${q}</span></h4>
+          <p>${escapeHtml(getReasonIntro(q))}</p>
+          <div class="explanation-grid">
+            <div class="explanation-pill"><span class="k">Correct answer</span><span>${escapeHtml(prettyCorrectAnswer(q))}</span></div>
+            <div class="explanation-pill"><span class="k">Your answer</span><span>${escapeHtml(prettyUserAnswer(q))}</span></div>
+          </div>
+          <div class="explanation-evidence">
+            <h4>Evidence from the passage</h4>
+            <ul>${buildEvidenceHtml(q)}</ul>
+          </div>
+          <div class="explanation-tip"><strong>How to read this type:</strong> ${escapeHtml(explanationTip(q))}</div>
+        </div>`);
+    }
+    return `<section class="review-pass-block"><h4 class="review-pass-title">${group.title}</h4>${cards.join('')}</section>`;
+  }).join('');
+}
+
+function openExplanationModal(q){
+  q = Number(q);
+  if(!q || !checked) return;
+  document.getElementById('explanationTitle').textContent = `Question ${q} explanation`;
+  document.getElementById('explanationSubtitle').textContent = prettyCorrectAnswer(q);
+  document.getElementById('explanationBody').innerHTML = buildExplanationHtml(q);
+  document.getElementById('explanationModalOverlay').classList.add('show');
+}
+function closeExplanationModal(){
+  document.getElementById('explanationModalOverlay').classList.remove('show');
+}
+function prepareExplanationTargets(){
+  document.querySelectorAll('.question-item,.question').forEach(item=> item.classList.add('explain-ready'));
+  document.querySelectorAll('.summary-text p').forEach(p=>{
+    if(p.querySelector('.question-number') || p.querySelector('.summary-drop-zone') || p.querySelector('[id^="q"]') || /^\d+/.test((p.textContent||'').trim())) p.classList.add('explain-ready');
+  });
+  document.querySelectorAll('#answersTableBody tr').forEach(row=> row.classList.add('explain-ready'));
+}
+function getQuestionNumberFromElement(target){
+  if(!target) return null;
+  const explicit = target.closest('[data-explain-q]');
+  if(explicit) return Number(explicit.dataset.explainQ);
+  const row = target.closest('#answersTableBody tr[data-q]');
+  if(row) return Number(row.dataset.q);
+  const byId = target.closest('[id^="q"]');
+  if(byId){
+    const m = (byId.id||'').match(/^q(\d+)/);
+    if(m) return Number(m[1]);
+  }
+  const byName = target.closest('[name^="q"]');
+  if(byName){
+    const m = (byName.name||'').match(/^q(\d+)/);
+    if(m) return Number(m[1]);
+  }
+  const dz = target.closest('.summary-drop-zone');
+  if(dz) return Number(dz.dataset.qStart || 0);
+  const num = target.closest('.question-number');
+  if(num) return Number(num.textContent.trim());
+  const strong = target.closest('strong');
+  if(strong && /^\d+$/.test(strong.textContent.trim())) return Number(strong.textContent.trim());
+  const item = target.closest('.question-item');
+  if(item) return findFirstQuestionNumber(item);
+  const p = target.closest('.summary-text p.explain-ready');
+  if(p){
+    const numEl = p.querySelector('.question-number');
+    if(numEl) return Number(numEl.textContent.trim());
+    const input = p.querySelector('[id^="q"]');
+    if(input){
+      const m = input.id.match(/^q(\d+)/);
+      if(m) return Number(m[1]);
+    }
+    const zone = p.querySelector('.summary-drop-zone');
+    if(zone) return Number(zone.dataset.qStart || 0);
+  }
+  return null;
+}
+function shouldOpenExplanationFromClick(target){
+  if(!checked) return false;
+  const sel = window.getSelection && window.getSelection().toString().trim();
+  if(sel) return false;
+  if(target.closest('#resultModalOverlay .modal-actions,#explanationModalOverlay .explanation-close,.hl-floating-toolbar,.note-popup,.note-modal')) return false;
+  if(target.closest('button') && !target.closest('.explain-chip') && !target.closest('#answersTableBody tr')) return false;
+  return true;
+}
+
+function markTextInputs(q){
+  const input = document.getElementById('q'+q);
+  if(!input) return;
+  input.classList.remove('correct','incorrect');
+  const hasValue = !!input.value.trim();
+  const ok = hasValue && input.value.trim().toLowerCase() === normalizedCorrect(q);
+  if(hasValue) input.classList.add(ok ? 'correct' : 'incorrect');
+  addInlineAnswerNote(input, q, correctAnswers[String(q)]);
+  input.closest('.question-item,.question')?.classList.add(ok?'result-correct':'result-incorrect');
+}
+function markSelect(q){
+  const select = document.getElementById('q'+q);
+  if(!select) return;
+  select.classList.remove('correct','incorrect');
+  if(!select.value) return;
+  const ok = select.value === normalizedCorrect(q);
+  select.classList.add(ok ? 'correct' : 'incorrect');
+  addCorrectAnswerNote(select.parentElement.parentElement || select.parentElement, q, prettyCorrectAnswer(q));
+  select.closest('.question-item,.question')?.classList.add(ok?'result-correct':'result-incorrect');
+}
+function markRadios(q){
+  const radios = document.querySelectorAll(`[name="q${q}"]`);
+  if(!radios.length) return;
+  radios.forEach(r=>{
+    const box = r.closest('.tf-option,.tfng-option,.mcq-option,.multi-choice-option');
+    if(box){
+      box.classList.remove('correct-choice','incorrect-choice');
+      if(r.value === normalizedCorrect(q)) box.classList.add('correct-choice');
+      else if(r.checked) box.classList.add('incorrect-choice');
+    }
+  });
+  const anchor = radios[0].closest('.question-item,.question');
+  if(anchor){
+    addCorrectAnswerNote(anchor, q, prettyCorrectAnswer(q));
+    const ok = getRadioAnswer(q) && getRadioAnswer(q) === normalizedCorrect(q);
+    anchor.classList.add(ok?'result-correct':'result-incorrect');
+  }
+}
+function markDrop(q){
+  const dz = document.querySelector(`.summary-drop-zone[data-q-start="${q}"]`);
+  if(!dz) return;
+  dz.classList.remove('correct','incorrect');
+  const hasValue = !!dz.dataset.value;
+  const ok = hasValue && dz.dataset.value === normalizedCorrect(q);
+  if(hasValue) dz.classList.add(ok ? 'correct' : 'incorrect');
+  addInlineAnswerNote(dz, q, prettyCorrectAnswer(q));
+}
+
+function markMatchingTable(q){
+  const cells = document.querySelectorAll(`.clickable-cell[data-question="${q}"]`);
+  if(!cells.length) return;
+  const userAnswer = getMatchingTableAnswer(q);
+  const correct = correctAnswers[String(q)];
+  cells.forEach(c=>c.classList.remove('correct','incorrect'));
+  const row = cells[0].closest('tr');
+  const ok = !!userAnswer && userAnswer === correct;
+  if(userAnswer){
+    const selected = document.querySelector(`.clickable-cell[data-question="${q}"].selected, .clickable-cell[data-question="${q}"][data-selected="true"]`);
+    if(selected) selected.classList.add(ok ? 'correct' : 'incorrect');
+  }
+  if(!ok){
+    const correctCell = document.querySelector(`.clickable-cell[data-question="${q}"][data-value="${correct}"]`);
+    if(correctCell) correctCell.classList.add('correct');
+  }
+  if(row) addCorrectAnswerNote(row, q, prettyCorrectAnswer(q));
+  row?.classList.add(ok ? 'result-correct' : 'result-incorrect');
+}
+
+function checkAnswers(){
+  checked = true;
+  removeAllAnswerNotes();
+  document.querySelectorAll('.result-correct,.result-incorrect').forEach(el=>el.classList.remove('result-correct','result-incorrect'));
+  for(let i=1;i<=40;i++){
+    const byId = document.getElementById('q'+i);
+    if(byId && byId.tagName === 'INPUT') markTextInputs(i);
+    else if(byId && byId.tagName === 'SELECT') markSelect(i);
+    else if(document.querySelector(`[name="q${i}"]`)) markRadios(i);
+    else if(document.querySelector(`.clickable-cell[data-question="${i}"]`)) markMatchingTable(i);
+    else if(document.querySelector(`.summary-drop-zone[data-q-start="${i}"]`)) markDrop(i);
+  }
+  highlightAnswerSources();
+  prepareExplanationTargets();
+  updateAnsweredCounter();
+  updateQuestionRowStates();
+  document.getElementById('checkAnswersBtn').classList.add('result-btn');
+  document.getElementById('checkAnswersBtn').textContent = 'My Result';
+  openResultModal();
+}
+document.getElementById('checkAnswersBtn').addEventListener('click', ()=>{
+  if(checked) openResultModal(); else checkAnswers();
+});
+
+function openResultModal(){
+  let score = 0;
+  for(let i=1;i<=40;i++) if(isCorrectAnswer(i)) score++;
+  const band = (
+    score>=39 ? '9.0' :
+    score>=37 ? '8.5' :
+    score>=35 ? '8.0' :
+    score>=33 ? '7.5' :
+    score>=30 ? '7.0' :
+    score>=27 ? '6.5' :
+    score>=23 ? '6.0' :
+    score>=19 ? '5.5' :
+    score>=15 ? '5.0' : 'Below 5.0'
+  );
+  const summary = document.getElementById('resultSummary');
+  summary.innerHTML = `
+    <div class="result-row"><strong>Score</strong><span>${score} / 40</span></div>
+    <div class="result-row"><strong>Estimated Band</strong><span>${band}</span></div>
+    <div class="result-row"><strong>Answered</strong><span>${[...Array(40)].map((_,i)=>isAnswered(i+1)).filter(Boolean).length} / 40</span></div>
+  `;
+  renderAnswersTable();
+  renderReviewExplanations();
+  document.getElementById('resultModalOverlay').classList.add('show');
+}
+document.getElementById('closeResultBtn').addEventListener('click', ()=>document.getElementById('resultModalOverlay').classList.remove('show'));
+document.getElementById('closeExplanationBtn').addEventListener('click', closeExplanationModal);
+document.getElementById('explanationModalOverlay').addEventListener('click', e=>{ if(e.target.id === 'explanationModalOverlay') closeExplanationModal(); });
+document.getElementById('answersTableBody').addEventListener('click', e=>{
+  if(!shouldOpenExplanationFromClick(e.target)) return;
+  const q = getQuestionNumberFromElement(e.target);
+  if(q) openExplanationModal(q);
+});
+document.getElementById('reviewExplanations').addEventListener('click', e=>{
+  const card = e.target.closest('.explanation-card[data-q]');
+  if(!card) return;
+  const q = Number(card.dataset.q);
+  if(q) openExplanationModal(q);
+});
+document.getElementById('questionsPanel').addEventListener('click', e=>{
+  if(!shouldOpenExplanationFromClick(e.target)) return;
+  const q = getQuestionNumberFromElement(e.target);
+  if(q) openExplanationModal(q);
+});
+
+function clearSourceHighlights(){
+  document.querySelectorAll('.answer-source').forEach(el=>{
+    const parent = el.parentNode;
+    while(el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+    parent.normalize();
+  });
+  document.querySelectorAll('.question-source-badge').forEach(b=>b.remove());
+}
+
+function getPartForQuestion(q){ return q<=13?'1':q<=26?'2':'3'; }
+
+function wrapTextInTextNode(node, start, length, q){
+  const range = document.createRange();
+  range.setStart(node, start);
+  range.setEnd(node, start+length);
+  const span = document.createElement('span');
+  span.className = 'answer-source';
+  span.dataset.q = q;
+  span.title = `Source for question ${q}`;
+  try { range.surroundContents(span); }
+  catch(e){
+    const extracted = range.extractContents();
+    span.appendChild(extracted);
+    range.insertNode(span);
+  }
+  return span;
+}
+function highlightSnippetIn(container, snippet, q){
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode(node){
+      if(!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      if(node.parentElement && (node.parentElement.closest('script,style,mark,.answer-source'))) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const lower = snippet.toLowerCase();
+  while(walker.nextNode()){
+    const node = walker.currentNode;
+    const idx = node.nodeValue.toLowerCase().indexOf(lower);
+    if(idx !== -1){
+      wrapTextInTextNode(node, idx, snippet.length, q);
+      return true;
+    }
+  }
+  return false;
+}
+function highlightAnswerSources(){
+  clearSourceHighlights();
+  Object.keys(sourceMap).forEach(q=>{
+    const snippets = sourceMap[q] || [];
+    const part = getPartForQuestion(Number(q));
+    const container = document.getElementById(`passage-content-${part}`);
+    snippets.forEach(snippet=>{
+      if(snippet) highlightSnippetIn(container, snippet, q);
+    });
+  });
+  document.querySelectorAll('.answer-source').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const q = Number(el.dataset.q);
+      switchPart(getPartForQuestion(q));
+      currentQuestion = q;
+      updateQuestionRowStates();
+      const badgeHolder = findQuestionAnchor(q);
+      if(badgeHolder && !badgeHolder.querySelector('.question-source-badge')){
+        const badge = document.createElement('span');
+        badge.className = 'question-source-badge';
+        badge.textContent = 'source';
+        const targetP = badgeHolder.querySelector('p,h4') || badgeHolder;
+        targetP.appendChild(badge);
+      }
+    });
+  });
+}
+
+// Drag and drop + click-fill for q27-30
+let draggedItem = null;
+document.querySelectorAll('.drag-item').forEach(item=>{
+  item.addEventListener('dragstart', e=>{
+    draggedItem = item;
+    item.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', item.dataset.value);
+  });
+  item.addEventListener('dragend', ()=>item.classList.remove('dragging'));
+  item.addEventListener('click', ()=>{
+    const firstEmpty = [...document.querySelectorAll('.summary-drop-zone[data-dnd-group="summary-27-30"]')].find(z=>!z.dataset.value);
+    if(firstEmpty) fillDropZone(firstEmpty, item.dataset.value);
+  });
+});
+document.querySelectorAll('.summary-drop-zone').forEach(zone=>{
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drop-hover'); });
+  zone.addEventListener('dragleave', ()=>zone.classList.remove('drop-hover'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault();
+    zone.classList.remove('drop-hover');
+    const val = e.dataTransfer.getData('text/plain');
+    if(val) fillDropZone(zone, val);
+    updateAnsweredCounter();
+  });
+  zone.addEventListener('click', ()=>{
+    if(zone.dataset.value){
+      zone.textContent = zone.dataset.qStart;
+      delete zone.dataset.value;
+      zone.classList.remove('filled','correct','incorrect');
+      updateAnsweredCounter();
+    }
+  });
+});
+function fillDropZone(zone, value){
+  zone.dataset.value = value;
+  zone.textContent = dragOptionText[value] || value;
+  zone.classList.add('filled');
+}
+
+function renderQuestionNumbersIntoPrompts(){
+  document.querySelectorAll('.question-item > p:first-child strong:first-child').forEach(el=>el.classList.add('question-badge'));
+}
+renderQuestionNumbersIntoPrompts();
+
+function observeCurrentQuestion(){
+  const sec = document.querySelector(`.question-section[data-part="${currentPart}"]`);
+  if(!sec) return;
+  const anchors = [...sec.querySelectorAll('.question-item, .summary-completion-container')];
+  let best = null, bestDist = Infinity;
+  anchors.forEach(el=>{
+    const rect = el.getBoundingClientRect();
+    const dist = Math.abs(rect.top - 220);
+    if(rect.bottom > 80 && dist < bestDist){
+      bestDist = dist; best = el;
+    }
+  });
+  if(best){
+    const q = findFirstQuestionNumber(best);
+    if(q){ currentQuestion = q; updateQuestionRowStates(); }
+  }
+}
+function findFirstQuestionNumber(container){
+  const ids = [...container.querySelectorAll('[id^="q"]')].map(el=>{
+    const m = (el.id||'').match(/^q(\d+)/);
+    return m ? Number(m[1]) : null;
+  }).filter(Boolean);
+  if(ids.length) return Math.min(...ids);
+  const nameEl = container.querySelector('[name^="q"]');
+  if(nameEl){
+    const m = nameEl.name.match(/^q(\d+)/);
+    if(m) return Number(m[1]);
+  }
+  const dz = container.querySelector('.summary-drop-zone');
+  if(dz) return Number(dz.dataset.qStart || 0);
+  return null;
+}
+document.getElementById('questionsPanel').addEventListener('scroll', observeCurrentQuestion);
+
+document.getElementById('prevBtn').addEventListener('click', ()=>{
+  if(currentQuestion > 1) scrollToQuestion(currentQuestion - 1);
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if(currentQuestion < 40) scrollToQuestion(currentQuestion + 1);
+});
+
+renderQuestionRow();
+updateAnsweredCounter();
+
+// Divider resize
+(function(){
+  const divider = document.getElementById('divider');
+  const passage = document.getElementById('passagePanel');
+  let dragging = false;
+  divider.addEventListener('mousedown', ()=> dragging = true);
+  window.addEventListener('mouseup', ()=> dragging = false);
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    const total = window.innerWidth;
+    let left = e.clientX;
+    left = Math.max(180, Math.min(total - 180, left));
+    passage.style.width = left + 'px';
+  });
+})();
+
+// Manual highlight toolbar
+const hlToolbar = document.getElementById('hlToolbar');
+function selectionInsideWorkArea(range){
+  if(!range) return false;
+  const ancestor = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+  return !!ancestor && (ancestor.closest('#passagePanel') || ancestor.closest('#questionsPanel'));
+}
+function positionToolbar(x,y){
+  const rect = {width:170,height:160};
+  let lx = x, ly = y - rect.height - 14;
+  if(ly < 8) ly = y + 20;
+  lx = Math.max(8, Math.min(window.innerWidth - rect.width - 8, lx));
+  hlToolbar.style.left = lx + 'px';
+  hlToolbar.style.top = ly + 'px';
+}
+document.addEventListener('mouseup', e=>{
+  setTimeout(()=>{
+    const sel = window.getSelection();
+    if(sel && sel.toString().trim().length > 0 && sel.rangeCount){
+      const range = sel.getRangeAt(0);
+      if(selectionInsideWorkArea(range)){
+        savedRange = range.cloneRange();
+        activeHLMark = null;
+        noteTargetText = sel.toString().trim().slice(0,220);
+        positionToolbar(e.clientX, e.clientY);
+        hlToolbar.classList.add('show');
+        return;
+      }
+    }
+  },10);
+});
+document.addEventListener('click', e=>{
+  const mark = e.target.closest('mark.hl-y,mark.hl-g,mark.hl-p,mark.hl-b');
+  if(mark){
+    activeHLMark = mark;
+    savedRange = null;
+    noteTargetText = mark.textContent.trim().slice(0,220);
+    positionToolbar(e.clientX, e.clientY);
+    hlToolbar.classList.add('show');
+    return;
+  }
+  if(!e.target.closest('#hlToolbar')){
+    hlToolbar.classList.remove('show');
+  }
+});
+function applyHL(color){
+  if(activeHLMark){
+    activeHLMark.className = 'hl-' + color;
+  } else if(savedRange){
+    const mark = document.createElement('mark');
+    mark.className = 'hl-' + color;
+    try{
+      savedRange.surroundContents(mark);
+    }catch(err){
+      const frag = savedRange.extractContents();
+      mark.appendChild(frag);
+      savedRange.insertNode(mark);
+    }
+  }
+  const sel = window.getSelection();
+  if(sel) sel.removeAllRanges();
+  savedRange = null;
+  hlToolbar.classList.remove('show');
+}
+function removeCurrentHL(){
+  if(!activeHLMark) return;
+  const parent = activeHLMark.parentNode;
+  while(activeHLMark.firstChild) parent.insertBefore(activeHLMark.firstChild, activeHLMark);
+  parent.removeChild(activeHLMark);
+  parent.normalize();
+  activeHLMark = null;
+  hlToolbar.classList.remove('show');
+}
+function clearAllHL(){
+  document.querySelectorAll('mark.hl-y,mark.hl-g,mark.hl-p,mark.hl-b').forEach(mark=>{
+    const parent = mark.parentNode;
+    while(mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+    parent.removeChild(mark);
+    parent.normalize();
+  });
+  hlToolbar.classList.remove('show');
+}
+document.querySelectorAll('.hl-dot').forEach(btn=>btn.addEventListener('click', ()=>applyHL(btn.dataset.color)));
+document.getElementById('hlRemoveBtn').addEventListener('click', removeCurrentHL);
+document.getElementById('hlClearBtn').addEventListener('click', clearAllHL);
+
+// Notes
+function renderNotesList(){
+  const list = document.getElementById('notesList');
+  list.innerHTML = notesData.length ? '' : '<div class="note-card">No notes yet.</div>';
+  notesData.forEach(note=>{
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    card.innerHTML = `<div class="note-excerpt">${escapeHtml(note.excerpt)}</div><div>${escapeHtml(note.text)}</div>`;
+    list.appendChild(card);
+  });
+}
+function escapeHtml(str){
+  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+document.getElementById('notesBtn').addEventListener('click', ()=>{
+  renderNotesList();
+  document.getElementById('notesPanelOverlay').classList.add('show');
+});
+document.getElementById('closeNotesPanelBtn').addEventListener('click', ()=>document.getElementById('notesPanelOverlay').classList.remove('show'));
+document.getElementById('hlNoteBtn').addEventListener('click', ()=>{
+  document.getElementById('noteExcerpt').textContent = noteTargetText || 'Selected text';
+  document.getElementById('noteText').value = '';
+  document.getElementById('noteModalOverlay').classList.add('show');
+  hlToolbar.classList.remove('show');
+});
+document.getElementById('cancelNoteBtn').addEventListener('click', ()=>document.getElementById('noteModalOverlay').classList.remove('show'));
+document.getElementById('saveNoteBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('noteText').value.trim();
+  if(!text) return;
+  notesData.unshift({id: ++noteIdCounter, excerpt: noteTargetText || 'Selected text', text});
+  document.getElementById('noteModalOverlay').classList.remove('show');
+});
+
+// Modal backdrop close
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target === ov) ov.classList.remove('show'); });
+});
+
+
+</script>
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTSUZ Reading Practice</title>
+<style>
+  :root{
+    --bg:#ffffff; --text:#000000; --muted:#666; --border:#e0e0e0; --panel:#ffffff; --nav:#ffffff;
+    --accent:#4a90e2; --accent-2:#3581d8; --correct:#28a745; --incorrect:#dc3545; --timer:#f0f0f0;
+    --part:#f1f2ec; --hl-yellow:#fff59d; --hl-blue:#cfe3ff; --hl-pink:#ffd8ef;
+  }
+  [data-theme="dark"]{
+    --bg:#1a1a1a; --text:#e0e0e0; --muted:#b7b7b7; --border:#444444; --panel:#2d2d2d; --nav:#2d2d2d;
+    --accent:#6aa8ee; --accent-2:#8abbf3; --correct:#3ac15a; --incorrect:#f06774; --timer:#444444; --part:#3a3a3a;
+    --hl-yellow:#7c6b18; --hl-blue:#25456e; --hl-pink:#6f294f;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:Arial,sans-serif; font-size:16px; line-height:1.4}
+  body{transition:background-color .25s, color .25s}
+  button,input,select,textarea{font:inherit}
+  .app-header{position:fixed; top:0; left:0; right:0; height:60px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:1000}
+  .header-title{font-size:16px; font-weight:700}
+  .header-center,.header-right,.header-left{display:flex; align-items:center; gap:10px}
+  .timer-wrap{display:flex; align-items:center; gap:8px; background:var(--timer); border:1px solid #ccc; border-radius:999px; padding:5px 10px}
+  .timer-display{font-weight:700; min-width:60px; text-align:center}
+  .timer-display.warning{color:var(--incorrect); animation:timerBlink 1s steps(1) infinite}
+  @keyframes timerBlink{0%,100%{opacity:1}50%{opacity:.3}}
+  .icon-btn,.nav-arrow{width:32px; height:32px; border-radius:50%; border:1px solid #ccc; background:var(--timer); cursor:pointer; display:inline-flex; align-items:center; justify-content:center}
+  .icon-btn:hover,.nav-arrow:hover{background:#e0e0e0}
+  [data-theme="dark"] .icon-btn:hover,[data-theme="dark"] .nav-arrow:hover{background:#555}
+  .tg-pill-btn{display:inline-flex; align-items:center; gap:8px; color:#3e3e3e; background:#fff; border:2px solid #3e3e3e; border-radius:9999px; padding:6px 14px; font-size:14px; font-weight:700; text-decoration:none; line-height:1; transition:background-color .2s}
+  .tg-pill-btn:hover{background:#f5f5f5; text-decoration:underline}
+  .tg-plane{width:18px; height:18px; background:currentColor; display:inline-block; mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="black" d="M21.93 2.59a1 1 0 0 0-1.05-.17L2.6 10.62a1 1 0 0 0 .07 1.87l5.87 2.06l2.05 5.88a1 1 0 0 0 .82.67h.11a1 1 0 0 0 .84-.47l9.98-17.03a1 1 0 0 0-.41-1.01ZM10.2 13.8l-.84-2.42l7.65-5.54l-6.8 7.96Z"/></svg>'); mask-size:contain; mask-repeat:no-repeat; mask-position:center}
+  [data-theme="dark"] .tg-pill-btn{color:#e0e0e0; border-color:#e0e0e0; background:transparent}
+  .main{position:fixed; top:60px; bottom:80px; left:0; right:0; display:flex; background:var(--bg)}
+  .passage-panel,.questions-panel{background:var(--panel); overflow:auto; transition:background-color .25s,color .25s}
+  .passage-panel{flex:1 1 50%; border-right:1px solid var(--border); position:relative}
+  .questions-panel{flex:1 1 50%; padding:18px 22px 28px}
+  .divider{width:8px; background:var(--border); cursor:col-resize; flex:0 0 8px}
+  .passage-tabs{display:flex; gap:8px; padding:12px 16px 0; position:sticky; top:0; background:var(--panel); z-index:5}
+  .passage-tab{background:none; border:none; padding:10px 6px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent}
+  .passage-tab.active{color:var(--text); border-bottom-color:var(--accent)}
+  .passage-inner{padding:18px 22px 100px}
+  .passage-content h4{text-align:center; font-size:20px; margin:4px 0 6px}
+  .subtitle{text-align:center; font-style:italic; color:var(--muted); margin:0 0 18px}
+  .passage-content p,.passage-note{margin:0 0 1.1em}
+  .para-label{font-weight:700; margin-right:6px}
+  .passage-note{border:1px dashed var(--border); padding:12px; border-radius:10px; background:rgba(127,127,127,.05)}
+  .question-card{border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:18px; background:var(--panel)}
+  .section-head{font-size:18px; font-weight:700; margin-bottom:8px}
+  .instruction{margin:0 0 14px; color:var(--muted)}
+  .question-item{padding:10px 0; border-top:1px solid rgba(127,127,127,.15); cursor:pointer}
+  .question-item:first-of-type{border-top:none}
+  .question-item.active-focus{outline:2px solid var(--accent); outline-offset:6px; border-radius:8px}
+  .question-stem{margin-bottom:8px}
+  .q-badge{display:inline-block; border:1px solid #d0d7e2; border-radius:6px; padding:2px 6px; background:#fff; color:#000; margin-right:6px}
+  [data-theme="dark"] .q-badge{background:#333; color:#fff; border-color:#666}
+  .option-group{display:flex; flex-direction:column; gap:8px}
+  .tf-option,.multi-choice-option{display:flex; align-items:flex-start; gap:10px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:#fff; cursor:pointer}
+  .tf-option:hover,.multi-choice-option:hover{background:#f1f7ff}
+  [data-theme="dark"] .tf-option,[data-theme="dark"] .multi-choice-option{background:#3a3a3a}
+  [data-theme="dark"] .tf-option:hover,[data-theme="dark"] .multi-choice-option:hover{background:#424242}
+  .tf-option.checked,.multi-choice-option.checked{background:#cfe3f9; border-color:#7db3f5}
+  [data-theme="dark"] .tf-option.checked,[data-theme="dark"] .multi-choice-option.checked{background:#25456e; border-color:#8abbf3}
+  .tf-option.correct,.multi-choice-option.correct,.click-cell.correct{background:#d4edda!important; border-color:var(--correct)!important}
+  .tf-option.incorrect,.multi-choice-option.incorrect,.click-cell.incorrect{background:#f8d7da!important; border-color:var(--incorrect)!important}
+  [data-theme="dark"] .tf-option.correct,[data-theme="dark"] .multi-choice-option.correct,[data-theme="dark"] .click-cell.correct{background:#193b24!important}
+  [data-theme="dark"] .tf-option.incorrect,[data-theme="dark"] .multi-choice-option.incorrect,[data-theme="dark"] .click-cell.incorrect{background:#4d232a!important}
+  .answer-input{border:1px solid #bfbfbf; border-radius:6px; background:#fff; padding:6px 10px; font-size:16px; font-weight:700; min-width:150px}
+  .answer-input:focus{border-color:var(--accent-2); border-width:2px; outline:none}
+  .answer-input.correct{border-color:var(--correct); background:#e9f7ef}
+  .answer-input.incorrect{border-color:var(--incorrect); background:#f8d7da}
+  [data-theme="dark"] .answer-input{background:#3a3a3a; color:#fff; border-color:#555}
+  [data-theme="dark"] .answer-input.correct{background:#193b24}
+  [data-theme="dark"] .answer-input.incorrect{background:#4d232a}
+  .summary-box{background:rgba(74,144,226,.05); border:1px solid var(--border); border-radius:10px; padding:14px}
+  .inline-answer{width:120px; min-width:120px; display:inline-block; vertical-align:middle}
+  .matching-grid{width:100%; border-collapse:collapse; table-layout:fixed}
+  .matching-grid th,.matching-grid td{border:1px solid var(--border); padding:8px; vertical-align:top}
+  .matching-grid th{background:#f9f9f9}
+  [data-theme="dark"] .matching-grid th{background:#333}
+  .grid-question{width:52%; position:relative}
+  .click-cell{text-align:center; cursor:pointer; user-select:none; transition:.15s; border:1px solid var(--border); border-radius:6px}
+  .click-cell.selected{background:#cfe3f9; border-color:#7db3f5; font-weight:700}
+  [data-theme="dark"] .click-cell.selected{background:#25456e}
+  .answer-note{display:none; margin-top:8px; padding:8px 10px; border-left:3px solid var(--accent); background:rgba(74,144,226,.08); border-radius:6px; font-size:14px}
+  body.checked .answer-note{display:block}
+  .review-section{display:none; margin-top:22px; border-top:2px solid var(--border); padding-top:18px}
+  body.checked .review-section{display:block}
+  .review-grid{display:grid; grid-template-columns:1fr; gap:10px}
+  .review-card{border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:var(--panel)}
+  .review-card.ok{border-left:4px solid var(--correct)}
+  .review-card.bad{border-left:4px solid var(--incorrect)}
+  .review-head{display:flex; gap:10px; align-items:center; margin-bottom:4px}
+  .review-q{font-weight:700}
+  .review-status{font-weight:700}
+  .status-ok{color:var(--correct)}
+  .status-bad{color:var(--incorrect)}
+  .bottom-nav{position:fixed; left:0; right:0; bottom:0; height:80px; background:var(--nav); border-top:1px solid var(--border); display:flex; align-items:center; gap:12px; padding:10px 14px; z-index:1000}
+  .nav-left,.nav-middle,.nav-right{display:flex; align-items:center; gap:10px}
+  .nav-left{flex:0 0 auto}
+  .nav-middle{flex:1 1 auto; min-width:0}
+  .part-tabs{display:flex; gap:4px}
+  .part-tab{background:none; color:#333; border:none; padding:10px 15px; cursor:pointer; border-radius:6px}
+  .part-tab:hover{background:#f8f9fa}
+  .part-tab.active{font-weight:700; color:#000; background:#eef4fb}
+  [data-theme="dark"] .part-tab{color:#e0e0e0}
+  [data-theme="dark"] .part-tab.active{background:#28415f}
+  .question-nav-row{display:flex; gap:6px; overflow-x:auto; padding-bottom:3px}
+  .question-nav-row::-webkit-scrollbar{height:6px}
+  .question-nav-row::-webkit-scrollbar-thumb{background:#ccc; border-radius:999px}
+  .subQuestion{width:32px; height:32px; flex:0 0 32px; border-radius:2px; border:1px solid #ccc; background:#fff; color:#333; font-size:14px; font-weight:500; cursor:pointer}
+  .subQuestion.answered{background:#e9ecef; border-color:#ddd}
+  .subQuestion.active{background:var(--accent); color:#fff}
+  .subQuestion.correct{background:var(--correct); color:#fff; border-color:var(--correct)}
+  .subQuestion.incorrect{background:var(--incorrect); color:#fff; border-color:var(--incorrect)}
+  [data-theme="dark"] .subQuestion{background:#3a3a3a; color:#fff; border-color:#666}
+  .answered-counter{font-weight:700; white-space:nowrap}
+  .check-btn{background:#f3f4f6; color:#111827; border:1px solid #d1d5db; border-radius:4px; font-size:15px; font-weight:700; padding:10px 16px; min-width:160px; cursor:pointer}
+  .check-btn:hover{background:#ebedf0}
+  .check-btn.result-mode{background:#4CAF50; color:#fff; border-color:#4CAF50}
+  .notes-modal,.result-modal,.explanation-modal{position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:2000}
+  .modal-card{background:var(--panel); color:var(--text); border-radius:14px; border:1px solid var(--border); width:min(900px,92vw); max-height:84vh; overflow:auto; padding:18px}
+  .modal-card.small{width:min(620px,92vw)}
+  .modal-top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px}
+  .close-btn{border:1px solid var(--border); background:var(--timer); border-radius:8px; padding:6px 10px; cursor:pointer}
+  .results-table{width:100%; border-collapse:collapse; font-size:14px}
+  .results-table th,.results-table td{border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top}
+  .results-table tr.ok{background:rgba(40,167,69,.08)}
+  .results-table tr.bad{background:rgba(220,53,69,.08)}
+  .score-pill{display:inline-block; padding:6px 12px; border-radius:999px; background:rgba(74,144,226,.12); font-weight:700}
+  .hl-floating-toolbar{position:fixed; z-index:9999; background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:10px 12px; display:none; flex-direction:column; gap:8px; min-width:150px; box-shadow:0 8px 32px rgba(0,0,0,.18)}
+  .hl-floating-toolbar.show{display:flex; animation:toolbarPop .15s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes toolbarPop{from{opacity:0; transform:translateY(8px) scale(.93)}to{opacity:1; transform:translateY(0) scale(1)}}
+  .hl-btn{border:1px solid var(--border); border-radius:8px; padding:7px 10px; cursor:pointer; background:#fff; text-align:left}
+  .hl-btn:hover{filter:brightness(.98)}
+  [data-theme="dark"] .hl-floating-toolbar,[data-theme="dark"] .hl-btn{background:#2d2d2d; color:#e0e0e0; border-color:#555}
+  mark.user-highlight{padding:0 2px; border-radius:3px}
+  mark.yellow{background:var(--hl-yellow)}
+  mark.blue{background:var(--hl-blue)}
+  mark.pink{background:var(--hl-pink)}
+  .evidence{padding:1px 2px; border-radius:4px; position:relative}
+  body.checked .evidence{background:rgba(255,243,133,.55); box-shadow:inset 0 0 0 1px rgba(201,177,0,.35)}
+  [data-theme="dark"] body.checked .evidence,[data-theme="dark"] .evidence.show{background:rgba(132,111,0,.45)}
+  body.checked .evidence::after{
+    content:"Q" attr(data-q); display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px;
+    background:var(--accent); color:#fff; font-size:11px; font-weight:700; vertical-align:middle
+  }
+  .watermark{position:fixed; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:1; opacity:.045; font-size:72px; font-weight:800; transform:rotate(-24deg); letter-spacing:2px}
+  .passage-panel,.questions-panel,.app-header,.bottom-nav,.modal-card{position:relative; z-index:2}
+  .hidden{display:none!important}
+  @media (max-width: 900px){
+    .header-right .tg-pill-btn span:last-child{display:none}
+    .question-nav-row{max-width:40vw}
+  }
+</style>
+<style data-ieltsuz-fix>#cdBlurGuard{display:none!important}</style>
+
+</head>
+<body>
+<div class="watermark">IELTSUZ</div>
+
+<header class="app-header">
+  <div class="header-left"><div class="header-title">IELTS Reading Test</div></div>
+  <div class="header-center">
+    <div class="timer-wrap">
+      <button class="icon-btn" id="timerToggle" aria-label="Start/Pause">▶</button>
+      <div class="timer-display" id="timerDisplay">60:00</div>
+      <button class="icon-btn" id="timerReset" aria-label="Reset">↺</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" id="notesBtn" title="Notes / Instructions">📝</button>
+    <button class="icon-btn" id="themeBtn" title="Night mode">🌙</button>
+    
+  </div>
+</header>
+
+<main class="main">
+  <section class="passage-panel" id="passagePanel">
+    <div class="passage-tabs">
+      <button class="passage-tab active" data-part="1">Passage 1</button>
+      <button class="passage-tab" data-part="2">Passage 2</button>
+      <button class="passage-tab" data-part="3">Passage 3</button>
+    </div>
+    <div class="passage-inner" id="passageInner">
+      
+<div class="passage-content" id="passage-1">
+  <h4>Dolls Through the Ages</h4>
+  <p class="subtitle">Passage 1 · Questions 1–13</p>
+  <p><span class="para-label">A</span> What is today a simple children’s toy has a surprisingly rich history. Dolls have been a part of humankind for thousands of years. Often depicting religious figures, or used as playthings, early dolls were probably made from primitive materials such as clay, fur, or wood.</p>
+  <p><span class="para-label">B</span> Dolls constructed of flat pieces of wood, painted with various designs, and with ‘hair’ made of <span class="evidence" data-q="1">clay</span>, have often been found in Egyptian graves dating back to 2000 BC. Egyptian tombs of wealthy families have included pottery dolls. Dolls being placed in these graves leads some to believe that they were cherished possessions.</p>
+  <p><span class="para-label">C</span> Girls from ancient Greece and Rome offered their wooden dolls to <span class="evidence" data-q="2">goddesses</span> after they were too ‘grown-up’ to play with dolls. Most ancient dolls that were found in tombs were very simple creations, often made from such materials as clay, rags, wood, or bone. Some of the more unique dolls were made with ivory or wax. The main goal was to make the doll as lifelike as possible. That ideal led to the creation of dolls with movable <span class="evidence" data-q="3">limbs</span> and removable garments, dating back to 600 BC.</p>
+  <p><span class="para-label">D</span> Following the era of the ancient dolls, Europe became a major hub for doll production. These dolls were primarily made of wood. Fewer than 30 examples of primitive wooden stump dolls from England survive today. The Grodnertal area of Germany produced many peg wooden dolls, a type of doll that has very simple peg joints and resembles a clothespin. An alternative to wood was developed in the 1800s.</p>
+  <p><span class="para-label">E</span> ‘<span class="evidence" data-q="6">Composition</span>' is a collective term for mixtures of pulped wood or paper that were used to make doll heads and bodies. These mixtures were moulded under pressure, creating a durable doll that could be mass-produced. Manufacturers closely guarded the recipes for their mixtures, sometimes using strange ingredients like ash or eggshells. Papier-mâché, a type of composition, was one of the most popular mixtures.</p>
+  <p><span class="para-label">F</span> In addition to wooden dolls, <span class="evidence" data-q="4">wax</span> dolls grew in popularity in the 17th and 18th centuries. Munich in Germany was a major manufacturing centre for wax dolls. Wax dollmakers would model a doll’s head in wax or clay, and then cover it with <span class="evidence" data-q="5">plaster</span> to create a mould. Then they would pour melted wax into the cast. The wax for the head would be very thin, no more than 3 mm. Some of the most distinctive wax dolls were created in England between 1850 and 1930. One of the first dolls that portrayed a baby was made in England from wax at the beginning of the 19th century.</p>
+  <p><span class="para-label">G</span> Around the same time, porcelain became popular. It is made by firing special clays in a kiln at more than 2,372 degrees Fahrenheit (1300°C), and only a few clays can withstand firing at such high temperatures. Porcelain is used generically to refer to both china and bisque dolls; china is glazed, whereas bisque is unglazed. Germany, France, and Denmark started creating china heads for dolls in the 1840s. These china heads were replaced in the 1860s by ones made of bisque. <span class="evidence" data-q="7">Bisque, which is porcelain fired twice with colour added to it after the first firing, looked more like skin than china did.</span></p>
+  <p><span class="para-label">H</span> In France, the bébé was popular in the 1880s, and it has become a highly sought-after doll today. The bébé, first made in the 1850s, was different from its predecessors because it depicted a younger girl. Until then, most French dolls were representations of adults. Although the French dolls were unrivalled in their artistry, <span class="evidence" data-q="8">German bisque dolls became quite popular because they were not as expensive.</span></p>
+  <p><span class="para-label">I</span> For many centuries, rag dolls were made by mothers for their children. <span class="evidence" data-q="9">Commercially produced rag dolls were first introduced in the 1850s by English and American manufacturers.</span> The term ‘rag doll’ refers generically to dolls made of any fabric. <span class="evidence" data-q="10">‘Cloth doll’ refers to a subset of rag dolls made of linen or cotton.</span> Although not as sophisticated as dolls made from other materials, rag dolls were well loved, often as a child’s first toy.</p>
+  <p><span class="para-label">J</span> Dollmaking did not become an industry in the United States until after the Civil War in the 1860s. Doll production was concentrated in the New England region of the United States, with dolls made from a variety of materials such as leather, rubber, papier-mâché, and cloth. Celluloid was developed in the state of New Jersey in the late 1860s and was used to manufacture dolls until the mid-1950s. German, French, American, and Japanese factories churned out cheaply produced celluloid dolls in mass quantities. However, celluloid fell out of favour because of its extreme flammability and <span class="evidence" data-q="11">propensity to fade in bright light.</span></p>
+  <p><span class="para-label">K</span> After World War I, dollmakers experimented with plastics. <span class="evidence" data-q="12">Hard plastic dolls were manufactured in the 1940s. They resembled composition dolls, but they were much more durable.</span> Other materials used in doll manufacturing included rubber, foam rubber, and vinyl in the 1950s and 1960s. Vinyl changed dollmaking, allowing dollmakers to root hair into the head, rather than using wigs or painting the hair. Although most dolls are now mass-manufactured using these modern materials, many modern dollmakers are still using the traditional materials of the past to make collectible dolls.</p>
+  <div class="passage-note"><span class="evidence" data-q="13">There is no sentence in this passage about collectors preferring original clothing, so Question 13 is NOT GIVEN.</span></div>
+</div>
+
+      
+<div class="passage-content" id="passage-2" hidden>
+  <h4>Playing Soccer</h4>
+  <p class="subtitle">Passage 2 · Questions 14–26</p>
+  <p><span class="para-label">A</span> Street soccer, as its name implies, is an informal variation of the sport, often played on the street, particularly in urban areas. There are many reasons for the widespread popularity of street soccer. <span class="evidence" data-q="20">Unlike youth soccer, its more formally organized counterpart, no large space is needed, and goal posts, corner markers, and marked lines, associated with the formal game, are typically absent, as are game officials or referees.</span> Another attraction of street soccer is that it is played frequently and competitively, but <span class="evidence" data-q="21">does not necessarily require standard 11-a-side teams or fixed playing positions.</span> Unlike in youth soccer, inexperienced street soccer players rarely learn from repetitive technical and tactical drills. Instead, they learn from their poor performance in competition, unconscious of the skills they are nonetheless developing, and without older adults or coaches present. Players learn without effort through playing the game, and soon attain an almost natural feeling for the sport.</p>
+  <p><span class="para-label">B</span> <span class="evidence" data-q="17">However, there are lots of cities in the world today where conditions are such that street soccer is no longer possible. Congested traffic now dominates where games were once played. Parks and open fields are used as hangouts for older teenagers with other interests. Add to this the requirement in many localities for official permits to use public spaces and the managed schedules that many young people have today, and spontaneous play of any kind is hard to imagine.</span></p>
+  <p><span class="para-label">C</span> In spite of all these obstacles, which are probably solvable in most instances, there is another sociological explanation of why in many places street soccer doesn't enjoy the same popularity it once did. In his book <em>How Soccer Explains the World</em>, US writer Franklin Foer observes: <span class="evidence" data-q="15">Like the 1960s consumer movement which brought seat belts and airbags to cars, the (youth) soccer movement felt like it could create a set of regulations that would protect both the child's body and mind from damage.</span> <span class="evidence" data-q="23">Soccer leagues like the one I played in as a child handed out “participation” prizes to every player, no matter how few games his (or her) team won.</span> Where most of the world accepts the practice of using your head to hit the ball as an essential element of the game, some (youth) soccer parents have worried over the potential for injury to the brain. An entire industry grew up to manufacture protective headgear. <span class="evidence" data-q="22">Even though very little medical evidence supports this fear, some youth leagues prohibited heading the ball altogether.</span></p>
+  <p><span class="para-label">D</span> A growing body of people don't believe street soccer involves a legitimate educational method. They argue that children need to be taught by experts. Youth soccer instruction now begins with four-year-olds, so that they will have an advantage as six-year-olds. <span class="evidence" data-q="19">This need to get ahead brings with it a fear of falling behind that only expert instruction can prevent.</span> This type of instruction leaves no room for the trial and error approach of street soccer.</p>
+  <p><span class="para-label">E</span> <span class="evidence" data-q="14">One of the basic ideas of street soccer is that young players are assigned a particular role by a better player and are expected to play for the good of the team. Such an assignment runs counter to the idea of youth soccer that every child needs to learn every position and will benefit from doing so. In street soccer, you fill the role that you are best suited to at a particular time.</span></p>
+  <p><span class="para-label">F</span> In street soccer, children have to learn patience, to wait their turn, to realize that they are not entitled to make decisions, or even be listened to simply because they show up. <span class="evidence" data-q="16">Positions of responsibility are earned through competition within the team. Younger players in street soccer must wait to attain those positions.</span> In youth soccer, however, with its overly democratic values, youngsters are guaranteed their time in the spotlight. Whether it’s their turn to be captain, to play a central position or to take a crucial shot, youth soccer players come to believe that hard work and patience aren’t really necessary.</p>
+  <p><span class="para-label">G</span> <span class="evidence" data-q="26">“Everyone’s a winner; no one’s a loser” is a guiding principle of youth soccer.</span> This ensures each individual goes away positive about themselves. No one can leave a game or a practice feeling bad. But, if there really are no losers, then why try at all? Since giving less than your best receives the same <span class="evidence" data-q="24">reward</span> as giving your best why go to any extra effort? In street soccer, every game results in a winner and a loser and everyone knows who is who. Losing a game is a common experience and <span class="evidence" data-q="18">players learn early on how to handle this. As a result, unlike most youth soccer players, they acquire resilience.</span> A further difference between these two strands of soccer is that in street soccer a formal <span class="evidence" data-q="25">record</span> is not kept. You can lose one day and win the next. The results are only temporary and are forgotten within minutes of the end of the match. But in organized youth soccer, the position each person plays and the results are formally noted and maintained throughout a season.</p>
+</div>
+
+      
+<div class="passage-content" id="passage-3" hidden>
+  <h4>The Rise of Big Data</h4>
+  <p class="subtitle">Passage 3 · Questions 27–40</p>
+  <p><span class="evidence" data-q="27">Big Data connects data to other data. It transforms scattered fragments of digital information into meaningful patterns, predictions, and insights.</span> Today, nearly every human activity leaves a digital trace: text messages, online purchases, GPS movements, photos, voice commands, and even biometric signals. All of these pieces of information are stored, analyzed, and often combined with other data sources to create a detailed and dynamic picture of the world. Through this process, aspects of life that were once invisible, such as emotions, preferences, or social relationships have become <span class="evidence" data-q="28">“datafied,” meaning that they can now be measured and studied quantitatively.</span></p>
+  <p>For centuries, scientists and statisticians relied on small, carefully controlled samples to make sense of the world. They sought precision and aimed to find clear <span class="evidence" data-q="32">causal relationships</span>. However, traditional methods could only capture limited slices of reality. <span class="evidence" data-q="33">The rise of digital technologies, cloud computing, and global networks has made it possible to analyze entire populations of data instead of samples.</span> The focus has shifted from seeking exact causes to discovering correlations and useful patterns that can predict or describe phenomena, even when the underlying reasons are not fully understood.</p>
+  <p>Real-world examples demonstrate how this new logic works. <span class="evidence" data-q="29">Google Translate, for instance, became accurate not by following linguistic rules, but by comparing billions of sentences translated by humans and identifying statistical relationships between words.</span> Similarly, <span class="evidence" data-q="34">Google Flu Trends once analyzed millions of search terms to predict influenza outbreaks more quickly than health agencies.</span> In New York City, Big Data was used to predict which apartment buildings were most likely to catch <span class="evidence" data-q="35">fire</span> by combining information about age, maintenance history, and neighborhood conditions. The result was faster inspections, safer housing, and more efficient public service.</p>
+  <p><span class="evidence" data-q="30">The influence of Big Data extends across all fields of human activity. In healthcare, it allows doctors to identify disease risks, track epidemics, and personalize treatments. In business, companies analyze customer data to predict demand, improve products, and optimize supply chains. In education, data analytics can track student progress and provide early warnings when learners are at risk of falling behind. Governments use data to monitor pollution, manage energy, and plan infrastructure. In science, massive datasets allow researchers to model climate systems or explore the human genome.</span></p>
+  <p>But Big Data is not just a technical innovation, it is a cultural and philosophical revolution. It changes what we mean by knowledge. Traditionally, knowledge was based on understanding causes, forming theories, and testing them through experiments. <span class="evidence" data-q="31">Today, Big Data often replaces explanation with prediction. Rather than asking why something happens, analysts ask what is likely to happen next.</span></p>
+  <p>Despite its benefits, Big Data introduces serious risks. One major concern is privacy. Every digital action, every click, search, or location can be tracked, stored, and sold. <span class="evidence" data-q="37">Individuals rarely know how much of their personal information is being collected or who controls it.</span> Large corporations such as Google, Amazon, and Facebook hold vast amounts of user data, giving them unprecedented power to influence behavior, markets, and even political outcomes. Governments also use Big Data for surveillance, sometimes justified in the name of national security, but potentially dangerous when it limits personal freedom.</p>
+  <p><span class="evidence" data-q="38">Data often reflects existing inequalities in society, and when algorithms learn from biased data, they reproduce and amplify those biases.</span> Systems used in hiring, lending, or policing can unintentionally discriminate against certain groups. Moreover, the growing reliance on automated decision-making risks replacing human judgment with statistical probability.</p>
+  <p><span class="evidence" data-q="39">Some critics warn of a future shaped by Big Data authoritarianism, where predictive analytics are used to anticipate and control behavior.</span> This dystopian possibility reminds us that technology alone cannot ensure fairness or justice. Data itself is neutral, but how it is collected and used reflects human values and power structures.</p>
+  <p>Ultimately, Big Data’s greatest challenge is not technological but human. Data can show what is happening, yet it cannot tell us why it matters or what should be done. It cannot replace intuition, empathy, and creativity—qualities that define human intelligence. While algorithms can identify correlations, only people can assign meaning and make ethical choices. Therefore, the true value of Big Data lies in <span class="evidence" data-q="36">collaboration between humans and machines</span>: analytical precision combined with moral wisdom.</p>
+  <p><span class="evidence" data-q="40">Education systems should teach data literacy so that citizens understand how algorithms shape their world.</span> Governments must create fair regulations that encourage innovation while guarding against abuse. Researchers and companies need ethical frameworks that prioritize human welfare over profit or control.</p>
+</div>
+
+    </div>
+  </section>
+  <div class="divider" id="divider"></div>
+  <section class="questions-panel" id="questionsPanel">
+    
+<div class="question-card" data-part="1">
+  <div class="section-head">Questions 1–6</div>
+  <p class="instruction">Complete the notes. <strong>ONE WORD ONLY</strong> from the passage.</p>
+  <div class="summary-box">
+    <div class="question-item summary-item" id="question-1" data-q="1">
+      <div><strong>Earliest known dolls</strong> – religious figures, toys.</div>
+      <div><strong>Egypt, 2000 BC</strong> – wooden bodies, hair made of <input class="answer-input inline-answer" type="text" id="q1" placeholder="1">.</div>
+      <div class="after-check answer-note" data-answer-for="1"></div>
+    </div>
+    <div class="question-item summary-item" id="question-2" data-q="2">
+      <div><strong>Ancient Greece/Rome</strong> – dolls given to <input class="answer-input inline-answer" type="text" id="q2" placeholder="2"> by older girls.</div>
+      <div class="after-check answer-note" data-answer-for="2"></div>
+    </div>
+    <div class="question-item summary-item" id="question-3" data-q="3">
+      <div><strong>600 BC</strong> – realistic dolls had clothes and movable <input class="answer-input inline-answer" type="text" id="q3" placeholder="3">.</div>
+      <div class="after-check answer-note" data-answer-for="3"></div>
+    </div>
+    <div class="question-item summary-item" id="question-4" data-q="4">
+      <div><strong>17th–18th centuries</strong> – dolls made of <input class="answer-input inline-answer" type="text" id="q4" placeholder="4"> became common; moulds made of <input class="answer-input inline-answer" type="text" id="q5" placeholder="5">.</div>
+      <div class="after-check answer-note" data-answer-for="4"></div>
+      <div class="after-check answer-note" data-answer-for="5"></div>
+    </div>
+    <div class="question-item summary-item" id="question-6" data-q="6">
+      <div><strong>1800s</strong> – new mixtures known as <input class="answer-input inline-answer" type="text" id="q6" placeholder="6">, recipes secret.</div>
+      <div class="after-check answer-note" data-answer-for="6"></div>
+    </div>
+  </div>
+</div>
+<div class="question-card" data-part="1"><div class="section-head">Questions 7–13</div><p class="instruction">Choose <strong>TRUE / FALSE / NOT GIVEN</strong>.</p>
+    <div class="question-item" id="question-7" data-q="7">
+      <div class="question-stem"><strong class="q-badge">7</strong> Bisque dolls appear less realistic than dolls made of china.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q7" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q7" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q7" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="7"></div>
+    </div>
+    <div class="question-item" id="question-8" data-q="8">
+      <div class="question-stem"><strong class="q-badge">8</strong> French dolls tended to cost more than German bisque dolls.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q8" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q8" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q8" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="8"></div>
+    </div>
+    <div class="question-item" id="question-9" data-q="9">
+      <div class="question-stem"><strong class="q-badge">9</strong> The first rag dolls were made in the 1850s.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q9" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q9" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q9" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="9"></div>
+    </div>
+    <div class="question-item" id="question-10" data-q="10">
+      <div class="question-stem"><strong class="q-badge">10</strong> Only dolls made of cotton or linen are classified as cloth dolls.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q10" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q10" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q10" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="10"></div>
+    </div>
+    <div class="question-item" id="question-11" data-q="11">
+      <div class="question-stem"><strong class="q-badge">11</strong> Dolls made of celluloid tended to lose their colour.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q11" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q11" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q11" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="11"></div>
+    </div>
+    <div class="question-item" id="question-12" data-q="12">
+      <div class="question-stem"><strong class="q-badge">12</strong> Composition dolls lasted longer than the plastic dolls made in the 1940s.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q12" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q12" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q12" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="12"></div>
+    </div>
+    <div class="question-item" id="question-13" data-q="13">
+      <div class="question-stem"><strong class="q-badge">13</strong> Doll collectors prefer a doll to be dressed in its original clothing.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q13" value="TRUE"><span>TRUE</span></label>
+<label class="tf-option"><input type="radio" name="q13" value="FALSE"><span>FALSE</span></label>
+<label class="tf-option"><input type="radio" name="q13" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="13"></div>
+    </div></div>
+<div class="question-card" data-part="2">
+  <div class="section-head">Questions 14–19</div>
+  <p class="instruction">Which section (A–G) contains the following information?</p>
+  <table class="matching-grid"><thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th></tr></thead><tbody><tr id="question-14" class="question-item" data-q="14"><td class="grid-question"><strong>14.</strong> contrast gaining experience playing different positions<div class="after-check answer-note" data-answer-for="14"></div></td><td class="click-cell" data-q="14" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="14" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="14" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="14" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="14" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="14" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="14" data-val="G" tabindex="0">G</td></tr><tr id="question-15" class="question-item" data-q="15"><td class="grid-question"><strong>15.</strong> examples outside sport of emphasis on safety<div class="after-check answer-note" data-answer-for="15"></div></td><td class="click-cell" data-q="15" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="15" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="15" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="15" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="15" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="15" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="15" data-val="G" tabindex="0">G</td></tr><tr id="question-16" class="question-item" data-q="16"><td class="grid-question"><strong>16.</strong> methods of selection for leadership<div class="after-check answer-note" data-answer-for="16"></div></td><td class="click-cell" data-q="16" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="16" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="16" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="16" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="16" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="16" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="16" data-val="G" tabindex="0">G</td></tr><tr id="question-17" class="question-item" data-q="17"><td class="grid-question"><strong>17.</strong> urban changes discouraging street soccer<div class="after-check answer-note" data-answer-for="17"></div></td><td class="click-cell" data-q="17" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="17" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="17" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="17" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="17" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="17" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="17" data-val="G" tabindex="0">G</td></tr><tr id="question-18" class="question-item" data-q="18"><td class="grid-question"><strong>18.</strong> lesson that failure teaches street players<div class="after-check answer-note" data-answer-for="18"></div></td><td class="click-cell" data-q="18" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="18" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="18" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="18" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="18" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="18" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="18" data-val="G" tabindex="0">G</td></tr><tr id="question-19" class="question-item" data-q="19"><td class="grid-question"><strong>19.</strong> why youth soccer emphasises need for coaches<div class="after-check answer-note" data-answer-for="19"></div></td><td class="click-cell" data-q="19" data-val="A" tabindex="0">A</td><td class="click-cell" data-q="19" data-val="B" tabindex="0">B</td><td class="click-cell" data-q="19" data-val="C" tabindex="0">C</td><td class="click-cell" data-q="19" data-val="D" tabindex="0">D</td><td class="click-cell" data-q="19" data-val="E" tabindex="0">E</td><td class="click-cell" data-q="19" data-val="F" tabindex="0">F</td><td class="click-cell" data-q="19" data-val="G" tabindex="0">G</td></tr></tbody></table>
+</div>
+    <div class="question-card" data-part="2" id="question-20" data-q="20,21">
+      <div class="section-head">Questions 20–21</div>
+      <p class="instruction"><strong>Choose TWO answers.</strong></p>
+      <div class="question-stem"><strong class="q-badge">20–21</strong> Which TWO reasons for the popularity of street soccer are mentioned?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="checkbox" name="q20_21" value="A"><span><strong>A)</strong> Famous players started in street soccer</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q20_21" value="B"><span><strong>B)</strong> Can begin playing at a very early age</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q20_21" value="C"><span><strong>C)</strong> Do not need elaborate facilities</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q20_21" value="D"><span><strong>D)</strong> Inexperienced players are not criticised</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q20_21" value="E"><span><strong>E)</strong> Teams can have varying numbers</span></label></div>
+      <div class="after-check answer-note" data-answer-for="20"></div><div class="after-check answer-note" data-answer-for="21"></div>
+    </div>
+    <div class="question-card" data-part="2" id="question-22" data-q="22,23">
+      <div class="section-head">Questions 22–23</div>
+      <p class="instruction"><strong>Choose TWO answers.</strong></p>
+      <div class="question-stem"><strong class="q-badge">22–23</strong> Which TWO results of the 1960s parenting style mentioned by Foer are given?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="checkbox" name="q22_23" value="A"><span><strong>A)</strong> Youth soccer became more expensive</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q22_23" value="B"><span><strong>B)</strong> Some leagues adopted restrictive rules</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q22_23" value="C"><span><strong>C)</strong> Fewer young people joined teams</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q22_23" value="D"><span><strong>D)</strong> Players were rewarded with participation prizes</span></label>
+<label class="multi-choice-option"><input type="checkbox" name="q22_23" value="E"><span><strong>E)</strong> Advertisements were directed to parents</span></label></div>
+      <div class="after-check answer-note" data-answer-for="22"></div><div class="after-check answer-note" data-answer-for="23"></div>
+    </div>
+<div class="question-card" data-part="2">
+  <div class="section-head">Questions 24–26</div>
+  <p class="instruction">Complete the summary below. <strong>ONE WORD ONLY</strong>.</p>
+  <div class="summary-box">
+    <div class="question-item summary-item" id="question-24" data-q="24">
+      <div>For youth soccer players, a key is that they should always come away with a positive attitude. In this respect, regardless of effort, they get some kind of <input class="answer-input inline-answer" type="text" id="q24" placeholder="24"> at the end.</div>
+      <div class="after-check answer-note" data-answer-for="24"></div>
+    </div>
+    <div class="question-item summary-item" id="question-25" data-q="25">
+      <div>In street soccer, players gain resilience because they have to cope with failure. But outcome isn’t remembered long; no-one keeps a <input class="answer-input inline-answer" type="text" id="q25" placeholder="25"> of results.</div>
+      <div class="after-check answer-note" data-answer-for="25"></div>
+    </div>
+    <div class="question-item summary-item" id="question-26" data-q="26">
+      <div>Also, the guiding <input class="answer-input inline-answer" type="text" id="q26" placeholder="26"> is “everyone’s a winner”.</div>
+      <div class="after-check answer-note" data-answer-for="26"></div>
+    </div>
+  </div>
+</div>
+<div class="question-card" data-part="3"><div class="section-head">Questions 27–31</div><p class="instruction">Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+    <div class="question-item" id="question-27" data-q="27">
+      <div class="question-stem"><strong class="q-badge">27</strong> What makes Big Data different from traditional data analysis?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="radio" name="q27" value="A"><span><strong>A)</strong> It depends on physical samples rather than digital records.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q27" value="B"><span><strong>B)</strong> It focuses on connections between data rather than isolated facts.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q27" value="C"><span><strong>C)</strong> It uses fewer but more reliable datasets.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q27" value="D"><span><strong>D)</strong> It is mainly concerned with communication between people.</span></label></div>
+      <div class="after-check answer-note" data-answer-for="27"></div>
+    </div>
+    <div class="question-item" id="question-28" data-q="28">
+      <div class="question-stem"><strong class="q-badge">28</strong> According to the passage, what does the term “datafied” mean?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="radio" name="q28" value="A"><span><strong>A)</strong> The process of storing all kinds of data in computers.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q28" value="B"><span><strong>B)</strong> Turning aspects of life into measurable digital information.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q28" value="C"><span><strong>C)</strong> The method of deleting unnecessary online data.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q28" value="D"><span><strong>D)</strong> The transformation of machines into human-like systems.</span></label></div>
+      <div class="after-check answer-note" data-answer-for="28"></div>
+    </div>
+    <div class="question-item" id="question-29" data-q="29">
+      <div class="question-stem"><strong class="q-badge">29</strong> What was the key to Google Translate’s success, according to the text?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="radio" name="q29" value="A"><span><strong>A)</strong> The use of strict linguistic rules.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q29" value="B"><span><strong>B)</strong> The ability to understand the meaning of sentences.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q29" value="C"><span><strong>C)</strong> The comparison of vast numbers of human translations.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q29" value="D"><span><strong>D)</strong> The correction of errors by language experts.</span></label></div>
+      <div class="after-check answer-note" data-answer-for="29"></div>
+    </div>
+    <div class="question-item" id="question-30" data-q="30">
+      <div class="question-stem"><strong class="q-badge">30</strong> In which field is Big Data not specifically mentioned as having an impact?</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="radio" name="q30" value="A"><span><strong>A)</strong> Healthcare.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q30" value="B"><span><strong>B)</strong> Education.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q30" value="C"><span><strong>C)</strong> Agriculture.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q30" value="D"><span><strong>D)</strong> Business.</span></label></div>
+      <div class="after-check answer-note" data-answer-for="30"></div>
+    </div>
+    <div class="question-item" id="question-31" data-q="31">
+      <div class="question-stem"><strong class="q-badge">31</strong> According to the writer, Big Data represents a new form of knowledge because it</div>
+      <div class="option-group"><label class="multi-choice-option"><input type="radio" name="q31" value="A"><span><strong>A)</strong> replaces theory with practical prediction.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q31" value="B"><span><strong>B)</strong> removes the need for human interpretation.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q31" value="C"><span><strong>C)</strong> proves that traditional science is wrong.</span></label>
+<label class="multi-choice-option"><input type="radio" name="q31" value="D"><span><strong>D)</strong> focuses entirely on the causes of events.</span></label></div>
+      <div class="after-check answer-note" data-answer-for="31"></div>
+    </div></div><div class="question-card" data-part="3"><div class="section-head">Questions 32–36</div><p class="instruction">Answer the questions below. <strong>NO MORE THAN THREE WORDS AND/OR A NUMBER</strong>.</p>
+    <div class="question-item" id="question-32" data-q="32">
+      <div class="question-stem"><strong class="q-badge">32</strong> What kind of relationship did traditional science mainly try to find?</div>
+      <input class="answer-input" type="text" id="q32" placeholder="32">
+      <div class="after-check answer-note" data-answer-for="32"></div>
+    </div>
+    <div class="question-item" id="question-33" data-q="33">
+      <div class="question-stem"><strong class="q-badge">33</strong> What allowed researchers to analyze whole populations of data rather than samples?</div>
+      <input class="answer-input" type="text" id="q33" placeholder="33">
+      <div class="after-check answer-note" data-answer-for="33"></div>
+    </div>
+    <div class="question-item" id="question-34" data-q="34">
+      <div class="question-stem"><strong class="q-badge">34</strong> Which online system once used search terms to predict flu outbreaks?</div>
+      <input class="answer-input" type="text" id="q34" placeholder="34">
+      <div class="after-check answer-note" data-answer-for="34"></div>
+    </div>
+    <div class="question-item" id="question-35" data-q="35">
+      <div class="question-stem"><strong class="q-badge">35</strong> What did New York City use Big Data to predict?</div>
+      <input class="answer-input" type="text" id="q35" placeholder="35">
+      <div class="after-check answer-note" data-answer-for="35"></div>
+    </div>
+    <div class="question-item" id="question-36" data-q="36">
+      <div class="question-stem"><strong class="q-badge">36</strong> What combination does the writer say gives Big Data its true value?</div>
+      <input class="answer-input" type="text" id="q36" placeholder="36">
+      <div class="after-check answer-note" data-answer-for="36"></div>
+    </div></div><div class="question-card" data-part="3"><div class="section-head">Questions 37–40</div><p class="instruction">Do the following statements agree with the views of the writer? Choose <strong>YES / NO / NOT GIVEN</strong>.</p>
+    <div class="question-item" id="question-37" data-q="37">
+      <div class="question-stem"><strong class="q-badge">37</strong> People are usually well informed about who collects their personal data.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q37" value="YES"><span>YES</span></label>
+<label class="tf-option"><input type="radio" name="q37" value="NO"><span>NO</span></label>
+<label class="tf-option"><input type="radio" name="q37" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="37"></div>
+    </div>
+    <div class="question-item" id="question-38" data-q="38">
+      <div class="question-stem"><strong class="q-badge">38</strong> Algorithms can reproduce social inequality because they learn from biased data.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q38" value="YES"><span>YES</span></label>
+<label class="tf-option"><input type="radio" name="q38" value="NO"><span>NO</span></label>
+<label class="tf-option"><input type="radio" name="q38" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="38"></div>
+    </div>
+    <div class="question-item" id="question-39" data-q="39">
+      <div class="question-stem"><strong class="q-badge">39</strong> The writer believes Big Data will certainly destroy human freedom.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q39" value="YES"><span>YES</span></label>
+<label class="tf-option"><input type="radio" name="q39" value="NO"><span>NO</span></label>
+<label class="tf-option"><input type="radio" name="q39" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="39"></div>
+    </div>
+    <div class="question-item" id="question-40" data-q="40">
+      <div class="question-stem"><strong class="q-badge">40</strong> The writer suggests that data literacy should be taught in schools.</div>
+      <div class="option-group"><label class="tf-option"><input type="radio" name="q40" value="YES"><span>YES</span></label>
+<label class="tf-option"><input type="radio" name="q40" value="NO"><span>NO</span></label>
+<label class="tf-option"><input type="radio" name="q40" value="NOT GIVEN"><span>NOT GIVEN</span></label></div>
+      <div class="after-check answer-note" data-answer-for="40"></div>
+    </div></div>
+    <section class="review-section" id="fullReview">
+      <div class="section-head">Explanation of Each Answer (1–40)</div>
+      <div class="review-grid" id="reviewGrid"></div>
+    </section>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <div class="nav-left">
+    <button class="nav-arrow" id="prevBtn">◄</button>
+    <button class="nav-arrow" id="nextBtn">►</button>
+  </div>
+  <div class="nav-middle">
+    <div class="part-tabs">
+      <button class="part-tab active" data-part="1">Part 1</button>
+      <button class="part-tab" data-part="2">Part 2</button>
+      <button class="part-tab" data-part="3">Part 3</button>
+    </div>
+    <div class="question-nav-row" id="questionNavRow"></div>
+  </div>
+  <div class="nav-right">
+    <div class="answered-counter" id="answeredCounter">0 of 40 answered</div>
+    <button class="check-btn" id="checkBtn">✓ Check Answers</button>
+  </div>
+</nav>
+
+<div class="hl-floating-toolbar" id="hlToolbar">
+  <button class="hl-btn" data-color="yellow">Highlight Yellow</button>
+  <button class="hl-btn" data-color="blue">Highlight Blue</button>
+  <button class="hl-btn" data-color="pink">Highlight Pink</button>
+  <button class="hl-btn" data-action="remove">Remove highlight</button>
+</div>
+
+<div class="notes-modal" id="notesModal">
+  <div class="modal-card small">
+    <div class="modal-top">
+      <h3>Test Instructions</h3>
+      <button class="close-btn" data-close="notesModal">Close</button>
+    </div>
+    <p>This full reading file contains 3 passages and 40 questions. You can move between parts using the bottom tabs or question buttons. After checking answers:</p>
+    <ul>
+      <li>Correct answers appear inside the question area.</li>
+      <li>Evidence sentences are highlighted in the passage with question numbers.</li>
+      <li>You can click any question to open its explanation.</li>
+      <li>The bottom of the question panel shows the full 1–40 explanation review.</li>
+    </ul>
+    <p>Telegram link: <strong>IELTSUZ</strong> · Watermark: <strong>IELTSUZ</strong></p>
+  </div>
+</div>
+
+<div class="result-modal" id="resultModal">
+  <div class="modal-card">
+    <div class="modal-top">
+      <div>
+        <h3 style="margin:0 0 6px">My Result</h3>
+        <div class="score-pill" id="scorePill">0 / 40</div>
+      </div>
+      <button class="close-btn" data-close="resultModal">Close</button>
+    </div>
+    <table class="results-table">
+      <thead><tr><th>Q</th><th>Your answer</th><th>Correct answer</th><th>Status</th></tr></thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="explanation-modal" id="explanationModal">
+  <div class="modal-card small">
+    <div class="modal-top">
+      <div>
+        <h3 id="expTitle" style="margin:0">Question</h3>
+        <div id="expAnswer" class="score-pill" style="margin-top:6px"></div>
+      </div>
+      <button class="close-btn" data-close="explanationModal">Close</button>
+    </div>
+    <div id="expText"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ANSWER_KEY = {"1": "clay", "2": "goddesses", "3": "limbs", "4": "wax", "5": "plaster", "6": "composition", "7": "FALSE", "8": "TRUE", "9": "FALSE", "10": "TRUE", "11": "TRUE", "12": "FALSE", "13": "NOT GIVEN", "14": "E", "15": "C", "16": "F", "17": "B", "18": "G", "19": "D", "20": "C", "21": "E", "22": "B", "23": "D", "24": "reward", "25": "record", "26": "principle", "27": "B", "28": "B", "29": "C", "30": "C", "31": "A", "32": "causal relationships", "33": "digital technologies / cloud computing / global networks", "34": "Google Flu Trends", "35": "fire", "36": "collaboration between humans and machines", "37": "NO", "38": "YES", "39": "NO", "40": "YES"};
+  const ALT_ANSWERS = {"33": ["digital technologies", "cloud computing", "global networks"], "35": ["fire", "catch fire"], "36": ["collaboration between humans and machines", "humans and machines", "collaboration between human and machine"]};
+  const EXPLANATIONS = {"1": {"answer": "clay", "text": "Paragraph B states that Egyptian dolls had ‘hair’ made of clay."}, "2": {"answer": "goddesses", "text": "Paragraph C says girls from ancient Greece and Rome offered their dolls to goddesses."}, "3": {"answer": "limbs", "text": "Paragraph C mentions movable limbs and removable garments."}, "4": {"answer": "wax", "text": "Paragraph F says wax dolls grew in popularity in the 17th and 18th centuries."}, "5": {"answer": "plaster", "text": "Paragraph F explains that wax dollmakers covered the model with plaster to create a mould."}, "6": {"answer": "composition", "text": "Paragraph E defines ‘composition’ as the new mixtures used in the 1800s."}, "7": {"answer": "FALSE", "text": "The passage says bisque looked more like skin than china, so the statement reverses the comparison."}, "8": {"answer": "TRUE", "text": "Paragraph H says German bisque dolls were popular because they were not as expensive, so French dolls tended to cost more."}, "9": {"answer": "FALSE", "text": "The passage says commercially produced rag dolls were first introduced in the 1850s, not the first rag dolls ever made."}, "10": {"answer": "TRUE", "text": "Paragraph I defines cloth dolls as the subset made of linen or cotton."}, "11": {"answer": "TRUE", "text": "Paragraph J says celluloid had a propensity to fade in bright light."}, "12": {"answer": "FALSE", "text": "Paragraph K says hard plastic dolls were much more durable than composition dolls."}, "13": {"answer": "NOT GIVEN", "text": "The passage discusses collectible dolls but says nothing about collectors preferring original clothing."}, "14": {"answer": "E", "text": "Section E contrasts fixed roles in street soccer with the youth-soccer idea that every child should learn every position."}, "15": {"answer": "C", "text": "Section C gives examples outside sport—seat belts and airbags—to show the safety-first mentality."}, "16": {"answer": "F", "text": "Section F explains that responsibility is earned through competition within the team."}, "17": {"answer": "B", "text": "Section B describes traffic, permits, and scheduled lifestyles that make spontaneous street soccer difficult."}, "18": {"answer": "G", "text": "Section G says losing teaches players how to handle failure and helps them acquire resilience."}, "19": {"answer": "D", "text": "Section D says fear of falling behind leads people to believe expert instruction is necessary."}, "20": {"answer": "C", "text": "Street soccer is popular because it does not require elaborate facilities or formal equipment."}, "21": {"answer": "E", "text": "The passage says it does not require standard 11-a-side teams or fixed positions."}, "22": {"answer": "B", "text": "Section C says some youth leagues prohibited heading the ball, showing restrictive rules."}, "23": {"answer": "D", "text": "Section C says participation prizes were handed out to every player."}, "24": {"answer": "reward", "text": "Section G says giving less than your best receives the same reward as giving your best."}, "25": {"answer": "record", "text": "Section G says that in street soccer a formal record is not kept."}, "26": {"answer": "principle", "text": "Section G says ‘Everyone’s a winner; no one’s a loser’ is a guiding principle of youth soccer."}, "27": {"answer": "B", "text": "The passage says Big Data connects data to other data rather than treating facts in isolation."}, "28": {"answer": "B", "text": "‘Datafied’ is defined as turning aspects of life into things that can be measured and studied quantitatively."}, "29": {"answer": "C", "text": "Google Translate succeeded by comparing billions of human translations, not by relying on fixed linguistic rules."}, "30": {"answer": "C", "text": "Healthcare, business, education, government, and science are mentioned; agriculture is not."}, "31": {"answer": "A", "text": "The writer says Big Data often replaces explanation with prediction."}, "32": {"answer": "causal relationships", "text": "Traditional science mainly tried to find causal relationships."}, "33": {"answer": "digital technologies / cloud computing / global networks", "text": "The passage says these developments made whole-population analysis possible."}, "34": {"answer": "Google Flu Trends", "text": "This is the system named in the text as using search terms to predict flu outbreaks."}, "35": {"answer": "fire", "text": "New York City used Big Data to predict which buildings were most likely to catch fire."}, "36": {"answer": "collaboration between humans and machines", "text": "The writer says Big Data’s true value lies in this combination."}, "37": {"answer": "NO", "text": "The passage says individuals rarely know how much data is collected or who controls it."}, "38": {"answer": "YES", "text": "The passage explicitly says algorithms learn from biased data and reproduce inequalities."}, "39": {"answer": "NO", "text": "The writer says some critics warn of this future; the writer does not state it will certainly happen."}, "40": {"answer": "YES", "text": "The final paragraph says education systems should teach data literacy."}};
+  const Q_ANCHOR = {"1": "question-1", "2": "question-2", "3": "question-3", "4": "question-4", "5": "question-4", "6": "question-6", "7": "question-7", "8": "question-8", "9": "question-9", "10": "question-10", "11": "question-11", "12": "question-12", "13": "question-13", "14": "question-14", "15": "question-15", "16": "question-16", "17": "question-17", "18": "question-18", "19": "question-19", "20": "question-20", "21": "question-20", "22": "question-22", "23": "question-22", "24": "question-24", "25": "question-25", "26": "question-26", "27": "question-27", "28": "question-28", "29": "question-29", "30": "question-30", "31": "question-31", "32": "question-32", "33": "question-33", "34": "question-34", "35": "question-35", "36": "question-36", "37": "question-37", "38": "question-38", "39": "question-39", "40": "question-40"};
+  const Q_PART = {"1": 1, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 1, "10": 1, "11": 1, "12": 1, "13": 1, "14": 2, "15": 2, "16": 2, "17": 2, "18": 2, "19": 2, "20": 2, "21": 2, "22": 2, "23": 2, "24": 2, "25": 2, "26": 2, "27": 3, "28": 3, "29": 3, "30": 3, "31": 3, "32": 3, "33": 3, "34": 3, "35": 3, "36": 3, "37": 3, "38": 3, "39": 3, "40": 3};
+  const TOTAL_QUESTIONS = 40;
+  const partRanges = {1:[1,13], 2:[14,26], 3:[27,40]};
+
+  let currentPart = 1;
+  let activeQuestion = 1;
+  let hasChecked = false;
+  let timerRunning = false;
+  let secondsLeft = 3600;
+  let timerInt = null;
+  let savedRange = null;
+  let activeHLMark = null;
+
+  const body = document.body;
+  const passagePanel = document.getElementById('passagePanel');
+  const questionsPanel = document.getElementById('questionsPanel');
+  const questionNavRow = document.getElementById('questionNavRow');
+  const answeredCounter = document.getElementById('answeredCounter');
+  const checkBtn = document.getElementById('checkBtn');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerToggle = document.getElementById('timerToggle');
+  const timerReset = document.getElementById('timerReset');
+  const hlToolbar = document.getElementById('hlToolbar');
+  const reviewGrid = document.getElementById('reviewGrid');
+
+  function norm(str){
+    return (str || '').toString().trim().toLowerCase().replace(/\s+/g,' ');
+  }
+  function normTight(str){
+    return norm(str).replace(/[.,;:!?'"()\-–—]/g,'').replace(/\s+/g,' ');
+  }
+
+  function showModal(id){ document.getElementById(id).style.display='flex'; }
+  function hideModal(id){ document.getElementById(id).style.display='none'; }
+
+  document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => hideModal(btn.dataset.close)));
+  document.getElementById('notesBtn').addEventListener('click', () => showModal('notesModal'));
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(dark){
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('themeBtn').textContent = '🌙';
+    }else{
+      document.documentElement.setAttribute('data-theme','dark');
+      document.getElementById('themeBtn').textContent = '☀️';
+    }
+  });
+
+  function renderQuestionNav(){
+    const [start,end] = partRanges[currentPart];
+    questionNavRow.innerHTML = '';
+    for(let q=start;q<=end;q++){
+      const btn = document.createElement('button');
+      btn.className = 'subQuestion';
+      btn.textContent = q;
+      btn.dataset.q = q;
+      btn.addEventListener('click', () => scrollToQuestion(q));
+      questionNavRow.appendChild(btn);
+    }
+    updateNavButtonStates();
+  }
+
+  function setPart(part){
+    currentPart = part;
+    document.querySelectorAll('.part-tab').forEach(btn => btn.classList.toggle('active', Number(btn.dataset.part)===part));
+    document.querySelectorAll('.passage-tab').forEach(btn => btn.classList.toggle('active', Number(btn.dataset.part)===part));
+    document.querySelectorAll('.question-card').forEach(card => card.classList.toggle('hidden', Number(card.dataset.part)!==part));
+    document.querySelectorAll('.passage-content').forEach(div => div.hidden = div.id !== `passage-${part}`);
+    renderQuestionNav();
+  }
+
+  document.querySelectorAll('.part-tab,.passage-tab').forEach(btn => btn.addEventListener('click', () => setPart(Number(btn.dataset.part))));
+
+  function getTextAnswer(q){ const el = document.getElementById(`q${q}`); return el ? el.value.trim() : ''; }
+  function getRadioAnswer(q){ const c = document.querySelector(`input[name="q${q}"]:checked`); return c ? c.value : ''; }
+  function getMatchAnswer(q){ const c = document.querySelector(`.click-cell.selected[data-q="${q}"]`); return c ? c.dataset.val : ''; }
+  function getCheckboxValues(group){ return [...document.querySelectorAll(`input[name="${group}"]:checked`)].map(x=>x.value); }
+
+  function isAnswered(q){
+    q = Number(q);
+    if ((q>=1 && q<=6) || (q>=24 && q<=26) || (q>=32 && q<=36)) return !!getTextAnswer(q);
+    if ((q>=7 && q<=13) || (q>=27 && q<=31) || (q>=37 && q<=40)) return !!getRadioAnswer(q);
+    if (q>=14 && q<=19) return !!getMatchAnswer(q);
+    if (q===20) return getCheckboxValues('q20_21').length >= 1;
+    if (q===21) return getCheckboxValues('q20_21').length >= 2;
+    if (q===22) return getCheckboxValues('q22_23').length >= 1;
+    if (q===23) return getCheckboxValues('q22_23').length >= 2;
+    return false;
+  }
+
+  function userDisplay(q){
+    q = Number(q);
+    if ((q>=1 && q<=6) || (q>=24 && q<=26) || (q>=32 && q<=36)) return getTextAnswer(q) || '—';
+    if ((q>=7 && q<=13) || (q>=27 && q<=31) || (q>=37 && q<=40)) return getRadioAnswer(q) || '—';
+    if (q>=14 && q<=19) return getMatchAnswer(q) || '—';
+    if (q===20 || q===21) { const vals = getCheckboxValues('q20_21'); return vals.length ? vals.join(', ') : '—'; }
+    if (q===22 || q===23) { const vals = getCheckboxValues('q22_23'); return vals.length ? vals.join(', ') : '—'; }
+    return '—';
+  }
+
+  function evaluate(q){
+    q = String(q);
+    const qn = Number(q);
+    let user = userDisplay(qn);
+    let ok = false;
+    if ((qn>=1 && qn<=6) || (qn>=24 && qn<=26) || (qn>=32 && qn<=36)){
+      const userN = normTight(user);
+      const correctN = normTight(ANSWER_KEY[q]);
+      if (ALT_ANSWERS[q]) ok = ALT_ANSWERS[q].some(v => normTight(v) === userN);
+      else ok = !!userN && (userN === correctN || userN.includes(correctN) || correctN.includes(userN));
+    } else if ((qn>=7 && qn<=13) || (qn>=14 && qn<=19) || (qn>=27 && qn<=31) || (qn>=37 && qn<=40)){
+      ok = user === ANSWER_KEY[q];
+    } else if (qn===20 || qn===21){
+      ok = getCheckboxValues('q20_21').includes(ANSWER_KEY[q]);
+    } else if (qn===22 || qn===23){
+      ok = getCheckboxValues('q22_23').includes(ANSWER_KEY[q]);
+    }
+    return {q: qn, user, correct: ANSWER_KEY[q], ok};
+  }
+
+  function updateAnsweredCount(){
+    let count = 0;
+    for(let q=1;q<=TOTAL_QUESTIONS;q++) if(isAnswered(q)) count++;
+    answeredCounter.textContent = `${count} of 40 answered`;
+    updateNavButtonStates();
+  }
+
+  function clearVisualState(){
+    document.querySelectorAll('.tf-option,.multi-choice-option,.click-cell,.answer-input,.question-item').forEach(el => {
+      el.classList.remove('correct','incorrect','checked','active-focus');
+    });
+  }
+
+  function applyCheckedClassUI(){
+    document.querySelectorAll('.tf-option,.multi-choice-option').forEach(label => {
+      const inp = label.querySelector('input');
+      label.classList.toggle('checked', !!inp.checked);
+    });
+  }
+
+  document.addEventListener('change', e => {
+    if (e.target.matches('input[type="radio"],input[type="checkbox"]')) applyCheckedClassUI();
+    if (e.target.name === 'q20_21' || e.target.name === 'q22_23'){
+      const name = e.target.name;
+      const checked = [...document.querySelectorAll(`input[name="${name}"]:checked`)];
+      if (checked.length > 2){
+        e.target.checked = false;
+      }
+      applyCheckedClassUI();
+    }
+    updateAnsweredCount();
+  });
+  document.addEventListener('input', updateAnsweredCount);
+
+  document.querySelectorAll('.click-cell').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const q = cell.dataset.q;
+      document.querySelectorAll(`.click-cell[data-q="${q}"]`).forEach(c => c.classList.remove('selected'));
+      cell.classList.add('selected');
+      setActiveQuestion(Number(q));
+      updateAnsweredCount();
+    });
+  });
+
+  function setActiveQuestion(q){
+    activeQuestion = q;
+    document.querySelectorAll('.question-item').forEach(el => el.classList.remove('active-focus'));
+    const anchorId = Q_ANCHOR[String(q)];
+    const anchor = document.getElementById(anchorId);
+    if (anchor) anchor.classList.add('active-focus');
+    updateNavButtonStates();
+  }
+
+  function updateNavButtonStates(){
+    document.querySelectorAll('.subQuestion').forEach(btn => {
+      const q = Number(btn.dataset.q);
+      btn.classList.remove('answered','active','correct','incorrect');
+      if (isAnswered(q)) btn.classList.add('answered');
+      if (q === activeQuestion) btn.classList.add('active');
+      if (hasChecked){
+        const ev = evaluate(q);
+        btn.classList.add(ev.ok ? 'correct' : 'incorrect');
+      }
+    });
+  }
+
+  function scrollToQuestion(q){
+    q = Number(q);
+    const part = Q_PART[String(q)];
+    if (part !== currentPart) setPart(part);
+    const target = document.getElementById(Q_ANCHOR[String(q)]);
+    if (target) {
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      setActiveQuestion(q);
+    }
+  }
+
+  function stepQuestion(dir){
+    let q = activeQuestion + dir;
+    if (q < 1) q = 1;
+    if (q > 40) q = 40;
+    scrollToQuestion(q);
+  }
+  document.getElementById('prevBtn').addEventListener('click', () => stepQuestion(-1));
+  document.getElementById('nextBtn').addEventListener('click', () => stepQuestion(1));
+
+  questionsPanel.addEventListener('click', e => {
+    const item = e.target.closest('.question-item');
+    if (!item) return;
+    const qAttr = item.dataset.q || '';
+    const firstQ = Number(qAttr.split(',')[0]);
+    if (firstQ) setActiveQuestion(firstQ);
+    if (hasChecked && !e.target.matches('input, label, .click-cell')) openExplanation(firstQ);
+  });
+
+  const observer = new IntersectionObserver(entries => {
+    let visible = entries.filter(en => en.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+    if (visible){
+      const qAttr = visible.target.dataset.q || '';
+      const firstQ = Number(qAttr.split(',')[0]);
+      if (firstQ && Q_PART[String(firstQ)] === currentPart) {
+        activeQuestion = firstQ;
+        updateNavButtonStates();
+      }
+    }
+  }, {root: questionsPanel, threshold: .35});
+
+  document.querySelectorAll('.question-item').forEach(item => observer.observe(item));
+
+  function formatTime(s){
+    const m = Math.floor(s/60), sec = s%60;
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+  function updateTimerUI(){
+    timerDisplay.textContent = formatTime(secondsLeft);
+    timerDisplay.classList.toggle('warning', secondsLeft <= 300);
+    timerToggle.textContent = timerRunning ? '⏸' : '▶';
+  }
+  function startTimer(){
+    if (timerInt) clearInterval(timerInt);
+    timerRunning = true;
+    updateTimerUI();
+    timerInt = setInterval(() => {
+      if (!timerRunning) return;
+      secondsLeft--;
+      if (secondsLeft <= 0){
+        secondsLeft = 0;
+        timerRunning = false;
+        clearInterval(timerInt);
+        if (!hasChecked) checkAnswers();
+      }
+      updateTimerUI();
+    }, 1000);
+  }
+  timerToggle.addEventListener('click', () => {
+    if (!timerInt && !timerRunning && secondsLeft === 3600) return startTimer();
+    timerRunning = !timerRunning;
+    if (!timerInt) startTimer();
+    updateTimerUI();
+  });
+  timerReset.addEventListener('click', () => {
+    clearInterval(timerInt);
+    timerInt = null;
+    timerRunning = false;
+    secondsLeft = 3600;
+    updateTimerUI();
+  });
+  updateTimerUI();
+
+  function fillAnswerNotes(){
+    document.querySelectorAll('[data-answer-for]').forEach(el => {
+      const q = el.dataset.answerFor;
+      const exp = EXPLANATIONS[q];
+      el.innerHTML = `<strong>Correct answer:</strong> ${exp.answer}. ${exp.text}`;
+    });
+  }
+
+  function markSingleRadio(q){
+    const correct = ANSWER_KEY[String(q)];
+    document.querySelectorAll(`input[name="q${q}"]`).forEach(inp => {
+      const label = inp.closest('.tf-option,.multi-choice-option');
+      if (!label) return;
+      if (inp.value === correct) label.classList.add('correct');
+      if (inp.checked && inp.value !== correct) label.classList.add('incorrect');
+    });
+  }
+
+  function markTextInput(q, ok){
+    const inp = document.getElementById(`q${q}`);
+    if (!inp) return;
+    inp.classList.add(ok ? 'correct' : 'incorrect');
+  }
+
+  function markMatching(q){
+    const correct = ANSWER_KEY[String(q)];
+    document.querySelectorAll(`.click-cell[data-q="${q}"]`).forEach(cell => {
+      if (cell.dataset.val === correct) cell.classList.add('correct');
+      if (cell.classList.contains('selected') && cell.dataset.val !== correct) cell.classList.add('incorrect');
+    });
+  }
+
+  function markCheckboxGroup(group, qA, qB){
+    const correctSet = new Set([ANSWER_KEY[String(qA)], ANSWER_KEY[String(qB)]]);
+    document.querySelectorAll(`input[name="${group}"]`).forEach(inp => {
+      const label = inp.closest('.multi-choice-option');
+      if (correctSet.has(inp.value)) label.classList.add('correct');
+      if (inp.checked && !correctSet.has(inp.value)) label.classList.add('incorrect');
+    });
+  }
+
+  function buildResults(){
+    const rows = [];
+    let correctCount = 0;
+    for(let q=1;q<=40;q++){
+      const ev = evaluate(q);
+      if (ev.ok) correctCount++;
+      rows.push(ev);
+    }
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = rows.map(r => `<tr class="${r.ok ? 'ok' : 'bad'}"><td>${r.q}</td><td>${r.user}</td><td>${r.correct}</td><td>${r.ok ? '✓' : '✗'}</td></tr>`).join('');
+    document.getElementById('scorePill').textContent = `${correctCount} / 40`;
+    reviewGrid.innerHTML = rows.map(r => {
+      const exp = EXPLANATIONS[String(r.q)];
+      return `<div class="review-card ${r.ok ? 'ok' : 'bad'}">
+        <div class="review-head"><div class="review-q">Question ${r.q}</div><div class="review-status ${r.ok ? 'status-ok' : 'status-bad'}">${r.ok ? 'Correct' : 'Incorrect'}</div></div>
+        <div><strong>Your answer:</strong> ${r.user}</div>
+        <div><strong>Correct answer:</strong> ${exp.answer}</div>
+        <div>${exp.text}</div>
+      </div>`;
+    }).join('');
+    return {rows, correctCount};
+  }
+
+  function openExplanation(q){
+    const exp = EXPLANATIONS[String(q)];
+    if (!exp) return;
+    document.getElementById('expTitle').textContent = `Question ${q}`;
+    document.getElementById('expAnswer').textContent = `Correct answer: ${exp.answer}`;
+    document.getElementById('expText').innerHTML = `<p>${exp.text}</p>`;
+    showModal('explanationModal');
+  }
+
+  function checkAnswers(){
+    hasChecked = true;
+    body.classList.add('checked');
+    clearVisualState();
+    applyCheckedClassUI();
+    fillAnswerNotes();
+
+    for(let q=1;q<=40;q++){
+      const ev = evaluate(q);
+      if ((q>=1&&q<=6)||(q>=24&&q<=26)||(q>=32&&q<=36)) markTextInput(q, ev.ok);
+      else if ((q>=7&&q<=13)||(q>=27&&q<=31)||(q>=37&&q<=40)) markSingleRadio(q);
+      else if (q>=14&&q<=19) markMatching(q);
+    }
+    markCheckboxGroup('q20_21',20,21);
+    markCheckboxGroup('q22_23',22,23);
+
+    const {correctCount} = buildResults();
+    checkBtn.textContent = 'My Result';
+    checkBtn.classList.add('result-mode');
+    updateNavButtonStates();
+    showModal('resultModal');
+  }
+
+  checkBtn.addEventListener('click', () => {
+    if (hasChecked) showModal('resultModal');
+    else checkAnswers();
+  });
+
+  function positionToolbar(x,y){
+    const rect = hlToolbar.getBoundingClientRect();
+    let lx = x, ly = y - rect.height - 14;
+    if (ly < 8) ly = y + 20;
+    lx = Math.max(8, Math.min(lx, window.innerWidth - rect.width - 8));
+    hlToolbar.style.left = `${lx}px`;
+    hlToolbar.style.top = `${ly}px`;
+  }
+
+  document.addEventListener('mouseup', e => {
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (sel && sel.toString().trim().length > 0){
+        const range = sel.getRangeAt(0);
+        const root = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+        if (passagePanel.contains(root) || questionsPanel.contains(root)){
+          savedRange = range.cloneRange();
+          activeHLMark = null;
+          hlToolbar.classList.add('show');
+          positionToolbar(e.clientX, e.clientY);
+          return;
+        }
+      }
+      if (!e.target.closest('mark.user-highlight')) hlToolbar.classList.remove('show');
+    }, 10);
+  });
+
+  document.addEventListener('click', e => {
+    const mark = e.target.closest('mark.user-highlight');
+    if (mark){
+      activeHLMark = mark;
+      savedRange = null;
+      hlToolbar.classList.add('show');
+      positionToolbar(e.clientX, e.clientY);
+    } else if (!e.target.closest('#hlToolbar')) {
+      hlToolbar.classList.remove('show');
+    }
+  });
+
+  function wrapRangeWithMark(range, color){
+    const mark = document.createElement('mark');
+    mark.className = `user-highlight ${color}`;
+    try{
+      const contents = range.extractContents();
+      mark.appendChild(contents);
+      range.insertNode(mark);
+    }catch(err){}
+  }
+
+  function unwrap(el){
+    const parent = el.parentNode;
+    while(el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  }
+
+  hlToolbar.addEventListener('click', e => {
+    const btn = e.target.closest('.hl-btn');
+    if (!btn) return;
+    if (btn.dataset.action === 'remove'){
+      if (activeHLMark) unwrap(activeHLMark);
+      hlToolbar.classList.remove('show');
+      return;
+    }
+    const color = btn.dataset.color;
+    if (savedRange) wrapRangeWithMark(savedRange, color);
+    else if (activeHLMark){
+      activeHLMark.classList.remove('yellow','blue','pink');
+      activeHLMark.classList.add(color);
+    }
+    window.getSelection().removeAllRanges();
+    hlToolbar.classList.remove('show');
+  });
+
+  const divider = document.getElementById('divider');
+  let dragging = false;
+  divider.addEventListener('mousedown', () => {
+    dragging = true;
+    document.body.style.cursor = 'col-resize';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const rect = document.querySelector('.main').getBoundingClientRect();
+    let pct = ((e.clientX - rect.left) / rect.width) * 100;
+    pct = Math.max(22, Math.min(78, pct));
+    passagePanel.style.flex = `0 0 ${pct}%`;
+    questionsPanel.style.flex = `0 0 ${100-pct}%`;
+  });
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    document.body.style.cursor = '';
+  });
+
+  renderQuestionNav();
+  setPart(1);
+  setActiveQuestion(1);
+  updateAnsweredCount();
+  applyCheckedClassUI();
+})();
+</script>
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>IELTSUZ Reading Practice</title>
+<style>
+    :root{
+      --bg:#ffffff;
+      --panel:#ffffff;
+      --panel-alt:#ffffff;
+      --text:#000000;
+      --muted:#666666;
+      --border:#e0e0e0;
+      --accent:#4a90e2;
+      --focus:#3581d8;
+      --correct:#28a745;
+      --incorrect:#dc3545;
+      --soft:#f7f7f7;
+      --timer:#f0f0f0;
+      --banner:#f1f2ec;
+      --shadow:0 8px 32px rgba(0,0,0,.18);
+    }
+    [data-theme="dark"]{
+      --bg:#1a1a1a;
+      --panel:#2d2d2d;
+      --panel-alt:#262626;
+      --text:#e0e0e0;
+      --muted:#b8b8b8;
+      --border:#444444;
+      --accent:#4a90e2;
+      --focus:#6aa6f0;
+      --correct:#28a745;
+      --incorrect:#dc3545;
+      --soft:#3a3a3a;
+      --timer:#444444;
+      --banner:#34362f;
+      --shadow:0 8px 32px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      font-size:16px;
+      line-height:1.4;
+      background:var(--bg);
+      color:var(--text);
+      overflow:hidden;
+    }
+    button,input,select,textarea{font:inherit}
+    .hidden{display:none !important}
+    .topbar{
+      position:fixed; top:0; left:0; right:0; height:60px;
+      display:grid; grid-template-columns:1fr auto auto; align-items:center;
+      gap:16px; padding:10px 16px; background:var(--panel);
+      border-bottom:1px solid var(--border); z-index:100;
+    }
+    .topbar-title{font-size:16px; font-weight:700; white-space:nowrap}
+    .topbar-center,.topbar-right{display:flex; align-items:center; gap:10px}
+    .timer-wrap{
+      display:flex; align-items:center; gap:8px;
+      background:var(--timer); border:1px solid var(--border);
+      border-radius:999px; padding:5px 10px;
+    }
+    .timer-display{
+      min-width:56px; text-align:center; font-size:16px; font-weight:600; color:var(--text);
+    }
+    .icon-circle{
+      width:32px; height:32px; border-radius:50%;
+      border:1px solid #ccc; background:var(--timer);
+      color:var(--text); cursor:pointer; display:inline-flex;
+      align-items:center; justify-content:center; transition:.2s;
+    }
+    .icon-circle:hover,.notes-btn:hover{filter:brightness(.96)}
+    .notes-btn{
+      border:1px solid #ccc; background:var(--timer); color:var(--text);
+      border-radius:6px; padding:6px 12px; cursor:pointer; font-weight:600;
+    }
+    .tg-pill-btn{
+      display:inline-flex; align-items:center; gap:8px;
+      color:#3e3e3e; background:#fff; border:2px solid #3e3e3e;
+      border-radius:9999px; padding:6px 14px; font-size:14px; font-weight:700;
+      text-decoration:none; line-height:1; transition:background-color .2s;
+      white-space:nowrap;
+    }
+    .tg-pill-btn:hover{background:#f5f5f5; text-decoration:underline}
+    .tg-icon{
+      width:18px; height:18px; display:inline-block; background:currentColor;
+      -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+      -webkit-mask-position:center; mask-position:center;
+      -webkit-mask-size:contain; mask-size:contain;
+      -webkit-mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M21.9 4.6c.2-1-.4-1.4-1.2-1.1L2.8 10.4c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 10.7-6.7c.5-.3 1-.1.6.2l-8.7 7.9-.3 4.5c.5 0 .7-.2 1-.5l2.2-2.1 4.6 3.4c.8.4 1.4.2 1.6-.8l3-14.6z'/></svg>");
+      mask-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'><path d='M21.9 4.6c.2-1-.4-1.4-1.2-1.1L2.8 10.4c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 10.7-6.7c.5-.3 1-.1.6.2l-8.7 7.9-.3 4.5c.5 0 .7-.2 1-.5l2.2-2.1 4.6 3.4c.8.4 1.4.2 1.6-.8l3-14.6z'/></svg>");
+    }
+    [data-theme="dark"] .tg-pill-btn{color:#e0e0e0; border-color:#e0e0e0; background:transparent}
+    .part-banner{
+      position:fixed; top:60px; left:0; right:0; z-index:99;
+      margin:10px 20px 0; padding:12px 18px;
+      background:var(--banner); border:1px solid var(--border); border-radius:5px;
+    }
+    .part-banner p{margin:0}
+    .part-banner p + p{margin-top:4px}
+    .workspace{
+      position:fixed; top:126px; bottom:96px; left:0; right:0;
+      display:flex; min-height:0;
+    }
+    .panel{
+      background:var(--panel); min-width:180px; min-height:0;
+      transition:background-color .3s,color .3s;
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .passage-panel{width:50%; border-right:1px solid var(--border); position:relative}
+    .questions-panel{width:50%; position:relative}
+    .panel-tabs{
+      display:flex; gap:8px; padding:12px 12px 0; background:var(--panel);
+      border-bottom:1px solid var(--border);
+    }
+    .panel-tab{
+      border:none; background:none; color:var(--text); padding:10px 12px;
+      font-weight:600; cursor:pointer; border-bottom:2px solid transparent;
+    }
+    .panel-tab.active{font-weight:700; border-bottom-color:var(--accent)}
+    .panel-scroll{
+      flex:1; min-height:0; height:auto; overflow:auto;
+      padding:16px 18px 148px;
+      background:var(--panel);
+    }
+    .question-sections .question-section,
+    .passage-sections .passage-section{display:none}
+    .question-sections .question-section.active,
+    .passage-sections .passage-section.active{display:block}
+    .resizer{
+      width:8px; cursor:col-resize; background:linear-gradient(90deg,transparent 0, var(--border) 45%, var(--border) 55%, transparent 100%);
+      flex:0 0 8px;
+    }
+    .section-title{
+      font-size:20px; font-weight:700; text-align:center; margin:0 0 14px;
+    }
+    .passage-content h3{font-size:20px; font-weight:700; text-align:center; margin:10px 0 14px}
+    .passage-content p{margin:0 0 1.05em}
+    .passage-content strong:first-child{display:inline-block}
+    .question-group{
+      background:var(--soft); border:1px solid var(--border);
+      border-radius:10px; padding:16px; margin-bottom:18px;
+    }
+    .question-group-title{
+      font-size:17px; font-weight:700; margin-bottom:10px;
+    }
+    .question{
+      background:var(--panel); border:1px solid var(--border); border-radius:8px;
+      padding:12px; margin:12px 0; transition:.2s; cursor:pointer;
+    }
+    .question.active-question{outline:2px solid var(--accent); outline-offset:1px}
+    .question{scroll-margin-bottom:150px}
+    .question:hover{border-color:#bfc9d5}
+    .question-text{font-weight:600; margin-bottom:10px}
+    .options{display:flex; flex-direction:column; gap:8px}
+    .options label{
+      display:flex; gap:10px; align-items:flex-start;
+      background:var(--panel); border:1px solid var(--border); border-radius:8px;
+      padding:10px 12px; cursor:pointer; transition:.2s;
+    }
+    .options label:hover{background:rgba(74,144,226,.06)}
+    .options label.is-checked{background:#cfe3f9; border-color:#7db3f5}
+    .options label.option-correct{background:#d4edda !important; border-color:var(--correct) !important}
+    .options label.option-incorrect{background:#f8d7da !important; border-color:var(--incorrect) !important}
+    .questions-panel input[type="text"], .questions-panel select{
+      border:1px solid #bfbfbf; border-radius:4px; background:#fff;
+      padding:4px 8px; font-size:16px; font-weight:700; min-height:30px; color:#111;
+    }
+    [data-theme="dark"] .questions-panel input[type="text"],
+    [data-theme="dark"] .questions-panel select{
+      background:#3a3a3a; color:#fff; border-color:#555;
+    }
+    .questions-panel input[type="text"]:focus, .questions-panel select:focus, textarea:focus{
+      border-color:var(--focus); outline:none; box-shadow:0 0 0 2px rgba(53,129,216,.15)
+    }
+    .questions-panel input.correct-input, .questions-panel select.correct-input{border-color:var(--correct); background:#e9f7ef !important}
+    .questions-panel input.incorrect-input, .questions-panel select.incorrect-input{border-color:var(--incorrect); background:#f8d7da !important}
+    .question-review{
+      margin-top:10px; background:rgba(74,144,226,.06); border-left:4px solid var(--accent);
+      padding:10px 12px; border-radius:8px; display:none;
+    }
+    .question.show-inline .question-review{display:block}
+    .question-review .mini{font-size:13px; color:var(--muted); margin-bottom:5px}
+    .question-review strong{color:var(--text)}
+    .correct-answer-display{color:var(--correct); font-weight:700; font-size:14px; margin-left:8px}
+    .multi-hint{margin:10px 0 0; color:var(--muted)}
+    .all-explanations{
+      margin-top:28px; border-top:2px solid var(--border); padding-top:18px;
+    }
+    .all-explanations h3{margin:0 0 14px; font-size:19px}
+    .explanation-grid{display:grid; gap:12px}
+    .explanation-card{
+      border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--soft);
+      scroll-margin-top:140px;
+    }
+    .explanation-card h4{margin:0 0 6px; font-size:16px}
+    .explanation-card p{margin:5px 0}
+    .answer-highlight{
+      background:#ffeb3b; font-weight:700; border-radius:3px; padding:2px 4px;
+      position:relative; color:#000;
+    }
+    .answer-badge{
+      position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%;
+      background:#1a73e8; color:#fff; font-size:11px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; z-index:10;
+      box-shadow:0 1px 3px rgba(0,0,0,.3); font-family:Arial,sans-serif;
+    }
+    mark.hl-y{background:#FEF08A}
+    mark.hl-g{background:#BBF7D0}
+    mark.hl-p{background:#FBCFE8}
+    mark.hl-b{background:#BFDBFE}
+    [data-theme="dark"] mark.hl-y{background:#854D0E; color:#fff}
+    [data-theme="dark"] mark.hl-g{background:#166534; color:#fff}
+    [data-theme="dark"] mark.hl-p{background:#9D174D; color:#fff}
+    [data-theme="dark"] mark.hl-b{background:#1E3A5F; color:#fff}
+    .hl-floating-toolbar{
+      position:fixed; z-index:9999; background:#fff; border:1px solid #e0e0e0;
+      border-radius:12px; padding:10px 12px; display:none; flex-direction:column; gap:8px;
+      min-width:150px; box-shadow:var(--shadow);
+    }
+    [data-theme="dark"] .hl-floating-toolbar{background:#2d2d2d; border-color:#444}
+    .hl-floating-toolbar.show{display:flex; animation:toolbarPop .15s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes toolbarPop{from{opacity:0; transform:translateY(8px) scale(.93)} to{opacity:1; transform:translateY(0) scale(1)}}
+    .hl-section-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#999; opacity:.8; padding:0 2px}
+    .hl-colors-row{display:flex; gap:7px; align-items:center}
+    .hl-dot{
+      width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; transition:.15s;
+    }
+    .hl-dot:hover{transform:scale(1.25); border-color:#e0e0e0; box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .hl-dot.cy{background:#FEF08A}
+    .hl-dot.cg{background:#BBF7D0}
+    .hl-dot.cp{background:#FBCFE8}
+    .hl-dot.cb{background:#BFDBFE}
+    .hl-divider{height:1px; background:#e0e0e0; margin:0 -2px}
+    .hl-text-btn{
+      display:flex; align-items:center; gap:7px; padding:6px 10px; border:none; border-radius:4px; background:none;
+      color:#333; cursor:pointer; font-size:13px; font-weight:500; text-align:left; width:100%; transition:.15s;
+    }
+    [data-theme="dark"] .hl-text-btn{color:#e0e0e0}
+    .hl-text-btn.note-btn:hover{color:#4a90e2; background:#f1f7ff}
+    .hl-text-btn.remove-btn:hover{color:#F59E0B; background:#fffbeb}
+    .hl-text-btn.clear-btn:hover{color:#dc3545; background:#fff5f5}
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+      display:none; align-items:center; justify-content:center; z-index:10000;
+    }
+    .overlay.show{display:flex}
+    .modal-card{
+      background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px;
+      width:90%; max-width:440px; max-height:85vh; overflow:auto;
+      animation:slideUp .2s ease;
+    }
+    @keyframes slideUp{from{opacity:0; transform:translateY(22px)} to{opacity:1; transform:translateY(0)}}
+    .excerpt-preview{
+      background:#FEF08A; border-radius:6px; padding:8px 12px; font-size:13px; font-style:italic;
+      color:#333; margin-bottom:14px; max-height:60px; overflow:hidden;
+    }
+    textarea{
+      width:100%; min-height:90px; resize:vertical; padding:10px;
+      border:1.5px solid #bfbfbf; border-radius:8px;
+    }
+    .btn-row{display:flex; gap:10px; margin-top:14px}
+    .plain-btn{
+      background:#f3f4f6; color:#111827; border:1px solid #d1d5db; border-radius:4px;
+      padding:10px 16px; font-size:14px; font-weight:700; cursor:pointer; flex:1;
+    }
+    .plain-btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+    .notes-list{max-height:55vh; overflow:auto; margin-top:14px}
+    .note-card{
+      background:var(--soft); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px;
+    }
+    .note-card .excerpt-label{
+      display:block; background:#FEF08A; border-radius:4px; padding:3px 8px; font-size:12px;
+      font-style:italic; color:#333; margin-bottom:7px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .note-card .delete-note{
+      border:1px solid #ddd; border-radius:4px; background:none; color:#dc3545; cursor:pointer; font-size:13px;
+      font-weight:600; padding:4px 10px;
+    }
+    .bottom-nav{
+      position:fixed; bottom:0; left:0; right:0; min-height:92px; background:var(--panel);
+      border-top:1px solid var(--border); z-index:100;
+      display:grid; grid-template-columns:auto auto 1fr auto auto; align-items:center;
+      gap:14px; padding:12px 16px;
+    }
+    .nav-arrows{display:flex; gap:8px}
+    .nav-arrow{
+      width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; color:#fff; font-size:20px;
+    }
+    .nav-arrow.prev{background:#4b5563}
+    .nav-arrow.next{background:#000}
+    .part-tabs{display:flex; gap:8px}
+    .part-tab{
+      background:none; color:var(--text); border:none; padding:10px 15px; cursor:pointer;
+      border-radius:6px;
+    }
+    .part-tab.active{font-weight:700}
+    .part-tab:hover{background:rgba(0,0,0,.04)}
+    .question-rail{
+      display:flex; gap:6px; overflow:auto; padding-bottom:4px;
+    }
+    .subQuestion{
+      width:32px; height:32px; border-radius:2px; border:1px solid #ccc; background:#fff; color:#333;
+      font-size:14px; font-weight:500; cursor:pointer; flex:0 0 auto;
+    }
+    .subQuestion.answered{background:#e9ecef; border-color:#ddd}
+    .subQuestion.active{background:var(--accent); color:#fff}
+    .subQuestion.correct{background:var(--correct); color:#fff; border-color:var(--correct)}
+    .subQuestion.incorrect{background:var(--incorrect); color:#fff; border-color:var(--incorrect)}
+    .status-wrap{font-weight:700; white-space:nowrap}
+    .check-btn{
+      background:#f3f4f6; color:#111827; border:1px solid #d1d5db; border-radius:4px;
+      font-size:15px; font-weight:700; padding:10px 16px; min-width:170px; cursor:pointer;
+    }
+    .check-btn.result-btn{background:#4CAF50; color:#fff; border-color:#4CAF50}
+    .results-overlay{
+      position:fixed; inset:0; background:rgba(17,24,39,.6); backdrop-filter:blur(3px); z-index:2000; display:none;
+      align-items:center; justify-content:center;
+    }
+    .results-overlay.show{display:flex}
+    .results-box{
+      background:var(--panel); border-radius:14px; padding:24px; width:92%; max-width:900px; max-height:86vh;
+      display:flex; flex-direction:column; position:relative; border:1px solid #e5e7eb; box-shadow:0 20px 60px rgba(0,0,0,.25);
+      animation:slideUp .22s ease;
+    }
+    .results-close{
+      position:absolute; top:10px; right:15px; background:none; border:none; font-size:28px; cursor:pointer; color:var(--muted)
+    }
+    .results-heading{text-align:center; font-size:22px; margin-bottom:18px}
+    .summary-row{
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap; border-bottom:1px solid #eef2f7; padding-bottom:12px; margin-bottom:16px;
+    }
+    .summary-row p{margin:0}
+    .summary-row span{
+      display:inline-block; padding:4px 10px; margin-left:6px; border-radius:999px; background:#f3f4f6; font-weight:700; color:#111827;
+    }
+    .results-table{overflow:auto}
+    .results-details-header,.result-row{
+      display:grid; grid-template-columns:56px 1fr 1fr 56px; gap:12px; align-items:center;
+    }
+    .results-details-header{
+      padding:8px; background:#f9fafb; border-radius:8px 8px 0 0; font-size:12px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.4px; color:#666; margin-top:4px;
+    }
+    .result-row{padding:10px 8px; border-bottom:1px solid #eef2f7; font-size:15px}
+    .result-row.correct{background:#f3faf5}
+    .result-row.incorrect{background:#fff5f5}
+    .q-num{background:#fff; border:1px solid #d1d5db; border-radius:8px; width:42px; height:30px; display:inline-flex; align-items:center; justify-content:center; font-weight:700}
+    .user-ans{background:#f9fafb; border:1px solid #e5e7eb; padding:4px 8px; border-radius:6px}
+    .correct-ans{background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; font-weight:600; padding:4px 8px; border-radius:6px}
+    .status-ok{color:var(--correct); font-size:15px; font-weight:700}
+    .status-bad{color:var(--incorrect); font-size:15px; font-weight:700}
+    .watermark{
+      position:fixed; right:14px; bottom:92px; z-index:90; font-size:13px; font-weight:700;
+      color:rgba(62,62,62,.4); pointer-events:none; user-select:none;
+    }
+    [data-theme="dark"] .watermark{color:rgba(224,224,224,.35)}
+    @keyframes timerBlink{0%,100%{opacity:1} 50%{opacity:.3}}
+    .timer-display.warning{color:var(--incorrect); animation:timerBlink 1s steps(1) infinite}
+    @media (max-width:1100px){
+      .topbar{grid-template-columns:1fr auto; height:auto; min-height:60px}
+      .topbar-right{grid-column:1 / -1; justify-content:flex-end; flex-wrap:wrap}
+      .part-banner{top:74px}
+      .workspace{top:140px}
+      .bottom-nav{grid-template-columns:1fr; height:auto; min-height:80px}
+      .question-rail{order:4}
+    }
+    @media (max-width:820px){
+      .workspace{flex-direction:column}
+      .passage-panel,.questions-panel{width:100%; min-width:0}
+      .resizer{height:8px; width:100%; cursor:row-resize}
+      .watermark{bottom:120px}
+    }
+  </style>
+<style data-ieltsuz-fix>#cdBlurGuard{display:none!important}</style>
+
+</head>
+<body>
+<header class="topbar">
+<div class="topbar-title">IELTS Reading Test</div>
+<div class="topbar-center">
+<div class="timer-wrap">
+<button aria-label="Start or pause timer" class="icon-circle" id="toggleTimerBtn">▶</button>
+<button aria-label="Reset timer" class="icon-circle" id="resetTimerBtn">↺</button>
+<div class="timer-display" id="timerDisplay">60:00</div>
+</div>
+</div>
+<div class="topbar-right">
+<button class="notes-btn" id="openNotesBtn">📝 Notes</button>
+<button aria-label="Toggle night mode" class="icon-circle" id="themeToggleBtn">🌙</button>
+
+</div>
+</header>
+<div class="part-banner" id="partBanner">
+<p><strong>Part 1</strong></p>
+<p>Read the text and answer questions 1–13.</p>
+</div>
+<main class="workspace">
+<section class="panel passage-panel" id="passagePanel">
+<div class="panel-tabs" id="passageTabs">
+<button class="panel-tab active" data-part="1">Passage 1</button>
+<button class="panel-tab" data-part="2">Passage 2</button>
+<button class="panel-tab" data-part="3">Passage 3</button>
+</div>
+<div class="panel-scroll">
+<div class="passage-sections">
+<section class="passage-section active" id="passage-section-1"><h2 class="section-title">READING PASSAGE 1</h2>
+<div id="passageContent">
+<h2 style="text-align: center;">The Blockbuster Phenomenon: a new museum trend</h2>
+<p style="text-align: center; font-style: italic;">Museums in Australia, like other pleasure-giving public organizations, are adapting their activities so that they more closely reflect the marketplace</p>
+<p><strong>A</strong> Since the 1980s, the term “blockbuster‟ has become the fashionable word for spectacular, high-profile museum exhibitions that have the ability to attract large crowds. A blockbuster is a “large-scale loan exhibition that people who normally don‟t go to museums will stand in line for hours to see” (Elsen 1984). Once the museum that created the exhibition has shown it to their local market, it can be offered to other organizations for a fee. This means that you can boost your own door takings and make money from boosting someone else‟s door takings.</p>
+<p><strong>B</strong> While partaking of the excitement of the blockbuster, visitors thus lured are likely to stay longer at the museum. Betty Churcher, when Director of the Australian National Gallery, Summed up the new blockbuster creed as follows: The bonus of the blockbuster exhibitions is that people come to see the blockbuster and they stay to lock at the permanent collection, so you are getting broader exposure for your collection.</p>
+<p><strong>C</strong> Museums across the UK, USA, Canada and Australia currently operate under a system of plural funding: revenue raised through contributions by federal, state and/or local governments, combined with revenue raised through admission charges and other activities, Maintaining and increasing visitor levels is this paramount and involves not only creating or hiring blockbuster exhibitions, but providing regular exhibition changes and innovations. In addition, the visiting public have become known as customers rather than visitors, and the skills that are valued in museums to keep the new customers coming through the door have changed. Curators are now administrators and being a museum director no longer requires an Arts degree – but public relations skills are essential if the museum is going to compete with other museums to stage traveling exhibition which draw huge crowds.</p>
+<p><strong>D</strong> The convergence of museums, the heritage industry, tourism, profit-making and pleasure-giving has resulted in the new “museology”. This has given rise to much debate about whether it is appropriate to see museums primarily as tourist attractions. In literature from both UK and USA, the words that are starting to appear in some descriptions of blockbusters are “less scholarly”, “non-elitist” and “popularist”, while others extol the virtues encouraging scholars to co-operate on projects, and to provide exhibitions that cater for a broad selection of community rather than an elite sector, whatever commentators may think, manager of museums worldwide are looking for artful ways to blend culture and commerce, and blockbuster exhibitions are at the top of the list.</p>
+<p><strong>E</strong> But do blockbusters held in public institutions really create a surplus to fund other activities? If the bottom line is profit, then according to the records of many major museums blockbusters do make money. For museums in some countries, it may be the money that they require to replace parts of their collections or to fix buildings that are in need of attention. For some museums in Australia, it may be the opportunity to illustrate that they are attempting to pay their way by recovering part of their operating costs. Also, creating or hiring a blockbuster has many positive spin-offs: blockbusters mean crowds, and crowds are good for the local economy, provide increased trade for shops, hotels, restaurants, the transport industry and retailers. The arrangement that the arts provide sustained economic benefits has been well illustrated in impact studies in the USA and UK.</p>
+<p><strong>F</strong> However, blockbusters require large capital expenditure, and draw on resources across all branches of an organization, and the costs don‟t end there. There is a Human Resource Management cost in addition to a measurable “ real” dollar cost. Receiving a touring exhibition draws resources from across functional management structures in project management style. Everyone, from general labourers to building services, front of house, technical, promotional, educational and administrative staff, is required to perform additional tasks. Furthermore, as an increasing number of institutions try their hand at increasing visitor numbers and memberships (and therefore revenue) by staging blockbuster exhibitions, it may be less likely that blockbusters will continue to provide a surplus to subsidize other activities due to the competitive nature of the market.</p>
+<p><strong>G</strong> It has been illustrated in both the UK and USA that the blockbuster ideology has resulted in the false expectation that the momentum required to stage blockbusters can be maintained continually. Creating, mounting or hiring blockbusters is exhausting, with the real costs throughout an institution difficult to calculate. Secondly, as some analysts have argued, the “shop keeping” mentality and cost benefit analysis and a pure concentration on the bottom line, can squeeze substance out of an exhibition. Taking out substance can be a recipe for blockbuster failure and therefore financial failure.</p>
+<p><strong>H</strong> Perhaps the best pathway to take is one that balances both blockbusters and regular exhibitions. However, this easy middle ground may only work if you have enough space, and have alternate sources of funding to continue to support the regular, less exciting fare. Perhaps the advice should be to make sure that you find out what your local community, wants from you and make sure that your regular activities and exhibitions are more ending.</p>
+</div></section>
+<section class="passage-section" id="passage-section-2"><h2 class="section-title">READING PASSAGE 2</h2>
+<div id="passageContent">
+<h2 style="text-align: center;">The dingo debate</h2>
+<p><strong>A</strong> A plane flies a slow pattern over Carlton Hill station, a 3,600 square kilometre ranch in the Kimberley region in northwest Australia. As the plane circles, those aboard drop 1,000 small pieces of meat, one by one, onto the scrubland below, each piece laced with poison; this practice is known as baiting. Besides 50,000 head of cattle, Carlton Hill is home to the dingo, Australia’s largest mammalian predator and the bane of a grazier's (cattle farmer's) life. Stuart McKechnie, manager of Carlton Hill, complains that graziers’ livelihoods are threatened when dingoes prey on cattle. But one man wants the baiting to end, and for dingoes to once again roam Australia’s wide-open spaces. According to Chris Johnson of James Cook University, ‘Australia needs more dingoes to protect our biodiversity.’</p>
+<p><strong>B</strong> About 4,000 years ago, Asian sailors introduced dingoes to Australia. Throughout the ensuing millennia, these descendants of the wolf spread across the continent and, as the Tasmanian tiger disappeared completely from Australia, dingoes became Australia’s top predators. As agricultural development took place, the European settlers found that they could not safely keep their livestock where dingoes roamed. So began one of the most sustained efforts at pest control in Australia’s history. Over the last 150 years, dingoes have been shot and poisoned, and fences have been used in an attempt to keep them away from livestock. But at the same time, as the European settlers tried to eliminate one native pest from Australia, they introduced more of their own.</p>
+<p><strong>C</strong> In 1860, the rabbit was unleashed on Australia by a wealthy landowner and by 1980 rabbits had covered most of the mainland. Rabbits provide huge prey base for two other introduced species: the feral (wild) cat and the red fox. The interaction between foxes, cats and rabbits is a huge problem for native mammals. In good years, rabbit numbers increase dramatically, and fox and cat populations grow quickly in response to the abundance of this prey. When bad seasons follow, rabbit numbers are significantly reduced - and the dwindling but still large fox and cat populations are left with little to eat besides native mammals.</p>
+<p><strong>D</strong> Australian mammals generally reproduce much more slowly than rabbits, cats and foxes - and adaption to prevent overpopulation in the arid environment, where food can be scarce and unreliable - and populations decline because they can’t grow fast enough to replace animals killed by the predators. Johnson says dingoes are the solution to this problem because they keep cat and fox populations under control. Besides regularly eating the smaller predators, dingoes will kill them simply to lessen competition. Dingo packs live in large, stable territories and generally have only one fertile, which limits their rate of increase. In the 4,000 years that dingoes have been Australia, they have contributed to few, if any, extinctions, Johnsons says.</p>
+<p><strong>E</strong> Reaching out from a desolate spot where three states meet, for 2,500 km in either direction, is the world’s longest fence, two metres high and stretching from the coast in Queensland to the Great Australian Bight in South Australia; it is there to keep dingoes out of southeast, the fence separates the main types of livestock found in Australia. To the northwest of the fence, cattle predominate; to the southwest, sheep fill the landscape. In fact, Australia is a land dominated by these animals - 25 million cattle, 100 million sheep and just over 20 million people.</p>
+<p><strong>F</strong> While there is no argument that dingoes will prey on sheep if given the chance, they don’t hunt cattle once the calves are much past two or three weeks old, according to McKechnie. And a study in Queensland suggests that dingoes don’t even prey heavily on the newborn calves unless their staple prey disappears due to deteriorating conditions like drought. This study, co-authored by Lee Allen of the Robert Wicks Research Centre in Queensland, suggests that the aggressive baiting programs used against dingoes may actually be counter-productive for graziers. When dingoes are removed from an area by baiting the area is recolonized by younger, more solitary dingoes. These animals aren’t capable of going after the large prey like kangaroos, so they turn to calves. In their study, some of the highest rates of calf predation occurred in areas that had been baited.</p>
+<p><strong>G</strong> Mark Clifford, general manager of a firm that manages over 200,000 head of cattle, is not convinced by Allen’s assertion. Clifford says, ‘It’s obvious if we drop or loosen control on dingoes, we are going to lose more calves.’ He doesn’t believe that dingoes will go after kangaroos when calves are around. Nor is he persuaded of dingoes’ supposed ecological benefits, saying he is not convinced that they manage to catch cats that often, believing they are more likely to catch small native animals instead.</p>
+<p><strong>H</strong> McKechnie agrees that dingoes kill the wallabies (small native animals) that compete with his cattle for food, but points out that in parts of Western Australia, there are no foxes, and not very many cats. He doesn’t see how relaxing controls on dingoes in his area will improve the ecological balance. Johnson sees a need for a change in philosophy on the part of graziers. ‘There might be a number of different ways of thinking through dingo management in cattle country,’ he says. ‘At the moment, though, that hasn’t got through to graziers. There’s still just one prescription, and that is to bait as widely as possible.’</p>
+</div></section>
+<section class="passage-section" id="passage-section-3"><h2 class="section-title">READING PASSAGE 3</h2>
+<div id="passageContent">
+<h2 style="text-align: center; color: #000;">Some views on the use of headphones</h2>
+<p style="text-align: center; font-style: italic; color: #000;">Whether wearing headphones at work, or in other areas of everyday life, is a good thing or a bad thing has generated a lot of research and opinion</p>
+<p>To visit a typical modern office today is to walk into a room with possibly a dozen songs playing simultaneously but to hear none of them. Up to half of younger workers listen to music on their headphones, and nearly all of them think it makes them better at their jobs. In survey after survey, people report with confidence that music makes them happier, better at concentrating, and more productive.</p>
+<p>Scientists do not share this belief, they maintain that listening to music hurts people’s ability to recall other things they should be doing, and any pop song, loud or soft, reduces overall performance for both extroverts and introverts. A Taiwanese study linked music that has lyrics to lower marks on concentration tests for college students, and other research has shown music with lyrics scrambles our brains’ verbal-processing skills. ‘As silence has the best overall performance, it would still be advisable that people work in silence,’ another reporter dryly concluded.</p>
+<p>The question is therefore: if headphones are so bad for productivity, why do so many people at work have them? One factor to consider is that countries like the USA have moved from a farming and manufacturing economy to a service economy, with an emphasis on jobs in offices that require higher levels of concentration, reflection and creativity. As an estimated 70 percent of office workers work in open-plan office spaces, it is more important to create one’s own enclosing bubble of sound. Lending strength to the argument for headphones at work is evidence that music relaxes our muscles, improves our mood, and may even moderately reduce blood pressure, heart rate and anxiety.</p>
+<p>The story of headphones began in 1910, when the US Navy received an odd letter written in purple ink on blue-and-pink paper. The letter writer, an eccentric inventor and repairman named Nathaniel Baldwin, from the USA state of Utah, made what at the time was an astonishing claim: he had built, in his kitchen, a new kind of headset that could amplify sound. This was an opportune invention for the Navy, who asked for a sound test and then enthusiastically adopted the headsets, later called headphones, and used them in World War I for naval radio communication.</p>
+<p>The purpose of headphones is to concentrate a quiet and private sound in the ear of the listener, which is a radical departure from music’s social purpose in history. ‘Music, together with dance, co-evolved biologically and culturally to serve as a technology of social bonding,’ Nills L Wallin and Bjorn Merker wrote in The Origins of Music. Songs don’t leave behind fossils, but evidence of musical notation dates back to Sumeria, 3,5000 years ago, and in 1995 archeologists discovered a bone flute in southern Europe estimated to be 44,000 years old. If music evolved as a social glue for the species, as a way to make groups and keep them together, headphones have done what writing and literacy did for language – they made music private.</p>
+<p>Author and columnist Stephen Marche wrote that separation from other people is one of the first things ordinary Americans spend their money achieving. It is ‘a by-product of a long-standing national appetite for independence,’ he said. Americans are not alone in their desire for personal independence and privacy. Marche is right; wealth can buy – and modern technology can deliver – personal independence, and it is this that people have always sought.</p>
+<p>Dr Michael Bull, an expert on personal music devices from the University of Sussex in the UK, has repeatedly made the larger point that personal music devices change how we relate to public spaces. Controlling our public spaces is more important now that more people are moving from the edges of cities to live in urban centers. ‘With the urban space, the more it’s inhabited, the safer you feel,’ Bull says. ‘You feel safe if you can feel people there, but you don’t want to interact with them.’ Headphones create shields for wearers, separating them from other people and their surroundings. Headphones have their own rules of good manners; they are like wearing a ‘Do not disturb’ sign. We assume that people wearing them are busy and we should respect their privacy, so now people wear them to appear busy. In fact, it is now becoming quite common for people not to listen to anything at all, but just to wear headphones.</p>
+<p>However, as pointed out at the beginning of this piece, although scientists have stated that headphones are bad for productivity, people still wear them at work. It is not just that headphones create privacy out of public areas, but also that music causes people to relax and reflect and pause. The outcome of relaxation, reflection and pausing at work won’t be captured in minute-to-minute productivity metrics. What must be considered is that in moments of extreme focus, our attention radiates outward, toward the problem, rather than inward, on how to solve the problem. However, with music ‘When our minds are at ease, we’re more likely to direct the spotlight of attention inward,’ Jonah Lehrer wrote in his book Imagine: How Creativity Works. ‘The answers have been there all along. We just weren’t listening.’ In a crowded world, real estate is the ultimate scarce resource, and a headphone is a small invisible fence around our minds – making space, creating separation, and helping us listen to ourselves.</p>
+</div></section>
+</div>
+</div>
+</section>
+<div class="resizer" id="resizer"></div>
+<section class="panel questions-panel" id="questionsPanel">
+<div class="panel-scroll">
+<div class="question-sections">
+<section class="question-section active" id="question-section-1">
+<div class="question-group">
+<div class="question-group-title">Questions 1–4</div>
+<p>Reading Passage 1 has eight paragraphs, <strong>A–H</strong>.</p>
+<p>Which paragraph contains the following information?</p>
+<p>Choose the correct letter, <strong>A–H</strong>, for each answer.</p>
+<div class="question" data-question="1"><div class="question-text">1 the reason why museum directors need to constantly alter and update their exhibits</div><div class="options"><select name="q1"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="2"><div class="question-text">2 mention of the length of time people will queue up to see a blockbuster</div><div class="options"><select name="q2"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="3"><div class="question-text">3 terms that people have used when referring to blockbusters</div><div class="options"><select name="q3"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="4"><div class="question-text">4 the various ways that institutions like museums get financial support</div><div class="options"><select name="q4"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 5–8</div>
+<p>Complete the sentences below.</p>
+<p>Write <strong>NO MORE THAN THREE WORDS</strong> from the passage for each answer.</p>
+<div class="question" data-question="5"><div class="question-text">5 These days, museum visitors tend to be referred to as <input name="q5" placeholder="5" style="width:180px;" type="text"/></div></div>
+<div class="question" data-question="6"><div class="question-text">6 Museum curators now need <input name="q6" placeholder="6" style="width:220px;" type="text"/> rather than academic qualifications.</div></div>
+<div class="question" data-question="7"><div class="question-text">7 The linking of a range of public institutions that entertain the public is known as <input name="q7" placeholder="7" style="width:180px;" type="text"/>.</div></div>
+<div class="question" data-question="8"><div class="question-text">8 There is discussion about whether museums can be regarded in the same way as other <input name="q8" placeholder="8" style="width:180px;" type="text"/>.</div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 9–10</div>
+<p>Choose <strong>TWO</strong> correct answers.</p>
+<p>Which <strong>TWO</strong> of the following are mentioned by the writer as advantages of blockbusters?</p>
+<p><strong>Options</strong><br/>A Some of the money they raise can be used for structural repairs.<br/>B They can provide funds to help support amateur artists.<br/>C Local services benefit from the extra business they bring about.<br/>D They encourage overseas workers into the local area.<br/>E They raise employee performance levels.</p>
+<div class="question" data-question="9"><div class="question-text">9 Choose one correct letter for the first advantage.</div><div class="options"><select name="q9"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></div></div>
+<div class="question" data-question="10"><div class="question-text">10 Choose one correct letter for the second advantage.</div><div class="options"><select name="q10"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 11–13</div>
+<p>Choose <strong>THREE</strong> correct answers.</p>
+<p>Which <strong>THREE</strong> of the following are mentioned by the writer as disadvantages of blockbusters?</p>
+<p><strong>Options</strong><br/>A They do not suit museum management styles.<br/>B Specialist business advice has to be paid for.<br/>C They involve an increased workload for personnel.<br/>D They do not increase overall annual visitor numbers.<br/>E They are very tiring to put on.<br/>F What is popular in one country may not be popular in another.<br/>G The content can be weakened through financial pressure.</p>
+<div class="question" data-question="11"><div class="question-text">11 Choose one correct letter.</div><div class="options"><select name="q11"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></div></div>
+<div class="question" data-question="12"><div class="question-text">12 Choose one correct letter.</div><div class="options"><select name="q12"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></div></div>
+<div class="question" data-question="13"><div class="question-text">13 Choose one correct letter.</div><div class="options"><select name="q13"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></div></div>
+</div>
+</section>
+<section class="question-section" id="question-section-2">
+<div class="question-group">
+<div class="question-group-title">Questions 14–20</div>
+<p>Reading Passage 2 has eight sections, <strong>A–H</strong>.</p>
+<p>Which section contains the following information?</p>
+<p>Write the correct letter, <strong>A–H</strong>, for each answer.</p>
+<div class="question" data-question="14"><div class="question-text">14 a description of a barrier designed to stop dingoes, which also divides two kinds of non-native animals</div><div class="options"><select name="q14"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="15"><div class="question-text">15 how dingoes ensure that rival species do not dominate</div><div class="options"><select name="q15"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="16"><div class="question-text">16 a reference to a widespread non-native species that other animals feed on</div><div class="options"><select name="q16"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="17"><div class="question-text">17 a mention of the dingo’s arrival in Australia</div><div class="options"><select name="q17"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="18"><div class="question-text">18 research which has proved that dingoes have resorted to eating young livestock</div><div class="options"><select name="q18"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="19"><div class="question-text">19 a description of a method used to kill dingoes</div><div class="options"><select name="q19"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+<div class="question" data-question="20"><div class="question-text">20 the way that the structure of dingo groups affects how quickly their numbers grow</div><div class="options"><select name="q20"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 21–23</div>
+<p>Look at the following statements and the list of people below.</p>
+<p>Match each statement with the correct person, <strong>A, B, C</strong> or <strong>D</strong>.</p>
+<p><strong>List of People</strong><br/>A Stuart McKechnie<br/>B Chris Johnson<br/>C Lee Allen<br/>D Mark Clifford</p>
+<div class="question" data-question="21"><div class="question-text">21 Dingoes tend to hunt native animals rather than hunting other non-native predators.</div><div class="options"><select name="q21"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div></div>
+<div class="question" data-question="22"><div class="question-text">22 The presence of dingoes puts the income of some people at risk.</div><div class="options"><select name="q22"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div></div>
+<div class="question" data-question="23"><div class="question-text">23 Dingoes have had little impact on the dying out of animal species in Australia.</div><div class="options"><select name="q23"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 24–26</div>
+<p>Complete the sentences below.</p>
+<p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+<div class="question" data-question="24"><div class="question-text">24 The dingo replaced the <input name="q24" placeholder="24" style="width:180px;" type="text"/> as the main predatory animal in Australia.</div></div>
+<div class="question" data-question="25"><div class="question-text">25 Foxes and cats are more likely to hunt native animals when there are fewer <input name="q25" placeholder="25" style="width:180px;" type="text"/>.</div></div>
+<div class="question" data-question="26"><div class="question-text">26 Australian animals reproduce at a slow rate as a natural way of avoiding <input name="q26" placeholder="26" style="width:180px;" type="text"/>.</div></div>
+</div>
+</section>
+<section class="question-section" id="question-section-3">
+<div class="question-group">
+<div class="question-group-title">Questions 27–31</div>
+<p>Do the following statements agree with the claims of the writer in Reading Passage 3?</p>
+<p>Write <strong>YES</strong> if the statement agrees with the claims of the writer.</p>
+<p>Write <strong>NO</strong> if the statement contradicts the claims of the writer.</p>
+<p>Write <strong>NOT GIVEN</strong> if it is impossible to say what the writer thinks about this.</p>
+<div class="question" data-question="27"><div class="question-text">27 Young people are easily persuaded by surveys that listening to music is beneficial.</div><div class="options"><label><input name="q27" type="radio" value="YES"/> YES</label><label><input name="q27" type="radio" value="NO"/> NO</label><label><input name="q27" type="radio" value="NOT GIVEN"/> NOT GIVEN</label></div></div>
+<div class="question" data-question="28"><div class="question-text">28 Different studies share the same conclusions about the desirability of working in silence.</div><div class="options"><label><input name="q28" type="radio" value="YES"/> YES</label><label><input name="q28" type="radio" value="NO"/> NO</label><label><input name="q28" type="radio" value="NOT GIVEN"/> NOT GIVEN</label></div></div>
+<div class="question" data-question="29"><div class="question-text">29 Some doctors recommend wearing headphones to lower blood pressure.</div><div class="options"><label><input name="q29" type="radio" value="YES"/> YES</label><label><input name="q29" type="radio" value="NO"/> NO</label><label><input name="q29" type="radio" value="NOT GIVEN"/> NOT GIVEN</label></div></div>
+<div class="question" data-question="30"><div class="question-text">30 Nathaniel Baldwin was a respected government researcher.</div><div class="options"><label><input name="q30" type="radio" value="YES"/> YES</label><label><input name="q30" type="radio" value="NO"/> NO</label><label><input name="q30" type="radio" value="NOT GIVEN"/> NOT GIVEN</label></div></div>
+<div class="question" data-question="31"><div class="question-text">31 The effect of the invention of headphones is comparable to the effect of the invention of writing.</div><div class="options"><label><input name="q31" type="radio" value="YES"/> YES</label><label><input name="q31" type="radio" value="NO"/> NO</label><label><input name="q31" type="radio" value="NOT GIVEN"/> NOT GIVEN</label></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 32–36</div>
+<p>Choose the correct letter, <strong>A, B, C</strong> or <strong>D</strong>.</p>
+<div class="question" data-question="32"><div class="question-text">32 What does the writer suggest about a service economy?</div><div class="options"><label><input name="q32" type="radio" value="A"/> A The work is mentally demanding</label><label><input name="q32" type="radio" value="B"/> B It provides employment for younger workers</label><label><input name="q32" type="radio" value="C"/> C It is a small part of a country’s economy</label><label><input name="q32" type="radio" value="D"/> D Workers have to live in urban centres</label></div></div>
+<div class="question" data-question="33"><div class="question-text">33 When the writer mentions the historical evidence for early music he is</div><div class="options"><label><input name="q33" type="radio" value="A"/> A emphasizing the diversity of musical forms</label><label><input name="q33" type="radio" value="B"/> B expressing his frustration with the limited archaeological evidence uncovered</label><label><input name="q33" type="radio" value="C"/> C lending support to the view that music has been important in human history</label><label><input name="q33" type="radio" value="D"/> D creating a geographical map of the evolution of music</label></div></div>
+<div class="question" data-question="34"><div class="question-text">34 What does the writer say about the social effects of listening to music through headphones?</div><div class="options"><label><input name="q34" type="radio" value="A"/> A It has caused a reduction in the number of people who listen to music</label><label><input name="q34" type="radio" value="B"/> B It has increased people’s participation in music events</label><label><input name="q34" type="radio" value="C"/> C It has reduced the global variation of music styles</label><label><input name="q34" type="radio" value="D"/> D It has changed the traditional role of music in society</label></div></div>
+<div class="question" data-question="35"><div class="question-text">35 What does the writer say about personal independence?</div><div class="options"><label><input name="q35" type="radio" value="A"/> A Americans are unique in their desire for personal independence</label><label><input name="q35" type="radio" value="B"/> B Personal independence is something that can be purchased</label><label><input name="q35" type="radio" value="C"/> C Striving for personal independence is a recent phenomenon</label><label><input name="q35" type="radio" value="D"/> D Personal independence destroys social connections</label></div></div>
+<div class="question" data-question="36"><div class="question-text">36 Why does the writer quote Jonah Lehrer in the last paragraph?</div><div class="options"><label><input name="q36" type="radio" value="A"/> A to support the writer’s own view</label><label><input name="q36" type="radio" value="B"/> B to draw attention to an authoritative book about music</label><label><input name="q36" type="radio" value="C"/> C to raise awareness of people’s loss of listening skills</label><label><input name="q36" type="radio" value="D"/> D to illustrate how music brings people closer to each other</label></div></div>
+</div>
+<div class="question-group">
+<div class="question-group-title">Questions 37–40</div>
+<p>Complete the summary using the list of words, <strong>A–I</strong>, below.</p>
+<p>Write the correct letter, <strong>A–I</strong>, for each answer.</p>
+<p><strong>Options</strong><br/>A courtesy<br/>B relationship<br/>C difficulty<br/>D countryside<br/>E suburbs<br/>F language<br/>G barriers<br/>H obstacles<br/>I disapproval</p>
+<div class="question" data-question="37"><div class="question-text">37 The word that best completes the first gap is</div><div class="options"><select name="q37"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select></div></div>
+<div class="question" data-question="38"><div class="question-text">38 The word that best completes the second gap is</div><div class="options"><select name="q38"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select></div></div>
+<div class="question" data-question="39"><div class="question-text">39 The word that best completes the third gap is</div><div class="options"><select name="q39"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select></div></div>
+<div class="question" data-question="40"><div class="question-text">40 The word that best completes the fourth gap is</div><div class="options"><select name="q40"><option value="">Select</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="I">I</option></select></div></div>
+</div>
+</section>
+</div>
+<section class="all-explanations hidden" id="allExplanations"></section>
+</div>
+</section>
+</main>
+<div class="watermark">IELTSUZ</div>
+<div class="hl-floating-toolbar" id="hlToolbar">
+<div class="hl-section-label">Highlight</div>
+<div class="hl-colors-row">
+<button class="hl-dot cy" data-color="y" title="Yellow"></button>
+<button class="hl-dot cg" data-color="g" title="Green"></button>
+<button class="hl-dot cp" data-color="p" title="Pink"></button>
+<button class="hl-dot cb" data-color="b" title="Blue"></button>
+</div>
+<div class="hl-divider"></div>
+<button class="hl-text-btn note-btn" id="toolbarNoteBtn">✏ Note</button>
+<button class="hl-text-btn remove-btn" id="toolbarRemoveBtn">🗑 Remove</button>
+<button class="hl-text-btn clear-btn" id="toolbarClearBtn">✕ Clear all</button>
+</div>
+<div class="overlay" id="noteModalOverlay">
+<div class="modal-card">
+<h3 style="margin-top:0">✏️ Add Note</h3>
+<div class="excerpt-preview" id="noteExcerptPreview"></div>
+<textarea id="noteText" placeholder="Write your note here..."></textarea>
+<div class="btn-row">
+<button class="plain-btn primary" id="saveNoteBtn">Save</button>
+<button class="plain-btn" id="cancelNoteBtn">Cancel</button>
+</div>
+</div>
+</div>
+<div class="overlay" id="notesPanelOverlay">
+<div class="modal-card" style="max-width:520px">
+<div style="display:flex; align-items:center; justify-content:space-between; gap:12px">
+<h3 style="margin:0">📝 My Notes</h3>
+<button aria-label="Close notes" class="icon-circle" id="closeNotesPanelBtn">×</button>
+</div>
+<div class="notes-list" id="notesList"></div>
+</div>
+</div>
+<footer class="bottom-nav">
+<div class="nav-arrows">
+<button aria-label="Previous question" class="nav-arrow prev" id="prevBtn">◄</button>
+<button aria-label="Next question" class="nav-arrow next" id="nextBtn">►</button>
+</div>
+<div class="part-tabs" id="partTabs">
+<button class="part-tab active" data-part="1">Part 1</button>
+<button class="part-tab" data-part="2">Part 2</button>
+<button class="part-tab" data-part="3">Part 3</button>
+</div>
+<div class="question-rail" id="questionRail"></div>
+<div class="status-wrap" id="answeredCount">0 of 40 answered</div>
+<button class="check-btn" id="checkAnswersBtn">✓ Check Answers</button>
+</footer>
+<div class="results-overlay" id="resultsOverlay">
+<div class="results-box">
+<button class="results-close" id="resultsCloseBtn">×</button>
+<div class="results-heading">Results</div>
+<div class="summary-row" id="resultsSummary"></div>
+<div class="results-table">
+<div class="results-details-header">
+<div>#</div><div>Your Answer</div><div>Correct Answer</div><div>✓/✗</div>
+</div>
+<div id="resultsRows"></div>
+</div>
+<div class="btn-row" style="padding-top:14px; border-top:1px solid #eef2f7">
+<button class="plain-btn" id="retakeBtn">🔄 Retake Test</button>
+<button class="plain-btn" id="closeResultsBtn">Close</button>
+</div>
+</div>
+</div>
+<script>
+    let currentPassage = 1;
+    let currentQuestion = 1;
+    let timeInSeconds = 3600;
+    let timerInterval = null;
+    let timerRunning = false;
+    let savedRange = null;
+    let activeHLMark = null;
+    let notesData = [];
+    let noteIdCounter = 0;
+    let checked = false;
+    let pendingNoteExcerpt = "";
+
+    const correctAnswers = {"1": "C", "2": "A", "3": "D", "4": "C", "5": ["customers"], "6": ["public relations skills"], "7": ["museology"], "8": ["tourist attractions"], "9": "A", "10": "C", "11": "C", "12": "E", "13": "G", "14": "E", "15": "D", "16": "C", "17": "B", "18": "F", "19": "A", "20": "D", "21": "D", "22": "A", "23": "B", "24": ["tasmanian tiger", "the tasmanian tiger"], "25": ["rabbits"], "26": ["overpopulation"], "27": "NO", "28": "YES", "29": "NOT GIVEN", "30": "NO", "31": "YES", "32": "A", "33": "C", "34": "D", "35": "B", "36": "A", "37": "B", "38": "E", "39": "G", "40": "A"};
+    const explanations = {"1": "Paragraph C says museums must maintain visitor levels by providing regular exhibition changes and innovations, so this is the reason directors keep updating exhibits.", "2": "Paragraph A says people will stand in line for hours to see a blockbuster, which matches the statement exactly.", "3": "Paragraph D lists labels used for blockbusters such as “less scholarly”, “non-elitist” and “popularist”.", "4": "Paragraph C explains the plural funding model: government support plus admission charges and other activities.", "5": "The passage says the visiting public have become known as customers rather than visitors.", "6": "Paragraph C says public relations skills are essential for modern museum directors and curators in this market-driven system.", "7": "Paragraph D says the convergence of museums, tourism, commerce and entertainment has resulted in the new museology.", "8": "Paragraph D says there is debate about seeing museums primarily as tourist attractions.", "9": "Paragraph E says blockbuster income can be used to fix buildings or replace parts of collections, so A is one correct advantage.", "10": "Paragraph E says crowds created by blockbusters are good for the local economy and increase trade for nearby services, so C is the other correct advantage.", "11": "Paragraph F says staff across the organisation are required to perform additional tasks, so increased workload is a disadvantage.", "12": "Paragraph G says creating, mounting or hiring blockbusters is exhausting, which matches option E.", "13": "Paragraph G says focus on the bottom line can squeeze substance out of an exhibition, so G is correct.", "14": "Section E describes the dingo fence and explains that it separates cattle areas from sheep areas.", "15": "Section D says dingoes kill cats and foxes simply to lessen competition, which prevents rivals from dominating.", "16": "Section C says rabbits became widespread and provide a huge prey base for foxes and cats.", "17": "Section B says Asian sailors introduced dingoes to Australia about 4,000 years ago.", "18": "Section F reports a Queensland study showing high rates of calf predation in baited areas, proving dingoes have preyed on young cattle.", "19": "Section A describes baiting, where poisoned meat is dropped from a plane.", "20": "Section D says dingo packs usually have only one fertile female, which limits how quickly their numbers rise.", "21": "Mark Clifford says he is not convinced dingoes catch cats often and believes they are more likely to catch small native animals instead.", "22": "Stuart McKechnie says graziers’ livelihoods are threatened when dingoes prey on cattle, so this matches person A.", "23": "Chris Johnson says dingoes have contributed to few, if any, extinctions in Australia.", "24": "The passage says dingoes became top predators as the Tasmanian tiger disappeared completely from Australia.", "25": "Section C explains that when rabbit numbers fall, foxes and cats are left with little to eat besides native mammals.", "26": "Section D says Australian mammals reproduce slowly as an adaptation to prevent overpopulation in a harsh environment.", "27": "The passage says young workers already believe music helps them; it does not say surveys persuaded them to think that, so the statement is contradicted.", "28": "Several studies are cited to show that music harms concentration, and one report concludes silence gives the best overall performance.", "29": "The passage mentions that music may reduce blood pressure, but it does not say doctors recommend headphones for that reason.", "30": "Nathaniel Baldwin is described as an eccentric inventor and repairman, not as a respected government researcher.", "31": "The writer says headphones did for music what writing and literacy did for language: they made it private.", "32": "The passage says service-economy office jobs require higher levels of concentration, reflection and creativity.", "33": "The historical references to notation and the bone flute support the point that music has long been important in human life.", "34": "The writer says headphones changed music from a social activity into a private one, so they changed its traditional social role.", "35": "The passage says wealth can buy, and technology can deliver, personal independence.", "36": "The Jonah Lehrer quote is used to support the writer’s point that music can help inward attention, reflection and creativity.", "37": "The summary gap refers to how wearers connect with public spaces, so relationship is the best fit.", "38": "The passage says people are moving from the edges of cities, which corresponds to suburbs.", "39": "The summary describes something that isolates wearers from others; barriers best matches that meaning.", "40": "The writer says people with headphones are treated as if their privacy should be respected, which is closest to courtesy."};
+    const evidenceMap = {"1": "providing regular exhibition changes and innovations", "2": "stand in line for hours to see", "3": "less scholarly", "4": "system of plural funding", "5": "known as customers rather than visitors", "6": "public relations skills are essential", "7": "the new “museology”", "8": "see museums primarily as tourist attractions", "9": "fix buildings that are in need of attention", "10": "crowds are good for the local economy", "11": "required to perform additional tasks", "12": "Creating, mounting or hiring blockbusters is exhausting", "13": "can squeeze substance out of an exhibition", "14": "the fence separates the main types of livestock", "15": "kill them simply to lessen competition", "16": "Rabbits provide huge prey base", "17": "Asian sailors introduced dingoes to Australia", "18": "highest rates of calf predation occurred in areas that had been baited", "19": "each piece laced with poison; this practice is known as baiting", "20": "have only one fertile, which limits their rate of increase", "21": "more likely to catch small native animals instead", "22": "graziers’ livelihoods are threatened", "23": "contributed to few, if any, extinctions", "24": "the Tasmanian tiger disappeared completely from Australia", "25": "rabbit numbers are significantly reduced", "26": "prevent overpopulation in the arid environment", "27": "people report with confidence that music makes them happier", "28": "silence has the best overall performance", "30": "an eccentric inventor and repairman", "31": "headphones have done what writing and literacy did for language", "32": "require higher levels of concentration, reflection and creativity", "33": "evidence of musical notation dates back to Sumeria", "34": "they made music private", "35": "wealth can buy", "36": "When our minds are at ease", "37": "change how we relate to public spaces", "38": "moving from the edges of cities", "39": "Headphones create shields for wearers", "40": "we should respect their privacy"};
+    const partMeta = {
+      1: { start: 1, end: 13, text: "Read the text and answer questions 1–13." },
+      2: { start: 14, end: 26, text: "Read the text and answer questions 14–26." },
+      3: { start: 27, end: 40, text: "Read the text and answer questions 27–40." }
+    };
+
+    function $(id){ return document.getElementById(id); }
+
+    function initialize(){
+      enhanceQuestionMarkup();
+      renderQuestionRail();
+      switchToPart(1);
+      attachEvents();
+      updateTimerDisplay();
+      updateAllIndicators();
+      renderNotesList();
+    }
+
+    function enhanceQuestionMarkup(){
+      document.querySelectorAll('.question').forEach(q => {
+        const qNum = Number(q.dataset.question || 0);
+        const end = Number(q.dataset.questionEnd || q.dataset.question || 0);
+        const review = document.createElement('div');
+        review.className = 'question-review';
+        review.id = 'inline-review-' + qNum;
+        q.appendChild(review);
+        q.addEventListener('click', (e) => {
+          if(e.target.closest('input,select,label,option')) return;
+          const anchorQ = qNum || 1;
+          currentQuestion = anchorQ;
+          updateAllIndicators();
+          if(checked){
+            if(q.classList.contains('multi-answer-question')){
+              q.classList.toggle('show-inline');
+              showInlineReview(25);
+              showInlineReview(26);
+            } else {
+              q.classList.toggle('show-inline');
+              showInlineReview(anchorQ);
+            }
+          }
+        });
+        q.querySelectorAll('input,select').forEach(inp => {
+          inp.addEventListener('focus', () => {
+            currentQuestion = qNum || 1;
+            updateAllIndicators();
+          });
+          inp.addEventListener('click', () => {
+            currentQuestion = qNum || 1;
+            updateAllIndicators();
+          });
+        });
+      });
+
+      document.querySelectorAll('.options label').forEach(label => {
+        const input = label.querySelector('input');
+        if(!input) return;
+        input.addEventListener('change', () => {
+          if(input.type === 'radio'){
+            document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
+              const lab = r.closest('label');
+              if(lab) lab.classList.toggle('is-checked', r.checked);
+            });
+          } else if(input.type === 'checkbox'){
+            if(input.name === 'q25_26'){
+              const checkedBoxes = Array.from(document.querySelectorAll('input[name="q25_26"]:checked'));
+              if(checkedBoxes.length > 2){
+                input.checked = false;
+                return;
+              }
+            }
+            label.classList.toggle('is-checked', input.checked);
+          }
+          updateAllIndicators();
+        });
+      });
+
+      document.querySelectorAll('select, input[type="text"]').forEach(el => {
+        el.addEventListener('input', updateAllIndicators);
+        el.addEventListener('change', updateAllIndicators);
+      });
+
+      document.querySelectorAll('ol li').forEach(li => li.style.marginBottom = '4px');
+    }
+
+    function attachEvents(){
+      document.querySelectorAll('[data-part]').forEach(btn => {
+        btn.addEventListener('click', () => switchToPart(Number(btn.dataset.part)));
+      });
+
+      $('prevBtn').addEventListener('click', previousQuestion);
+      $('nextBtn').addEventListener('click', nextQuestion);
+      $('toggleTimerBtn').addEventListener('click', toggleTimer);
+      $('resetTimerBtn').addEventListener('click', resetTimer);
+      $('themeToggleBtn').addEventListener('click', toggleTheme);
+      $('checkAnswersBtn').addEventListener('click', () => {
+        if(checked){ showResultsModal(); return; }
+        checkAnswers();
+      });
+      $('resultsCloseBtn').addEventListener('click', closeResultsModal);
+      $('closeResultsBtn').addEventListener('click', closeResultsModal);
+      $('retakeBtn').addEventListener('click', () => location.reload());
+      $('resultsOverlay').addEventListener('click', e => { if(e.target === $('resultsOverlay')) closeResultsModal(); });
+
+      $('openNotesBtn').addEventListener('click', () => $('notesPanelOverlay').classList.add('show'));
+      $('closeNotesPanelBtn').addEventListener('click', () => $('notesPanelOverlay').classList.remove('show'));
+      $('notesPanelOverlay').addEventListener('click', e => { if(e.target === $('notesPanelOverlay')) $('notesPanelOverlay').classList.remove('show'); });
+      $('cancelNoteBtn').addEventListener('click', closeNoteInput);
+      $('saveNoteBtn').addEventListener('click', saveNote);
+      $('noteModalOverlay').addEventListener('click', e => { if(e.target === $('noteModalOverlay')) closeNoteInput(); });
+
+      $('toolbarNoteBtn').addEventListener('click', () => {
+        const excerpt = activeHLMark ? activeHLMark.textContent.trim() : (savedRange ? savedRange.toString().trim() : '');
+        openNoteInput(excerpt);
+      });
+      $('toolbarRemoveBtn').addEventListener('click', removeCurrentHL);
+      $('toolbarClearBtn').addEventListener('click', clearAllHL);
+      document.querySelectorAll('.hl-dot').forEach(btn => btn.addEventListener('click', () => applyHL(btn.dataset.color)));
+
+      document.addEventListener('mouseup', (e) => {
+        if(e.target.closest('#hlToolbar')) return;
+        setTimeout(() => maybeShowToolbar(e.clientX, e.clientY), 10);
+      });
+      document.addEventListener('mousedown', (e) => {
+        if(!e.target.closest('#hlToolbar') && !e.target.closest('mark')){
+          $('hlToolbar').classList.remove('show');
+        }
+      });
+      document.addEventListener('click', (e) => {
+        if(e.target.tagName === 'MARK'){
+          activeHLMark = e.target;
+          savedRange = null;
+          positionToolbar(e.clientX, e.clientY);
+          $('hlToolbar').classList.add('show');
+        }
+      });
+
+      const resizer = $('resizer');
+      let isResizing = false;
+      resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.userSelect = 'none'; });
+      window.addEventListener('mousemove', (e) => {
+        if(!isResizing) return;
+        const workspace = document.querySelector('.workspace');
+        const rect = workspace.getBoundingClientRect();
+        if(window.innerWidth <= 820){
+          const y = Math.min(rect.bottom - 180, Math.max(rect.top + 180, e.clientY));
+          const topH = y - rect.top;
+          $('passagePanel').style.height = topH + 'px';
+          $('questionsPanel').style.height = (rect.height - topH - 8) + 'px';
+          $('passagePanel').style.width = '100%';
+          $('questionsPanel').style.width = '100%';
+        } else {
+          const x = Math.min(rect.right - 180, Math.max(rect.left + 180, e.clientX));
+          const leftPct = ((x - rect.left) / rect.width) * 100;
+          $('passagePanel').style.width = leftPct + '%';
+          $('questionsPanel').style.width = (100 - leftPct) + '%';
+        }
+      });
+      window.addEventListener('mouseup', () => { isResizing = false; document.body.style.userSelect = ''; });
+
+      document.addEventListener('keydown', (e) => {
+        const t = e.target.tagName;
+        if(['INPUT','TEXTAREA','SELECT'].includes(t)) return;
+        if(e.altKey && e.key === '1'){ e.preventDefault(); switchToPart(1); }
+        if(e.altKey && e.key === '2'){ e.preventDefault(); switchToPart(2); }
+        if(e.altKey && e.key === '3'){ e.preventDefault(); switchToPart(3); }
+        if(e.key === 'ArrowLeft'){ e.preventDefault(); previousQuestion(); }
+        if(e.key === 'ArrowRight'){ e.preventDefault(); nextQuestion(); }
+      });
+    }
+
+    function renderQuestionRail(){
+      const rail = $('questionRail');
+      rail.innerHTML = '';
+      for(let q = 1; q <= 40; q++){
+        const btn = document.createElement('button');
+        btn.className = 'subQuestion';
+        btn.textContent = q;
+        btn.dataset.question = q;
+        btn.addEventListener('click', () => goToQuestion(q));
+        rail.appendChild(btn);
+      }
+    }
+
+    function switchToPart(n){
+      currentPassage = n;
+      document.querySelectorAll('.passage-section,.question-section').forEach(sec => sec.classList.remove('active'));
+      $('passage-section-' + n).classList.add('active');
+      $('question-section-' + n).classList.add('active');
+      document.querySelectorAll('.panel-tab,.part-tab').forEach(btn => btn.classList.toggle('active', Number(btn.dataset.part) === n));
+      $('partBanner').innerHTML = `<p><strong>Part ${n}</strong></p><p>${partMeta[n].text}</p>`;
+      if(currentQuestion < partMeta[n].start || currentQuestion > partMeta[n].end){
+        currentQuestion = partMeta[n].start;
+      }
+      updateAllIndicators();
+    }
+
+    function goToQuestion(n){
+      if(n < 1 || n > 40) return;
+      currentQuestion = n;
+      const targetPart = n <= 13 ? 1 : n <= 26 ? 2 : 3;
+      switchToPart(targetPart);
+      const target = document.querySelector(`.question[data-question="${n}"]`) || document.querySelector('.multi-answer-question');
+      const fallback = document.querySelector(`#question-section-${targetPart} .question[data-question="${n === 26 ? 25 : n}"]`) || target;
+      if(fallback){
+        fallback.scrollIntoView({behavior:'smooth', block:'center'});
+        fallback.classList.add('active-question');
+        setTimeout(() => fallback.classList.remove('active-question'), 1400);
+      }
+      const explanationCard = $('exp-card-' + n);
+      if(checked && explanationCard){
+        explanationCard.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }
+      updateAllIndicators();
+    }
+
+    function nextQuestion(){
+      if(currentQuestion < 40) goToQuestion(currentQuestion + 1);
+    }
+
+    function previousQuestion(){
+      if(currentQuestion > 1) goToQuestion(currentQuestion - 1);
+    }
+
+    function toggleTimer(){
+      const btn = $('toggleTimerBtn');
+      if(timerRunning){
+        clearInterval(timerInterval);
+        timerRunning = false;
+        btn.textContent = '▶';
+        return;
+      }
+      timerRunning = true;
+      btn.textContent = '⏸';
+      timerInterval = setInterval(() => {
+        timeInSeconds -= 1;
+        if(timeInSeconds <= 0){
+          timeInSeconds = 0;
+          clearInterval(timerInterval);
+          timerRunning = false;
+          btn.textContent = '▶';
+          updateTimerDisplay();
+          if(!checked) checkAnswers();
+          return;
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function resetTimer(){
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timeInSeconds = 3600;
+      $('toggleTimerBtn').textContent = '▶';
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay(){
+      const mins = String(Math.floor(timeInSeconds / 60)).padStart(2,'0');
+      const secs = String(timeInSeconds % 60).padStart(2,'0');
+      const timer = $('timerDisplay');
+      timer.textContent = `${mins}:${secs}`;
+      timer.classList.toggle('warning', timeInSeconds <= 300);
+    }
+
+    function toggleTheme(){
+      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if(dark){
+        document.documentElement.removeAttribute('data-theme');
+        $('themeToggleBtn').textContent = '🌙';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        $('themeToggleBtn').textContent = '☀️';
+      }
+    }
+
+    function normalizeAnswer(v){
+      return String(v || '')
+        .toLowerCase()
+        .replace(/['’]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function isQuestionAnswered(n){
+      const checkedRadio = document.querySelector(`input[name="q${n}"]:checked`);
+      if(checkedRadio) return true;
+      const text = document.querySelector(`[name="q${n}"][type="text"]`);
+      if(text) return !!text.value.trim();
+      const select = document.querySelector(`select[name="q${n}"]`);
+      if(select) return !!select.value;
+      return false;
+    }
+
+    function getUserAnswer(n){
+      const checkedRadio = document.querySelector(`input[name="q${n}"]:checked`);
+      if(checkedRadio) return checkedRadio.value;
+      const text = document.querySelector(`[name="q${n}"][type="text"]`);
+      if(text) return text.value.trim();
+      const select = document.querySelector(`select[name="q${n}"]`);
+      if(select) return select.value;
+      return '';
+    }
+
+    function getUserAnswerDisplay(n){
+      const ans = getUserAnswer(n);
+      return ans ? ans : '—';
+    }
+
+    function getCorrectAnswerDisplay(n){
+      const ans = correctAnswers[String(n)];
+      if(Array.isArray(ans)) return ans[0].toUpperCase();
+      return String(ans).toUpperCase();
+    }
+
+    function compareAnswer(n){
+      const user = getUserAnswer(n);
+      const correct = correctAnswers[String(n)];
+      if(Array.isArray(correct)){
+        const norm = normalizeAnswer(user);
+        return correct.some(ans => normalizeAnswer(ans) === norm);
+      }
+      return normalizeAnswer(user) === normalizeAnswer(correct);
+    }
+
+    function updateAllIndicators(){
+      let answered = 0;
+      document.querySelectorAll('.subQuestion').forEach(btn => {
+        const q = Number(btn.dataset.question);
+        btn.classList.remove('active');
+        if(isQuestionAnswered(q)) { btn.classList.add('answered'); } else { btn.classList.remove('answered'); }
+        if(q === currentQuestion) btn.classList.add('active');
+        if(isQuestionAnswered(q)) answered += 1;
+      });
+      $('answeredCount').textContent = `${answered} of 40 answered`;
+    }
+
+    function clearOldGradingUI(){
+      document.querySelectorAll('.option-correct,.option-incorrect,.is-checked').forEach(el => {
+        if(el.classList.contains('option-correct')) el.classList.remove('option-correct');
+        if(el.classList.contains('option-incorrect')) el.classList.remove('option-incorrect');
+      });
+      document.querySelectorAll('.correct-input,.incorrect-input').forEach(el => {
+        el.classList.remove('correct-input','incorrect-input');
+      });
+      document.querySelectorAll('.correct-answer-display').forEach(el => el.remove());
+      document.querySelectorAll('.question-review').forEach(el => el.innerHTML = '');
+      document.querySelectorAll('.question').forEach(q => q.classList.remove('show-inline'));
+      document.querySelectorAll('.subQuestion').forEach(btn => btn.classList.remove('correct','incorrect'));
+      document.querySelectorAll('.options label').forEach(label => {
+        const input = label.querySelector('input');
+        if(input){
+          label.classList.toggle('is-checked', input.checked);
+        }
+      });
+    }
+
+    function disableQuestionInputs(){
+      document.querySelectorAll('.questions-panel input, .questions-panel select, .questions-panel textarea').forEach(el => {
+        if(el.id === 'noteText') return;
+        el.disabled = true;
+      });
+    }
+
+    function renderInlineReview(qNum){
+      const review = $('inline-review-' + qNum);
+      if(!review) return;
+      review.innerHTML = `
+        <div class="mini">Explanation</div>
+        <div><strong>Correct answer:</strong> ${getCorrectAnswerDisplay(qNum)}</div>
+        <div><strong>Why:</strong> ${explanations[String(qNum)]}</div>
+      `;
+    }
+
+    function showInlineReview(qNum){
+      renderInlineReview(qNum);
+    }
+
+    function checkAnswers(){
+      checked = true;
+      clearInterval(timerInterval);
+      timerRunning = false;
+      $('toggleTimerBtn').textContent = '▶';
+      clearOldGradingUI();
+      disableQuestionInputs();
+
+      const results = [];
+      for(let q = 1; q <= 40; q++){
+        const isCorrect = compareAnswer(q);
+        gradeQuestionUI(q, isCorrect);
+        results.push({
+          q,
+          correct: isCorrect,
+          user: getUserAnswerDisplay(q),
+          answer: getCorrectAnswerDisplay(q)
+        });
+      }
+      buildResults(results);
+      renderAllExplanations();
+      highlightCorrectAnswersInPassage();
+      $('checkAnswersBtn').textContent = 'My Result';
+      $('checkAnswersBtn').classList.add('result-btn');
+      showResultsModal();
+      updateAllIndicators();
+    }
+
+    function gradeQuestionUI(q, isCorrect){
+      const btn = document.querySelector(`.subQuestion[data-question="${q}"]`);
+      if(btn){
+        btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+      }
+      const radioChecked = document.querySelector(`input[name="q${q}"]:checked`);
+      const textInput = document.querySelector(`[name="q${q}"][type="text"]`);
+      const selectInput = document.querySelector(`select[name="q${q}"]`);
+      if(radioChecked){
+        const userLabel = radioChecked.closest('label');
+        if(userLabel) userLabel.classList.add(isCorrect ? 'option-correct' : 'option-incorrect');
+        if(!isCorrect){
+          const correctRadio = document.querySelector(`input[name="q${q}"][value="${correctAnswers[String(q)]}"]`);
+          if(correctRadio && correctRadio.closest('label')) correctRadio.closest('label').classList.add('option-correct');
+          if(userLabel){
+            const span = document.createElement('span');
+            span.className = 'correct-answer-display';
+            span.innerHTML = `➜ <span>${getCorrectAnswerDisplay(q)}</span>`;
+            userLabel.appendChild(span);
+          }
+        }
+      } else if(textInput){
+        textInput.classList.add(isCorrect ? 'correct-input' : 'incorrect-input');
+        if(!isCorrect){
+          const span = document.createElement('span');
+          span.className = 'correct-answer-display';
+          span.innerHTML = `➜ <span>${getCorrectAnswerDisplay(q)}</span>`;
+          textInput.insertAdjacentElement('afterend', span);
+        }
+      } else if(selectInput){
+        selectInput.classList.add(isCorrect ? 'correct-input' : 'incorrect-input');
+        if(!isCorrect){
+          const span = document.createElement('span');
+          span.className = 'correct-answer-display';
+          span.innerHTML = `➜ <span>${getCorrectAnswerDisplay(q)}</span>`;
+          selectInput.insertAdjacentElement('afterend', span);
+        }
+      }
+      renderInlineReview(q);
+    }
+
+    function calculateBandScore(score){
+      if(score >= 39) return '9.0';
+      if(score >= 37) return '8.5';
+      if(score >= 35) return '8.0';
+      if(score >= 32) return '7.5';
+      if(score >= 30) return '7.0';
+      if(score >= 27) return '6.5';
+      if(score >= 23) return '6.0';
+      if(score >= 19) return '5.5';
+      if(score >= 15) return '5.0';
+      if(score >= 13) return '4.5';
+      return '4.0';
+    }
+
+    function buildResults(results){
+      const total = results.filter(r => r.correct).length;
+      const p1 = results.filter(r => r.q >= 1 && r.q <= 13 && r.correct).length;
+      const p2 = results.filter(r => r.q >= 14 && r.q <= 26 && r.correct).length;
+      const p3 = results.filter(r => r.q >= 27 && r.q <= 40 && r.correct).length;
+      $('resultsSummary').innerHTML = `
+        <p>Score:<span>${total} / 40</span></p>
+        <p>Band:<span>${calculateBandScore(total)}</span></p>
+        <p>Part 1:<span>${p1}/13</span></p>
+        <p>Part 2:<span>${p2}/13</span></p>
+        <p>Part 3:<span>${p3}/14</span></p>
+      `;
+      const rows = results.map(r => `
+        <div class="result-row ${r.correct ? 'correct' : 'incorrect'}" id="res-row-${r.q}" data-correct="${r.correct ? 1 : 0}">
+          <div><span class="q-num">${r.q}</span></div>
+          <div><span class="user-ans">${r.user}</span></div>
+          <div><span class="correct-ans">${r.answer}</span></div>
+          <div>${r.correct ? '<span class="status-ok">✓</span>' : '<span class="status-bad">✗</span>'}</div>
+        </div>
+      `).join('');
+      $('resultsRows').innerHTML = rows;
+    }
+
+    function renderAllExplanations(){
+      const host = $('allExplanations');
+      host.classList.remove('hidden');
+      let html = '<h3>Answer Explanations 1–40</h3><div class="explanation-grid">';
+      for(let q = 1; q <= 40; q++){
+        html += `
+          <div class="explanation-card" id="exp-card-${q}">
+            <h4>Question ${q}</h4>
+            <p><strong>Correct answer:</strong> ${getCorrectAnswerDisplay(q)}</p>
+            <p><strong>Explanation:</strong> ${explanations[String(q)]}</p>
+            <p><strong>Evidence:</strong> ${evidenceMap[String(q)] || 'Not given in the passage.'}</p>
+          </div>
+        `;
+      }
+      html += '</div>';
+      host.innerHTML = html;
+    }
+
+    function showResultsModal(){ $('resultsOverlay').classList.add('show'); }
+    function closeResultsModal(){ $('resultsOverlay').classList.remove('show'); }
+
+    function maybeShowToolbar(clientX, clientY){
+      const sel = window.getSelection();
+      if(!sel || !sel.toString().trim()) return;
+      const range = sel.getRangeAt(0);
+      const common = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement;
+      if(!common || (!common.closest('#passagePanel') && !common.closest('#questionsPanel'))) return;
+      savedRange = range.cloneRange();
+      activeHLMark = null;
+      positionToolbar(clientX, clientY);
+      $('hlToolbar').classList.add('show');
+    }
+
+    function positionToolbar(clientX, clientY){
+      const toolbar = $('hlToolbar');
+      toolbar.style.display = 'flex';
+      const rect = toolbar.getBoundingClientRect();
+      let lx = clientX - rect.width / 2;
+      let ly = clientY - rect.height - 14;
+      if(ly < 8) ly = clientY + 20;
+      lx = Math.max(8, Math.min(window.innerWidth - rect.width - 8, lx));
+      ly = Math.max(8, Math.min(window.innerHeight - rect.height - 8, ly));
+      toolbar.style.left = lx + 'px';
+      toolbar.style.top = ly + 'px';
+      toolbar.style.display = '';
+    }
+
+    function applyHL(color){
+      const className = 'hl-' + color;
+      if(activeHLMark){
+        activeHLMark.className = className;
+      } else if(savedRange){
+        try{
+          const mark = document.createElement('mark');
+          mark.className = className;
+          try{
+            savedRange.surroundContents(mark);
+          } catch(err){
+            const contents = savedRange.extractContents();
+            mark.appendChild(contents);
+            savedRange.insertNode(mark);
+          }
+        } catch(err){}
+      }
+      window.getSelection().removeAllRanges();
+      savedRange = null;
+      $('hlToolbar').classList.remove('show');
+    }
+
+    function unwrapMark(mark){
+      if(!mark || !mark.parentNode) return;
+      const parent = mark.parentNode;
+      while(mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+      parent.removeChild(mark);
+      parent.normalize();
+    }
+
+    function removeCurrentHL(){
+      if(activeHLMark) unwrapMark(activeHLMark);
+      activeHLMark = null;
+      savedRange = null;
+      $('hlToolbar').classList.remove('show');
+    }
+
+    function clearAllHL(){
+      document.querySelectorAll('mark.hl-y, mark.hl-g, mark.hl-p, mark.hl-b').forEach(unwrapMark);
+      notesData = [];
+      renderNotesList();
+      activeHLMark = null;
+      savedRange = null;
+      $('hlToolbar').classList.remove('show');
+    }
+
+    function openNoteInput(excerpt){
+      pendingNoteExcerpt = excerpt || 'Selected text';
+      $('noteExcerptPreview').textContent = pendingNoteExcerpt;
+      $('noteText').value = '';
+      $('noteModalOverlay').classList.add('show');
+    }
+
+    function closeNoteInput(){
+      $('noteModalOverlay').classList.remove('show');
+      pendingNoteExcerpt = '';
+    }
+
+    function saveNote(){
+      const text = $('noteText').value.trim();
+      if(!text) return;
+      notesData.push({ id: ++noteIdCounter, text, excerpt: pendingNoteExcerpt || 'Selected text' });
+      renderNotesList();
+      closeNoteInput();
+      $('notesPanelOverlay').classList.add('show');
+    }
+
+    function renderNotesList(){
+      const list = $('notesList');
+      if(!notesData.length){
+        list.innerHTML = '<div style="text-align:center; padding:28px; color:#999; font-size:14px">📝 No notes yet.<br>Select text and click ✏ Note</div>';
+        return;
+      }
+      list.innerHTML = notesData.map(note => `
+        <div class="note-card">
+          <span class="excerpt-label">${escapeHtml(note.excerpt)}</span>
+          <div style="margin-bottom:8px">${escapeHtml(note.text)}</div>
+          <button class="delete-note" data-id="${note.id}">🗑 Delete</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.delete-note').forEach(btn => btn.addEventListener('click', () => deleteNote(Number(btn.dataset.id))));
+    }
+
+    function deleteNote(id){
+      notesData = notesData.filter(note => note.id !== id);
+      renderNotesList();
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
+    function clearAnswerHighlights(){
+      document.querySelectorAll('.answer-highlight').forEach(el => {
+        const parent = el.parentNode;
+        while(el.firstChild){
+          if(el.firstChild.classList && el.firstChild.classList.contains('answer-badge')){
+            el.removeChild(el.firstChild);
+          } else {
+            parent.insertBefore(el.firstChild, el);
+          }
+        }
+        parent.removeChild(el);
+        parent.normalize();
+      });
+    }
+
+    function wrapFirstOccurrence(container, phrase, qNum){
+      if(!container || !phrase) return null;
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode(node){
+          if(!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if(parent && (parent.closest('.answer-highlight') || parent.closest('mark'))) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const lower = phrase.toLowerCase();
+      let node;
+      while((node = walker.nextNode())){
+        const idx = node.nodeValue.toLowerCase().indexOf(lower);
+        if(idx === -1) continue;
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + phrase.length);
+        const span = document.createElement('span');
+        span.className = 'answer-highlight';
+        try{
+          range.surroundContents(span);
+        } catch(err){
+          continue;
+        }
+        const badge = document.createElement('span');
+        badge.className = 'answer-badge';
+        badge.textContent = qNum;
+        span.appendChild(badge);
+        return span;
+      }
+      return null;
+    }
+
+    function applyHighlights(container, items){
+      items.forEach(item => wrapFirstOccurrence(container, item.text, item.question));
+    }
+
+    function highlightCorrectAnswersInPassage(){
+      clearAnswerHighlights();
+      const partHighlights = { 1: [], 2: [], 3: [] };
+      Object.keys(evidenceMap).forEach(key => {
+        const q = Number(key);
+        const text = evidenceMap[key];
+        if(!text) return;
+        const part = q <= 13 ? 1 : q <= 26 ? 2 : 3;
+        partHighlights[part].push({ question:q, text });
+      });
+      applyHighlights($('passage-section-1'), partHighlights[1]);
+      applyHighlights($('passage-section-2'), partHighlights[2]);
+      applyHighlights($('passage-section-3'), partHighlights[3]);
+      const first = $('passage-section-' + currentPassage).querySelector('.answer-highlight');
+      if(first) first.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+
+    window.addEventListener('DOMContentLoaded', initialize);
+  </script>
+<script>
+(function() {
+  function setTheme(theme) {
+    const isDark = theme === 'dark';
+    const html = document.documentElement;
+    if (isDark) {
+      html.classList.add('dark');
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.classList.remove('dark');
+      html.setAttribute('data-theme', 'light');
+    }
+    try { localStorage.setItem('theme', theme); } catch(e) {}
+  }
+  // Listen to parent page
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) setTheme(e.data.theme);
+  });
+  // Also check localStorage on load
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved) setTheme(saved);
+  } catch(e) {}
+})();
+</script>
+
+
+<script>
+(function(){
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.theme) {
+      document.documentElement.setAttribute('data-theme', e.data.theme);
+    }
+  });
+  // Also check local parent theme via postMessage handshake
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'IELTS_REQUEST_THEME' }, '*');
+  }
+})();
+</script>
+
+</body>
+</html>
