@@ -142,10 +142,10 @@ export interface SpeakingQuestion {
 export interface SpeakingQuestionSet {
   part: number;
   topic: string;
-  questions: SpeakingQuestion[];
+  questions: (string | SpeakingQuestion)[];
   bullets?: string[];  // Part 2 cue card bullets
   model_answer?: string;  // Part 2 model answer
-  part3_questions?: SpeakingQuestion[];  // Part 3 questions tied to Part 2
+  part3_questions?: string[];  // Part 3 questions tied to the Part 2 cue card
 }
 
 // ---------- Listening / Reading ----------
@@ -264,6 +264,44 @@ export interface ReadingFeedback {
   weak_question_types: string[];
 }
 
+// ---------- Word Games (shared master pool, built from the real test bank) ----------
+export interface GameMasterItem {
+  id: string;
+  word: string;
+  type: "word" | "idiom";
+  translation: string | null;
+  phonetic: string | null;
+  definition: string | null;
+  examples: string[];
+  difficulty: string;
+  source: string | null;
+}
+
+export interface GameMasterSentence {
+  id: string;
+  sentence: string;
+  translation: string | null;
+  structure_note: string | null;
+  difficulty: string;
+  source: string | null;
+}
+
+export interface GameStats {
+  xp: number;
+  games_played: number;
+  best_combo: number;
+  level: number;
+  xp_into_level: number;
+  xp_needed: number;
+  percent: number;
+}
+
+export interface GameFinishResult {
+  xp_gained: number;
+  leveled_up: boolean;
+  stats: GameStats;
+}
+
 // ---------- Vocabulary ----------
 export interface VocabRecord {
   id: string;
@@ -309,6 +347,11 @@ export interface StudyRecommendation {
 }
 
 // ---------- AI Teacher / Coaching ----------
+export interface CoachSkillHistoryPoint {
+  date: string;
+  band: number;
+}
+
 export interface CoachSkillAnalysis {
   skill: Skill;
   current: number | null;
@@ -319,6 +362,8 @@ export interface CoachSkillAnalysis {
   weaknesses: string[];
   strengths: string[];
   actions: string[];
+  trend?: number | null;
+  history?: CoachSkillHistoryPoint[];
 }
 
 export interface CoachWeeklyFocus {
@@ -326,10 +371,26 @@ export interface CoachWeeklyFocus {
   tasks: string[];
 }
 
+export interface CoachSkillDelta {
+  skill: Skill;
+  previous: number | null;
+  current: number | null;
+  delta: number | null;
+}
+
+export interface CoachSinceLastCheck {
+  previous_generated_at: string;
+  overall_delta: number | null;
+  skill_deltas: CoachSkillDelta[];
+}
+
 export interface CoachAnalysis {
   generated_at: string;
   headline: string;
   motivation: string;
+  progress_update?: string | null;
+  since_last_check?: CoachSinceLastCheck | null;
+  streak_days?: number;
   current_overall: number | null;
   target_band: number;
   overall_gap: number;

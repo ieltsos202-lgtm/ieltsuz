@@ -58,7 +58,7 @@ const TRIAL_COLUMNS: Record<string, string> = {
 export async function checkAndDecrementTrial(
   req: Request,
   skill: "listening" | "reading" | "speaking" | "writing" | "mock"
-): Promise<{ ok: boolean; remaining: number; isPro: boolean }> {
+): Promise<{ ok: boolean; remaining: number; isPro: boolean; userId?: string; refundColumn?: string }> {
   const { supabase, user } = await getAuth(req);
   if (!user) return { ok: false, remaining: 0, isPro: false };
 
@@ -91,13 +91,13 @@ export async function checkAndDecrementTrial(
         .from("profiles")
         .update({ trial_mock_remaining: trialMock - 1 })
         .eq("id", user.id);
-      return { ok: true, remaining: trialMock + bonusMock - 1, isPro: false };
+      return { ok: true, remaining: trialMock + bonusMock - 1, isPro: false, userId: user.id, refundColumn: "trial_mock_remaining" };
     } else if (bonusMock > 0) {
       await (supabase as any)
         .from("profiles")
         .update({ bonus_mock_remaining: bonusMock - 1 })
         .eq("id", user.id);
-      return { ok: true, remaining: bonusMock - 1, isPro: false };
+      return { ok: true, remaining: bonusMock - 1, isPro: false, userId: user.id, refundColumn: "bonus_mock_remaining" };
     }
     return { ok: false, remaining: 0, isPro: false };
   }
@@ -108,5 +108,33 @@ export async function checkAndDecrementTrial(
   }
 
   await (supabase as any).from("profiles").update({ [column]: remaining - 1 }).eq("id", user.id);
-  return { ok: true, remaining: remaining - 1, isPro: false };
+  return { ok: true, remaining: remaining - 1, isPro: false, userId: user.id, refundColumn: column };
+}
+
+/**
+ * Refunds a previously-decremented trial credit. Used when a background AI
+ * evaluation (writing/speaking) fails AFTER the trial was already charged,
+ * so the user doesn't lose an attempt to a transient server/AI error.
+ * No-op if `trial.isPro` was true (nothing was decremented) or refundColumn
+ * is missing.
+ */
+export async function refundTrial(
+  supabase: SupabaseClient,
+  trial: { isPro: boolean; userId?: string; refundColumn?: string }
+): Promise<void> {
+  if (trial.isPro || !trial.userId || !trial.refundColumn) return;
+  try {
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select(trial.refundColumn)
+      .eq("id", trial.userId)
+      .single();
+    const current = (profile?.[trial.refundColumn] as number) ?? 0;
+    await (supabase as any)
+      .from("profiles")
+      .update({ [trial.refundColumn]: current + 1 })
+      .eq("id", trial.userId);
+  } catch (err) {
+    console.error("refundTrial failed:", err);
+  }
 }

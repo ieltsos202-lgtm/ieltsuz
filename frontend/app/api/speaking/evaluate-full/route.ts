@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -47,6 +47,8 @@ Rules:
 }
 
 export async function POST(req: NextRequest) {
+  let trial: Awaited<ReturnType<typeof checkAndDecrementTrial>> | null = null;
+  let refundSupabase: any = null;
   try {
     const formData = await req.formData();
 
@@ -75,12 +77,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No answers provided" }, { status: 400 });
     }
 
-    const trial = await checkAndDecrementTrial(req, "speaking");
+    trial = await checkAndDecrementTrial(req, "speaking");
     if (!trial.ok) {
       return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
     }
 
     const { supabase, user } = await getAuth(req);
+    refundSupabase = supabase;
     const model = getModel(EVAL_MODEL, false);
 
     // Step 1: Transcribe all answers
@@ -227,6 +230,9 @@ Return ONLY valid JSON:
     });
   } catch (error: any) {
     console.error("Speaking full evaluation error:", error);
+    if (trial && refundSupabase) {
+      await refundTrial(refundSupabase, trial);
+    }
     return NextResponse.json({ error: error?.message || "Evaluation failed" }, { status: 500 });
   }
 }

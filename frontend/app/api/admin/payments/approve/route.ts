@@ -36,17 +36,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment already processed" }, { status: 400 });
     }
 
-    // Approve payment
-    const { error: updateError } = await supabase
-      .from("payments")
-      .update({ status: "approved", verified_at: new Date().toISOString() })
-      .eq("id", payment_id);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
-
-    // Grant 30-day Pro access
+    // Grant 30-day Pro access first — if this fails we bail out and leave
+    // the payment "pending" so the admin can safely retry the approval
+    // instead of getting stuck with an "approved" payment but no Pro granted.
     const proExpiresAt = new Date();
     proExpiresAt.setDate(proExpiresAt.getDate() + 30);
 
@@ -60,6 +52,18 @@ export async function POST(req: NextRequest) {
 
     if (profileError) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+
+    // Approve payment. Pro is already granted at this point, so even if
+    // this update fails we still report success but log the inconsistency
+    // for manual reconciliation.
+    const { error: updateError } = await supabase
+      .from("payments")
+      .update({ status: "approved", verified_at: new Date().toISOString() })
+      .eq("id", payment_id);
+
+    if (updateError) {
+      console.error("Mark payment approved error:", updateError, "payment_id:", payment_id);
     }
 
     return NextResponse.json({ success: true, message: "Payment approved and Pro activated" });

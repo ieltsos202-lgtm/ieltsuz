@@ -16,7 +16,7 @@ async function authHeader(): Promise<Record<string, string>> {
 export async function apiGet<T>(path: string): Promise<T> {
   const headers = await authHeader();
   const res = await fetch(`${API_URL}${path}`, { headers });
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  if (!res.ok) throw new Error(await readError(res, `GET ${path}`));
   return res.json();
 }
 

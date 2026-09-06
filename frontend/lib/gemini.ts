@@ -66,13 +66,13 @@ export function parseJSONFromText(text: string): any {
  */
 export async function generateText(
   prompt: string,
-  options?: { primary?: string; fallback?: string; maxRetries?: number }
+  options?: { primary?: string; fallback?: string; maxRetries?: number; jsonMode?: boolean }
 ): Promise<string> {
-  const { primary = "gemini-2.5-flash", fallback = "gemini-2.0-flash", maxRetries = 2 } = options || {};
+  const { primary = "gemini-2.5-flash", fallback = "gemini-2.0-flash", maxRetries = 2, jsonMode = false } = options || {};
   const models = [primary, fallback].filter(Boolean);
 
   for (const modelName of models) {
-    const model = getModel(modelName, false);
+    const model = getModel(modelName, jsonMode);
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await model.generateContent(prompt);
@@ -104,6 +104,6 @@ export async function generateJSON(
   modelName = "gemini-2.5-flash",
   retries = 2
 ): Promise<any> {
-  const text = await generateText(prompt, { primary: modelName, fallback: "gemini-2.0-flash", maxRetries: retries });
+  const text = await generateText(prompt, { primary: modelName, fallback: "gemini-2.0-flash", maxRetries: retries, jsonMode: true });
   return parseJSONFromText(text);
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Check, AlertCircle, Upload, CreditCard, Smartphone, Wallet, ArrowLeft, Info, Copy } from "lucide-react";
+import { Loader2, Check, AlertCircle, Upload, CreditCard, ArrowLeft, Info, Copy } from "lucide-react";
 import { apiGet, apiPostForm } from "@/lib/api";
 
 function sanitizeCard(raw?: string) {
@@ -17,7 +17,7 @@ export default function MobilePayPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payment, setPayment] = useState<any>(null);
-  const [step, setStep] = useState<"select" | "payme" | "click" | "upload">("select");
+  const [step, setStep] = useState<"select" | "upload">("select");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<"success" | "error" | null>(null);
@@ -44,30 +44,6 @@ export default function MobilePayPage() {
       .catch(() => setError("Could not load payment details."))
       .finally(() => setLoading(false));
   }, [code]);
-
-  const openPayme = () => {
-    const amount = 49000;
-    const deepLink = `payme://transfer?cardNumber=${cardNumber}&amount=${amount}`;
-    const webLink = `https://payme.uz/transfer/${cardNumber}`;
-
-    window.location.href = deepLink;
-    setTimeout(() => {
-      window.open(webLink, "_blank");
-    }, 1500);
-    setStep("payme");
-  };
-
-  const openClick = () => {
-    const amount = 49000;
-    const deepLink = `click://payment?cardNumber=${cardNumber}&amount=${amount}`;
-    const webLink = `https://my.click.uz/clickp2p/${cardNumber}?amount=${amount}`;
-
-    window.location.href = deepLink;
-    setTimeout(() => {
-      window.open(webLink, "_blank");
-    }, 1500);
-    setStep("click");
-  };
 
   const copyCard = () => {
     navigator.clipboard.writeText(cardNumber);
@@ -196,63 +172,35 @@ export default function MobilePayPage() {
             </div>
           </Card>
 
-          <p className="text-center text-sm font-medium text-content-secondary">Choose payment method:</p>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Button className="h-16 flex-col gap-1 bg-[#2B5CE6] text-white hover:bg-[#1e4fc7]" onClick={openPayme}>
-              <Wallet className="h-6 w-6" />
-              <span className="text-sm font-bold">Payme</span>
-            </Button>
-            <Button className="h-16 flex-col gap-1 bg-[#00A651] text-white hover:bg-[#008a43]" onClick={openClick}>
-              <Smartphone className="h-6 w-6" />
-              <span className="text-sm font-bold">Click</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {(step === "payme" || step === "click") && (
-        <div className="space-y-4">
-          <Card className="border-emerald-500/30 bg-emerald-500/10 p-4">
-            <div className="flex items-start gap-2">
-              <Check className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <div className="text-sm text-emerald-800 dark:text-emerald-400">
-                <p className="font-bold">{step === "payme" ? "Payme" : "Click"} app opened!</p>
-                <p className="mt-1">If the app did not open, a payment page should have opened in your browser.</p>
-              </div>
-            </div>
-          </Card>
-
           <Card className="p-4">
-            <p className="mb-3 text-sm font-medium">Steps:</p>
+            <p className="mb-3 text-sm font-medium">To'lov qilish uchun:</p>
             <ol className="space-y-3 text-sm text-content-secondary">
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">1</span>
-                <span>Verify card number: <code className="font-bold text-accent">{formattedCard}</code></span>
+                <span>Yuqoridagi <strong>Copy</strong> tugmasi bilan karta raqamini nusxalang</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">2</span>
-                <span>Amount: <strong>49,000 UZS</strong></span>
+                <span><strong>Payme</strong> yoki <strong>Click</strong> ilovasini oching</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">3</span>
-                <span>Complete the payment</span>
+                <span>"Kartadan kartaga o'tkazma" bo'limini tanlab, nusxalangan raqamni joylashtiring</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">4</span>
-                <span><strong>Take a screenshot</strong> of the success screen</span>
+                <span>Miqdorni <strong>49,000 UZS</strong> deb kiritib, to'lovni tasdiqlang</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">5</span>
+                <span>Muvaffaqiyatli to'lov ekranidan <strong>skrinshot</strong> oling</span>
               </li>
             </ol>
           </Card>
 
-          <Button className="w-full bg-accent text-white hover:bg-accent/90" onClick={() => setStep("upload")}>
-            <Upload className="mr-2 h-4 w-4" />
-            Upload screenshot →
-          </Button>
-
-          <Button variant="ghost" className="w-full text-content-secondary" onClick={() => setStep("select")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+          <Button className="w-full bg-accent py-6 text-base text-white hover:bg-accent/90" onClick={() => setStep("upload")}>
+            <Upload className="mr-2 h-5 w-5" />
+            To'lov qildim, skrinshot yuklash →
           </Button>
         </div>
       )}
@@ -263,8 +211,8 @@ export default function MobilePayPage() {
             <div className="flex items-start gap-2">
               <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
               <div className="text-sm text-blue-800 dark:text-blue-400">
-                <p className="font-bold">Upload screenshot</p>
-                <p className="mt-1">Take a screenshot after a successful payment and upload it here. AI will verify it automatically.</p>
+                <p className="font-bold">Skrinshot yuklash</p>
+                <p className="mt-1">To'lov muvaffaqiyatli bo'lgandan so'ng skrinshot olib shu yerga yuklang. AI uni avtomatik tekshiradi.</p>
               </div>
             </div>
           </Card>

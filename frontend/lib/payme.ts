@@ -76,7 +76,7 @@ export async function createReceipt(amountUzs: number, orderId: string) {
 
 export async function getReceipt(receiptId: string) {
   const result = await callPayme("receipts.get", {
-    id: { receiptId },
+    id: receiptId,
   });
 
   if (result.error) {

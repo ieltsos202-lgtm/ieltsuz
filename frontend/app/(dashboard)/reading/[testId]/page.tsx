@@ -15,6 +15,7 @@ import {
   Lightbulb,
   RotateCcw,
   BookOpen,
+  Gamepad2,
 } from "lucide-react";
 import { FullscreenToggle } from "@/components/shared/FullscreenToggle";
 import { useTheme } from "@/components/ThemeProvider";
@@ -364,6 +365,11 @@ export default function ReadingTestPage() {
 
         {/* Actions */}
         <div className="flex flex-col gap-3 sm:flex-row">
+          <Link href="/game" className="flex-1">
+            <Button variant="outline" className="w-full">
+              <Gamepad2 className="mr-2 h-4 w-4" /> Play Word Games
+            </Button>
+          </Link>
           <Button variant="outline" className="flex-1" onClick={() => setFeedback(null)}>
             <RotateCcw className="mr-2 h-4 w-4" /> Try Again
           </Button>

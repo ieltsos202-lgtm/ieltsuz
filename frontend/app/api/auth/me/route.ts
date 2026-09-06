@@ -20,7 +20,14 @@ export async function PATCH(req: NextRequest) {
     if (body.writing_band !== undefined) update.writing_band = body.writing_band;
     if (body.speaking_band !== undefined) update.speaking_band = body.speaking_band;
 
-    await supabase.from("profiles").update(update).eq("id", user.id);
+    if (Object.keys(update).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    }
+
+    const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch {

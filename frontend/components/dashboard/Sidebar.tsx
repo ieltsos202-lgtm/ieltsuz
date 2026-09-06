@@ -16,6 +16,7 @@ import {
   GraduationCap,
   ExternalLink,
   BarChart3,
+  Gamepad2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const nav = [
   { label: "Writing", href: "/writing", icon: PenLine },
   { label: "Speaking", href: "/speaking", icon: Mic },
   { label: "Mock Test", href: "/mock-test", icon: ClipboardList },
+  { label: "Games", href: "/game", icon: Gamepad2 },
   { label: "Vocabulary", href: "/vocabulary", icon: Library },
   { label: "Progress", href: "/progress", icon: TrendingUp },
   { label: "Upgrade", href: "/upgrade", icon: Crown },

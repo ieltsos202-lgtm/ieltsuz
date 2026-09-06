@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -196,6 +196,8 @@ Return ONLY valid JSON:
             .update({ status: "failed", error: err.message || "Evaluation failed" })
             .eq("id", jobId);
         }
+        // Give the trial attempt back since the evaluation never completed.
+        await refundTrial(supabase, trial);
       }
     });
 
@@ -256,6 +258,7 @@ Return ONLY valid JSON:
       });
     } catch (syncErr: any) {
       console.error("Synchronous speaking evaluation error:", syncErr);
+      await refundTrial(supabase, trial);
       return NextResponse.json({ error: syncErr.message || "Evaluation failed" }, { status: 500 });
     }
   } catch (error: any) {

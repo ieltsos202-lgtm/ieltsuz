@@ -10,7 +10,9 @@ export function useTrialGuard(skill: "listening" | "reading" | "speaking" | "wri
 
   useEffect(() => {
     if (loading || !profile) return;
-    if (profile.is_pro) return;
+    const proActive =
+      profile.is_pro && (!profile.pro_expires_at || new Date(profile.pro_expires_at) >= new Date());
+    if (proActive) return;
 
     const remainingMap = {
       listening: profile.trial_listening_remaining ?? 0,

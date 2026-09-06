@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -186,6 +186,8 @@ Return ONLY valid JSON with EXACTLY these fields:
             .update({ status: "failed", error: err.message || "Evaluation failed" })
             .eq("id", jobId);
         }
+        // Give the trial attempt back since the evaluation never completed.
+        await refundTrial(supabase, trial);
       }
     });
 
@@ -232,6 +234,7 @@ Return ONLY valid JSON with EXACTLY these fields:
       return NextResponse.json({ feedback: result });
     } catch (syncErr: any) {
       console.error("Synchronous writing evaluation error:", syncErr);
+      await refundTrial(supabase, trial);
       return NextResponse.json({ error: syncErr.message || "Evaluation failed" }, { status: 500 });
     }
   } catch (error: any) {

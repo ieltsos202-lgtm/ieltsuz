@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTrialGuard } from "@/hooks/useTrialGuard";
-import { Mic, Loader2, Volume2, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Mic, Loader2, Volume2, ChevronRight, CheckCircle, AlertCircle, Gamepad2 } from "lucide-react";
 
 import { apiGet, apiPostForm } from "@/lib/api";
 import { Card } from "@/components/ui/card";
@@ -187,9 +188,16 @@ function FullTestFeedbackView({
         </Card>
       )}
 
-      <Button variant="gradient" onClick={onPracticeAgain} className="w-full">
-        Practice Again
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Link href="/game" className="flex-1">
+          <Button variant="outline" className="w-full">
+            <Gamepad2 className="h-4 w-4" /> Play Word Games
+          </Button>
+        </Link>
+        <Button variant="gradient" className="flex-1" onClick={onPracticeAgain}>
+          Practice Again
+        </Button>
+      </div>
     </div>
   );
 }
@@ -225,11 +233,17 @@ export default function SpeakingFullTestPage() {
     setLoading(true);
     setError(null);
     try {
-      const [p1, p2, p3] = await Promise.all([
+      const [p1, p2] = await Promise.all([
         apiGet<SpeakingQuestionSet>("/api/speaking/questions/1"),
         apiGet<SpeakingQuestionSet>("/api/speaking/questions/2"),
-        apiGet<SpeakingQuestionSet>("/api/speaking/questions/3"),
       ]);
+      // Part 3 stays thematically linked to the Part 2 cue card, as in a
+      // real exam — use the questions returned alongside it rather than an
+      // unrelated random set.
+      const linkedPart3 = p2.part3_questions;
+      const p3 = linkedPart3?.length
+        ? { part: 3, topic: "", questions: linkedPart3 }
+        : await apiGet<SpeakingQuestionSet>("/api/speaking/questions/3");
       setPart1Set(p1);
       setPart2Set(p2);
       setPart3Set(p3);

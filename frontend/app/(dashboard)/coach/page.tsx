@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Flame,
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   CheckCircle2,
   ListChecks,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
+import { Line, LineChart, ResponsiveContainer } from "recharts";
 
 import { apiGet } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -48,6 +50,36 @@ function ProgressBar({ value, className = "bg-accent" }: { value: number; classN
   );
 }
 
+function TrendBadge({ trend }: { trend?: number | null }) {
+  if (trend == null || trend === 0) return null;
+  const up = trend > 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={`flex items-center gap-0.5 text-xs font-semibold ${
+        up ? "text-emerald-400" : "text-red-400"
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {up ? "+" : ""}
+      {trend.toFixed(1)}
+    </span>
+  );
+}
+
+function Sparkline({ history, color }: { history?: { date: string; band: number }[]; color: string }) {
+  if (!history || history.length < 2) return null;
+  return (
+    <div className="h-10 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={history}>
+          <Line type="monotone" dataKey="band" stroke={color} strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function SkillCard({ s }: { s: CoachSkillAnalysis }) {
   const style = STATUS_STYLE[s.status] || STATUS_STYLE.no_data;
   const fill = s.current != null ? (s.current / 9) * 100 : 0;
@@ -61,11 +93,13 @@ function SkillCard({ s }: { s: CoachSkillAnalysis }) {
       <div className="flex items-end gap-2">
         <span className="text-3xl font-bold">{s.current != null ? s.current.toFixed(1) : "—"}</span>
         <span className="mb-1 text-sm text-content-secondary">/ {s.target.toFixed(1)} target</span>
+        <TrendBadge trend={s.trend} />
         {s.gap > 0 && (
           <span className="mb-1 ml-auto text-sm font-medium text-amber-400">+{s.gap.toFixed(1)} needed</span>
         )}
       </div>
       <ProgressBar value={fill} className={style.bar} />
+      <Sparkline history={s.history} color={style.bar.includes("emerald") ? "#10b981" : style.bar.includes("amber") ? "#f59e0b" : style.bar.includes("red") ? "#ef4444" : "#6366f1"} />
 
       {s.summary && <p className="text-sm text-content-secondary">{s.summary}</p>}
 
@@ -231,6 +265,11 @@ export default function CoachPage() {
                       Exam in: <strong className="text-content-primary">{analysis.days_to_exam} days</strong>
                     </span>
                   )}
+                  {!!analysis.streak_days && analysis.streak_days > 0 && (
+                    <span className="flex items-center gap-1.5 font-semibold text-accent-yellow">
+                      🔥 {analysis.streak_days} day streak
+                    </span>
+                  )}
                 </div>
                 <ProgressBar value={analysis.readiness_percent ?? 0} />
               </div>
@@ -256,6 +295,40 @@ export default function CoachPage() {
               </div>
             )}
           </Card>
+
+          {/* Since last check */}
+          {analysis.progress_update && (
+            <Card className="border-emerald-500/30 bg-emerald-500/5">
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-400" /> Since your last check
+              </CardTitle>
+              <p className="mt-2 text-sm text-content-secondary">{analysis.progress_update}</p>
+              {analysis.since_last_check && analysis.since_last_check.skill_deltas.some((d) => d.delta) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {analysis.since_last_check.skill_deltas
+                    .filter((d) => d.delta != null && d.delta !== 0)
+                    .map((d) => (
+                      <span
+                        key={d.skill}
+                        className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                          (d.delta as number) > 0
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : "bg-red-500/15 text-red-400"
+                        }`}
+                      >
+                        {(d.delta as number) > 0 ? (
+                          <TrendingUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <TrendingDown className="h-3.5 w-3.5" />
+                        )}
+                        {SKILL_LABEL[d.skill]}: {(d.delta as number) > 0 ? "+" : ""}
+                        {(d.delta as number).toFixed(1)}
+                      </span>
+                    ))}
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Per-skill */}
           <div className="grid gap-4 md:grid-cols-2">

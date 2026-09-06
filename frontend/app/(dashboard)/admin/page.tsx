@@ -27,14 +27,17 @@ function PaymentsTab() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("pending");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setActionError("");
     try {
       const res = await apiGet<{ payments: AdminPayment[] }>(`/api/admin/payments?status=${statusFilter}`);
       setPayments(res.payments || []);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setActionError(e?.message || "Failed to load payments");
     } finally {
       setLoading(false);
     }
@@ -46,11 +49,13 @@ function PaymentsTab() {
 
   const approve = async (id: string) => {
     setActionLoading(id);
+    setActionError("");
     try {
       await apiPost("/api/admin/payments/approve", { payment_id: id });
       load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setActionError(e?.message || "Failed to approve payment");
     } finally {
       setActionLoading(null);
     }
@@ -58,11 +63,13 @@ function PaymentsTab() {
 
   const reject = async (id: string) => {
     setActionLoading(id);
+    setActionError("");
     try {
       await apiPost("/api/admin/payments/reject", { payment_id: id, reason: "Could not verify payment" });
       load();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setActionError(e?.message || "Failed to reject payment");
     } finally {
       setActionLoading(null);
     }
@@ -84,6 +91,12 @@ function PaymentsTab() {
           </button>
         ))}
       </div>
+
+      {actionError && (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          {actionError}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-8">

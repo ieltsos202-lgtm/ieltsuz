@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Headphones, BookOpen, PenLine, Mic, AlertTriangle, Target, Calendar, Clock, BookOpen as BookIcon, Sparkles } from "lucide-react";
+import { Headphones, BookOpen, PenLine, Mic, AlertTriangle, Target, Calendar, Clock, BookOpen as BookIcon, Sparkles, Gift, Copy, Check, GraduationCap } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
@@ -37,13 +37,25 @@ export default function DashboardPage() {
   const { overview, loading } = useProgress();
   const { plan: studyPlan, loading: planLoading } = useStudyPlan();
   const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [dailyMessage, setDailyMessage] = useState<string | null>(null);
   const days = daysUntil(profile?.exam_date);
   const target = profile?.target_band ?? 6.5;
   const firstName = (profile?.full_name || "there").split(" ")[0];
 
+  const copyReferralCode = () => {
+    if (!profile?.promo_code) return;
+    navigator.clipboard.writeText(profile.promo_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   useEffect(() => {
     apiGet<{ recommendation: string }>("/api/progress/recommendation")
       .then((res) => setRecommendation(res.recommendation ?? null))
+      .catch(() => {});
+    apiGet<{ message: string }>("/api/coach/daily-message")
+      .then((res) => setDailyMessage(res.message ?? null))
       .catch(() => {});
   }, []);
 
@@ -73,6 +85,21 @@ export default function DashboardPage() {
         </p>
       </Card>
 
+      {/* Daily AI Coach message */}
+      {dailyMessage && (
+        <Card className="border-accent/30 bg-gradient-to-r from-accent/10 to-transparent">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15">
+              <GraduationCap className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-accent">Your AI Coach — Today</p>
+              <p className="mt-1 text-sm text-content-secondary">{dailyMessage}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Trial usage */}
       {profile && !profile.is_pro && (
         <Card className="border-accent-yellow/30 bg-accent-yellow/5">
@@ -96,16 +123,45 @@ export default function DashboardPage() {
           </div>
           {(profile.bonus_mock_remaining ?? 0) > 0 && (
             <p className="mt-2 text-xs text-accent-green">
-              +{profile.bonus_mock_remaining} bonus mock test(s) from referrals
+              +{profile.bonus_mock_remaining} ta bonus mock test do'stlaringizni taklif qilganingiz uchun
             </p>
           )}
-          {profile.promo_code && (
-            <div className="mt-3 rounded-lg bg-bg-tertiary/50 p-2 text-center">
-              <p className="text-[10px] text-content-secondary">Your referral code</p>
-              <p className="text-lg font-bold tracking-wider text-accent">{profile.promo_code}</p>
-              <p className="text-[10px] text-content-secondary">Share with friends & earn +1 of every skill (Listening, Reading, Speaking, Writing) and +1 Mock test for each signup!</p>
+        </Card>
+      )}
+
+      {/* Referral / bonus card */}
+      {profile?.promo_code && (
+        <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-accent-purple/10">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/15">
+              <Gift className="h-6 w-6 text-accent" />
             </div>
-          )}
+            <div>
+              <h3 className="text-lg font-bold">Do'stingizni taklif qiling, bonus oling! 🎉</h3>
+              <p className="mt-1 text-sm text-content-secondary">
+                Kodingiz orqali ro'yxatdan o'tgan har bir yangi foydalanuvchi uchun sizga{" "}
+                <span className="font-semibold text-content-primary">
+                  har bir bo'lim bo'yicha (Listening, Reading, Speaking, Writing) +1 mashg'ulot
+                </span>{" "}
+                va <span className="font-semibold text-content-primary">+1 Mock test</span> bonus beriladi!
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col items-center gap-3 rounded-xl bg-bg-tertiary/60 p-5 sm:flex-row sm:justify-between">
+            <div className="text-center sm:text-left">
+              <p className="text-xs text-content-secondary">Sizning referal kodingiz</p>
+              <p className="text-2xl font-extrabold tracking-wider text-accent sm:text-3xl">{profile.promo_code}</p>
+            </div>
+            <Button onClick={copyReferralCode} className="w-full sm:w-auto">
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? "Nusxalandi!" : "Kodni nusxalash"}
+            </Button>
+          </div>
+
+          <p className="mt-3 text-center text-xs text-content-secondary sm:text-left">
+            Do'stingiz ro'yxatdan o'tishda shu kodni kiritsa bo'ldi — bonus avtomatik hisoblanadi.
+          </p>
         </Card>
       )}
 

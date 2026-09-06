@@ -47,6 +47,18 @@ Return ONLY valid JSON:
   };
 }
 
+// The data file stores each cue card's category + question concatenated
+// together, e.g. "PART 2 — EXPERIENCEDescribe a movie you watched...".
+// Every real question starts with "Describe", so split on that.
+function extractCueQuestion(raw: string): string {
+  const idx = raw.indexOf("Describe");
+  return idx >= 0 ? raw.slice(idx).trim() : raw.trim();
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  return [...arr].sort(() => 0.5 - Math.random());
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { part: string } }
@@ -57,19 +69,34 @@ export async function GET(
     const raw = await fs.readFile(filePath, "utf-8");
     const data = JSON.parse(raw);
 
-    const collect = (topics: { questions?: { question: string }[] }[]): string[] => {
-      const all: string[] = [];
-      for (const topic of topics || []) {
-        for (const q of topic.questions || []) {
-          if (q?.question) all.push(q.question);
-        }
-      }
-      return all.sort(() => 0.5 - Math.random());
-    };
-
     if (part === 1) {
+      // Real IELTS Part 1 asks 3 questions on one topic, then 3 on a second
+      // related topic — never a random mix of six unrelated topics.
+      const PER_TOPIC = 3;
+      const topics = (data.part1 || []).filter(
+        (t: any) => (t.questions || []).length >= PER_TOPIC
+      );
+
+      let questions: string[] = [];
+      if (topics.length >= 2) {
+        const chosenTopics: any[] = shuffle(topics).slice(0, 2);
+        for (const topic of chosenTopics) {
+          const qs = shuffle(topic.questions)
+            .slice(0, PER_TOPIC)
+            .map((q: any) => q.question);
+          questions.push(...qs);
+        }
+      } else {
+        // Extremely unlikely fallback: not enough topics with 3+ questions.
+        for (const topic of data.part1 || []) {
+          for (const q of topic.questions || []) {
+            if (q?.question) questions.push(q.question);
+          }
+        }
+        questions = shuffle(questions).slice(0, 6);
+      }
+
       const TARGET = 6;
-      let questions = collect(data.part1).slice(0, TARGET);
       if (questions.length < TARGET) {
         const extra = await generateQuestions(1, TARGET - questions.length);
         questions = [...questions, ...extra].slice(0, TARGET);
@@ -78,27 +105,45 @@ export async function GET(
     }
 
     if (part === 2) {
-      const cues = data.part2 || [];
-      const randomCue = cues.length
-        ? cues[Math.floor(Math.random() * cues.length)]
+      const cues: any[] = data.part2 || [];
+      const cueIndex = cues.length ? Math.floor(Math.random() * cues.length) : -1;
+      const rawCue = cueIndex >= 0 ? cues[cueIndex] : null;
+
+      const cue = rawCue
+        ? { question: extractCueQuestion(rawCue.topic || ""), bullets: rawCue.bullets || [] }
         : await generateCueCard();
+
+      // Carry the same cue's Part 3 questions along so the discussion stays
+      // thematically linked to the cue card, as in a real exam.
+      const PART3_TARGET = 5;
+      let part3Questions: string[] = (rawCue?.part3_questions || [])
+        .map((q: any) => q?.question)
+        .filter(Boolean);
+      part3Questions = shuffle(part3Questions).slice(0, PART3_TARGET);
+      if (part3Questions.length < PART3_TARGET) {
+        const extra = await generateQuestions(3, PART3_TARGET - part3Questions.length);
+        part3Questions = [...part3Questions, ...extra].slice(0, PART3_TARGET);
+      }
+
       return NextResponse.json({
         part: 2,
-        questions: [randomCue.question || "Describe something interesting."],
-        bullets: randomCue.bullets || [],
+        questions: [cue.question || "Describe something interesting."],
+        bullets: cue.bullets || [],
+        part3_questions: part3Questions,
       });
     }
 
     if (part === 3) {
       const TARGET = 5;
-      // Part 3 questions live inside each Part 2 cue card as `part3_questions`.
+      // Standalone Part 3 practice (no linked Part 2 cue): pool from all
+      // cue cards' part3_questions and pick a random set.
       const part3Bank: string[] = [];
       for (const cue of data.part2 || []) {
         for (const q of cue.part3_questions || []) {
           if (q?.question) part3Bank.push(q.question);
         }
       }
-      let questions = part3Bank.sort(() => 0.5 - Math.random()).slice(0, TARGET);
+      let questions = shuffle(part3Bank).slice(0, TARGET);
       if (questions.length < TARGET) {
         const extra = await generateQuestions(3, TARGET - questions.length);
         questions = [...questions, ...extra].slice(0, TARGET);

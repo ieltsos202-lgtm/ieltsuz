@@ -116,7 +116,7 @@ Respond ONLY in this JSON format:
     const cardLast4 = cardNumber.slice(-4);
 
     const amountOk = analysis.amount === expectedAmount || Math.abs((analysis.amount || 0) - expectedAmount) < 1000;
-    const cardOk = analysis.card_last4?.includes(cardLast4) || analysis.card_last4?.includes(cardNumber);
+    const cardOk = !!cardLast4 && (analysis.card_last4?.includes(cardLast4) || analysis.card_last4?.includes(cardNumber));
     const statusOk = analysis.status?.toLowerCase().includes("success") || analysis.status?.toLowerCase().includes("paid") || analysis.status?.toLowerCase().includes("muvaffaqiyatli") || analysis.status?.toLowerCase().includes("successfully");
     // Fully automatic decision — no manual review. Accept on strong signals
     // (amount + recipient card + success status) unless confidence is low.
@@ -125,8 +125,29 @@ Respond ONLY in this JSON format:
     const verified = amountOk && cardOk && statusOk && notLowConfidence;
 
     if (verified) {
-      // Approve payment
-      await supabase
+      // Grant Pro first — if this fails we bail out with an error and leave
+      // the payment "pending" so the user can safely retry the upload
+      // instead of being told "success" while Pro was never granted.
+      const proExpiresAt = new Date();
+      proExpiresAt.setDate(proExpiresAt.getDate() + 30);
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          is_pro: true,
+          pro_expires_at: proExpiresAt.toISOString(),
+        })
+        .eq("id", payment.user_id);
+
+      if (profileError) {
+        console.error("Grant Pro error:", profileError);
+        return NextResponse.json({ error: "Failed to activate Pro. Please try again." }, { status: 500 });
+      }
+
+      // Approve payment. Pro is already granted at this point, so even if
+      // this update fails we still report success to the user but log the
+      // inconsistency for manual reconciliation.
+      const { error: approveError } = await supabase
         .from("payments")
         .update({
           status: "approved",
@@ -136,17 +157,9 @@ Respond ONLY in this JSON format:
         })
         .eq("id", payment.id);
 
-      // Grant Pro
-      const proExpiresAt = new Date();
-      proExpiresAt.setDate(proExpiresAt.getDate() + 30);
-
-      await supabase
-        .from("profiles")
-        .update({
-          is_pro: true,
-          pro_expires_at: proExpiresAt.toISOString(),
-        })
-        .eq("id", payment.user_id);
+      if (approveError) {
+        console.error("Mark payment approved error:", approveError, "payment_id:", payment.id);
+      }
 
       return NextResponse.json({
         success: true,

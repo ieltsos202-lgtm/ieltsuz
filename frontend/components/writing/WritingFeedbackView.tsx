@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, AlertTriangle, Plus, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, AlertTriangle, Plus, BookOpen, Gamepad2 } from "lucide-react";
 
 import { apiPost } from "@/lib/api";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -110,8 +111,15 @@ export function WritingFeedbackView({
       </Card>
 
       {feedback.new_vocabulary?.length > 0 && (
-        <Card>
-          <CardTitle>New vocabulary</CardTitle>
+        <Card className="border-accent/30 bg-gradient-to-r from-accent/10 to-transparent">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>New vocabulary</CardTitle>
+            <Link href="/game">
+              <Button variant="gradient" size="sm">
+                <Gamepad2 className="h-4 w-4" /> Play Word Games
+              </Button>
+            </Link>
+          </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {feedback.new_vocabulary.map((w) => (
               <div key={w.word} className="rounded-[var(--radius)] bg-bg-tertiary p-4">
