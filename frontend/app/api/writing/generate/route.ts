@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import { join } from "path";
 import { generateJSON } from "@/lib/gemini";
+import writingPrompts from "@/data/writing_prompts.json";
 
 async function localPrompt(taskType: string): Promise<{ question: string; chart_data?: any } | null> {
   try {
-    const filePath = join(process.cwd(), "data", "writing_prompts.json");
-    const raw = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(raw);
+    const data = writingPrompts as Record<string, any[]>;
     const prompts = data[taskType === "task1" ? "task1" : "task2"] || [];
     if (prompts.length === 0) return null;
     const item = prompts[Math.floor(Math.random() * prompts.length)];

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import { join } from "path";
 import { generateJSON } from "@/lib/gemini";
+import speakingQuestions from "@/data/speaking_questions.json";
 
 // Generate fresh, exam-realistic questions with Gemini when the local bank
 // is too small (acts as our "latest questions from the web" source).
@@ -65,9 +64,7 @@ export async function GET(
 ) {
   try {
     const part = parseInt(params.part);
-    const filePath = join(process.cwd(), "data", "speaking_questions.json");
-    const raw = await fs.readFile(filePath, "utf-8");
-    const data = JSON.parse(raw);
+    const data = speakingQuestions as Record<string, any>;
 
     if (part === 1) {
       // Real IELTS Part 1 asks 3 questions on one topic, then 3 on a second
