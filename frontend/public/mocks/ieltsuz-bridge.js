@@ -287,23 +287,48 @@
   }
 
   /* ---------- detection ---------- */
-  var FN_NAMES = ["checkAnswers", "checkAllAnswers", "submitTest", "showResults", "showResultsModal", "openResultModal", "buildResults", "deliverTest", "finishTest", "gradeTest", "calculateScore", "submitAnswers"];
-  FN_NAMES.forEach(function (name) {
-    var orig = window[name];
-    if (typeof orig === "function" && !orig.__uz) {
-      var w = function () {
-        var r = orig.apply(this, arguments);
-        setTimeout(report, 80);
-        setTimeout(report, 600);
-        return r;
-      };
-      w.__uz = 1;
-      try { window[name] = w; } catch (e) {}
-    }
-  });
+  var FN_NAMES = [
+    "checkAnswers",
+    "checkAllAnswers",
+    "submitTest",
+    "submitAnswers",
+    "showResults",
+    "showResultsModal",
+    "openResultModal",
+    "showFeedback",
+    "confirmSubmitModal",
+    "buildResults",
+    "deliverTest",
+    "finishTest",
+    "gradeTest",
+    "calculateScore",
+  ];
+  function wrapGraders() {
+    FN_NAMES.forEach(function (name) {
+      var orig = window[name];
+      if (typeof orig === "function" && !orig.__uz) {
+        var w = function () {
+          var r = orig.apply(this, arguments);
+          setTimeout(report, 80);
+          setTimeout(report, 600);
+          return r;
+        };
+        w.__uz = 1;
+        try { window[name] = w; } catch (e) {}
+      }
+    });
+  }
+  // Some tests declare their grading functions inside DOMContentLoaded / late scripts.
+  wrapGraders();
+  document.addEventListener("DOMContentLoaded", wrapGraders);
+  window.addEventListener("load", wrapGraders);
+  setTimeout(wrapGraders, 1500);
 
   function modalVisible() {
-    var sel = "#result-modal,#results-modal,.results-modal,#resultModal,#resultsModal,.result-modal,#resultModalOverlay,#screen-results,#completion-screen,.completion-screen,.results-overlay";
+    var sel =
+      "#result-modal,#results-modal,.results-modal,#resultModal,#resultsModal,.result-modal," +
+      "#resultModalOverlay,#screen-results,#completion-screen,.completion-screen,.results-overlay," +
+      "#feedback-panel,#feedbackPanel,.feedback-panel";
     var list = document.querySelectorAll(sel);
     for (var i = 0; i < list.length; i++) {
       var el = list[i];
@@ -338,11 +363,16 @@
   function forceSubmit() {
     var btn =
       document.querySelector("#deliver-btn,#deliverButton,#deliver-button,#submit-btn,#submitBtn,#submit-button,.deliver-btn,.submit-btn,.deliver-button,.submit-button") ||
-      document.querySelector('button[onclick*="checkAnswers"],button[onclick*="submitTest"],button[onclick*="showResults"],a[onclick*="checkAnswers"]');
+      document.querySelector(
+        'button[onclick*="checkAnswers"],button[onclick*="checkAllAnswers"],button[onclick*="submitTest"],' +
+          'button[onclick*="showResults"],button[onclick*="showFeedback"],a[onclick*="checkAnswers"]'
+      );
     if (!btn) {
-      var all = document.querySelectorAll("button,a.btn,.btn");
+      var all = document.querySelectorAll("button,a.btn,.btn,input[type=button],input[type=submit]");
+      var ok = /^(submit|deliver|finish)([\s\-]?(answers?|test|now))?$|^(check|show|view|see)\s+(answers?|results?|score)$|^my results?$/i;
       for (var i = 0; i < all.length; i++) {
-        if (/^(submit|deliver|check answers?|finish|my result|show results?)$/i.test(norm(all[i].textContent))) { btn = all[i]; break; }
+        var label = norm(all[i].textContent || all[i].value);
+        if (ok.test(label)) { btn = all[i]; break; }
       }
     }
     if (btn) { try { btn.click(); } catch (e) {} }
