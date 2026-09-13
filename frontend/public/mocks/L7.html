@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>IELTSUZ Listening Practice</title>
+        <title>IELTSUZ – Listening Test 7</title>
         <style>
             * {
                 margin: 0;
@@ -572,7 +572,7 @@
             }
 
             .fa-check::before {
-                content: "вњ“";
+                content: "✓";
             }
 
             .hidden {
@@ -780,11 +780,11 @@
                 color: #721c24;
             }
             .question li.correct::before {
-                content: 'вњ” ';
+                content: '✔ ';
                 color: #28a745;
             }
             .question li.incorrect::before {
-                content: 'вњ– ';
+                content: '✖ ';
                 color: #dc3545;
             }
 
@@ -1133,7 +1133,7 @@
                 font-weight: bold;
             }
             .single-choice > label.correct::before {
-                content: 'вњ” ';
+                content: '✔ ';
                 color: #28a745;
             }
             .single-choice > label.incorrect {
@@ -1141,7 +1141,7 @@
                 text-decoration: line-through;
             }
             .single-choice > label.incorrect::before {
-                content: 'вњ– ';
+                content: '✖ ';
                 color: #dc3545;
             }
             .mcq-table tbody tr.correct {
@@ -1300,7 +1300,7 @@
                 background-color: #f0f0f0;
             }
 
-            /* в”Ђв”Ђ Intro overlay в”Ђв”Ђ */
+            /* ── Intro overlay ── */
             #intro-overlay {
                 position: fixed; inset: 0; background: #e8edf5;
                 z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -2055,7 +2055,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
 </head>
 
     <body>
-        <!-- в”Ђв”Ђ Intro overlay в”Ђв”Ђ -->
+        <!-- ── Intro overlay ── -->
         <div id="intro-overlay">
             <div class="intro-card">
                 <h1>IELTS Listening</h1>
@@ -2132,7 +2132,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
                 <div id="part-1" class="question-part">
                     <div class="part-header">
                         <p><strong>Part 1</strong> </p>
-                        <p>Listen and answer questions 1вЂ“10.</p>
+                        <p>Listen and answer questions 1–10.</p>
                     </div>
                     <div class="questions-container">
                         <div class="question">
@@ -2181,7 +2181,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
                 <div id="part-2" class="question-part hidden">
                     <div class="part-header">
                         <p><strong>Part 2</strong></p>
-                        <p>Listen and answer questions 11вЂ“20.</p>
+                        <p>Listen and answer questions 11–20.</p>
                     </div>
                     <div class="questions-container">
                         <div class="question">
@@ -2221,7 +2221,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
                 <div id="part-3" class="question-part hidden">
                     <div class="part-header">
                         <p><strong>Part 3</strong></p>
-                        <p>Listen and answer questions 21вЂ“30.</p>
+                        <p>Listen and answer questions 21–30.</p>
                     </div>
                     <div class="questions-container">
                         <div class="question">
@@ -2321,7 +2321,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
                 <div id="part-4" class="question-part hidden">
                     <div class="part-header">
                         <p><strong>Part 4</strong></p>
-                        <p>Listen and answer questions 31вЂ“40.</p>
+                        <p>Listen and answer questions 31–40.</p>
                     </div>
                     <div class="questions-container">
                         <div class="question">
@@ -2422,7 +2422,7 @@ They'd like that. But I'm just looking on the map at where their college is. It'
 It is a bit far for them from there. The hostel actually has scooters for hire at a very good price, so they could do that. It would be quicker than cycling or walking to the center.
 Hmm. It is a bit expensive, but it sounds like the best one so far, unless there's something a bit cheaper. Okay. 
 Well, what about the Backpackers Hostel? That's not so expensive. It's in a side street in the Entertainment District. They wouldn't need to go far to find everything they want. 
-They could walk everywhere, and it's very reasonable, only $45 and another $5 if they want to have breakfast. Hmm. But what about other meals? There's no cafГ©, but on each floor in this hostel, there's a kitchen for residents to cook in.
+They could walk everywhere, and it's very reasonable, only $45 and another $5 if they want to have breakfast. Hmm. But what about other meals? There's no café, but on each floor in this hostel, there's a kitchen for residents to cook in.
 Oh. I'm not sure how well equipped they are, but it should be fine for basic meals. Well, that's really very helpful. 
 I'll pass all this information on now. Do ask your friends to ring me if they need to know anything else. I will. 
 Thank you. 
@@ -2523,8 +2523,8 @@ Now, let's see about trying a few of them for ourselves.</div>
 
         <!-- Navigation Arrows -->
         <div class="nav-arrows">
-            <button class="nav-arrow" onclick="previousPart()" id="prevBtn">вЂ№</button>
-            <button class="nav-arrow" onclick="nextPart()" id="nextBtn">вЂє</button>
+            <button class="nav-arrow" onclick="previousPart()" id="prevBtn">‹</button>
+            <button class="nav-arrow" onclick="nextPart()" id="nextBtn">›</button>
         </div>
 
         <!-- Bottom Navigation -->
@@ -2932,7 +2932,7 @@ Now, let's see about trying a few of them for ourselves.</div>
                     span.className = 'highlight';
                     selectedRange.surroundContents(span);
                 } catch(err){
-                    console.warn('Complex selection вЂ“ fallback highlight');
+                    console.warn('Complex selection – fallback highlight');
                     document.execCommand('backColor', false, 'yellow');
                 }
                 window.getSelection().removeAllRanges();
@@ -2954,7 +2954,7 @@ Now, let's see about trying a few of them for ourselves.</div>
                     span.appendChild(tooltip);
                     selectedRange.surroundContents(span);
                 }catch(err){
-                    console.warn('Complex selection вЂ“ cannot comment');
+                    console.warn('Complex selection – cannot comment');
                 }
                 window.getSelection().removeAllRanges();
                 closeContextMenu();
@@ -3219,7 +3219,7 @@ Now, let's see about trying a few of them for ourselves.</div>
                             <td>${res.userAnswer}</td>
                             <td>${res.correctAnswer}</td>
                             <td class="${res.isCorrect ? 'result-correct' : 'result-incorrect'}">
-                                ${res.isCorrect ? 'вњ” Correct' : 'вњ– Incorrect'}
+                                ${res.isCorrect ? '✔ Correct' : '✖ Incorrect'}
                             </td>
                         </tr>
                     `;
@@ -3684,7 +3684,7 @@ Now, let's see about trying a few of them for ourselves.</div>
                 contextElement = null;
             }
         
-            // в”Ђв”Ђ Intro dismiss в”Ђв”Ђ
+            // ── Intro dismiss ──
             document.getElementById('start-test-btn').addEventListener('click', function() {
                 document.getElementById('intro-overlay').style.display = 'none';
             });
@@ -3732,5 +3732,8 @@ Now, let's see about trying a few of them for ourselves.</div>
 })();
 </script>
 
+<!-- ieltsuz-shared -->
+<link rel="stylesheet" href="ieltsuz-mock.css">
+<script src="ieltsuz-bridge.js" defer></script>
 </body>
     </html>

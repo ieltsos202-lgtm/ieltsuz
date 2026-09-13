@@ -25,10 +25,12 @@ function listeningBand(correct: number): number {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { test_id, test_title, correct_count, total, wrong_answers } = body;
+    const { test_id, test_title, correct_count, total, wrong_answers, time_spent_sec, unanswered } = body;
 
     const band = listeningBand(correct_count);
     const wrong = wrong_answers || [];
+    const timeSec = Number(time_spent_sec) || 0;
+    const skipped: number[] = Array.isArray(unanswered) ? unanswered : [];
 
     const hasWrong = Array.isArray(wrong) && wrong.length > 0;
 
@@ -36,6 +38,8 @@ export async function POST(req: NextRequest) {
 
 Test: ${test_title || "Listening Test"}
 Score: ${correct_count}/${total || 40} correct  →  Band ${band}
+${timeSec ? `Time spent: ${Math.floor(timeSec / 60)} min ${timeSec % 60} sec (standard test time: 30 min + 10 min transfer).` : ""}
+${skipped.length ? `Questions left UNANSWERED: ${skipped.join(", ")} — comment on time management / avoidance patterns.` : ""}
 
 ${
   hasWrong
@@ -91,7 +95,7 @@ ${hasWrong ? "Include one wrong_analysis entry for EVERY wrong answer provided."
         weak_areas: feedback.weak_areas,
         feedback: feedback.feedback,
         improvement_tips: feedback.improvement_tips,
-        time_taken_seconds: 0,
+        time_taken_seconds: timeSec,
       });
     }
 

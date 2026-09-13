@@ -11,6 +11,9 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 /** Routes accessible after free trials are exhausted (non-Pro users). */
 const TRIAL_EXEMPT_PREFIXES = ["/upgrade", "/settings", "/progress", "/coach"];
 
+/** Full-screen test runners: sidebar and header are hidden. */
+const IMMERSIVE_ROUTE = /^\/(listening|reading)\/[^/]+$/;
+
 export default function DashboardLayout({
   children,
 }: {
@@ -54,6 +57,10 @@ export default function DashboardLayout({
         <LoadingSpinner />
       </div>
     );
+  }
+
+  if (IMMERSIVE_ROUTE.test(pathname)) {
+    return <main className="min-h-screen">{children}</main>;
   }
 
   return (

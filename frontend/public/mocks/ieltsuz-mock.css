@@ -1,0 +1,124 @@
+/* IELTSUZ shared mock-test stylesheet — loaded by every Listening/Reading test.
+   Fixes dark-mode result visibility and hides third-party branding. */
+
+/* ---- Hide third-party branding / promo ---- */
+a[href*="t.me/"], a[href*="telegram.me"], a[href*="instagram.com"], a[href*="youtube.com"],
+.tg-btn, .logo-link, .watermark, .watermark-buttons, .footer-credit, .credits,
+[class*="watermark"], [id*="watermark"] {
+  display: none !important;
+}
+body::after, body::before { content: none !important; }
+
+/* ---- Result colours (light) ---- */
+:root {
+  --uz-ok-bg: #dcfce7;
+  --uz-ok-fg: #166534;
+  --uz-ok-border: #86efac;
+  --uz-bad-bg: #fee2e2;
+  --uz-bad-fg: #991b1b;
+  --uz-bad-border: #fca5a5;
+}
+html.dark, html[data-theme="dark"] {
+  --uz-ok-bg: #14532d;
+  --uz-ok-fg: #bbf7d0;
+  --uz-ok-border: #22c55e;
+  --uz-bad-bg: #7f1d1d;
+  --uz-bad-fg: #fecaca;
+  --uz-bad-border: #ef4444;
+}
+
+/* Correct / incorrect markers must win over the theme normalizer's input backgrounds */
+.correct, input.correct, select.correct, .blank.correct, .answer-input.correct,
+.tf-option.correct, .multi-choice-option.correct, .drop-zone.correct,
+.matching-form-row.correct, .ldm-slot.correct, .subQuestion.correct {
+  background-color: var(--uz-ok-bg) !important;
+  border-color: var(--uz-ok-border) !important;
+  color: var(--uz-ok-fg) !important;
+}
+.incorrect, input.incorrect, select.incorrect, .blank.incorrect, .answer-input.incorrect,
+.tf-option.incorrect, .multi-choice-option.incorrect, .drop-zone.incorrect,
+.matching-form-row.incorrect, .ldm-slot.incorrect, .subQuestion.incorrect {
+  background-color: var(--uz-bad-bg) !important;
+  border-color: var(--uz-bad-border) !important;
+  color: var(--uz-bad-fg) !important;
+}
+
+/* The correct option shown next to a wrong answer */
+.correct-answer-highlight,
+.tf-option.correct-answer-highlight,
+.multi-choice-option.correct-answer-highlight,
+.ldm-option.correct-answer-highlight,
+label.correct-answer-highlight {
+  background-color: var(--uz-ok-bg) !important;
+  border: 1px solid var(--uz-ok-border) !important;
+  color: var(--uz-ok-fg) !important;
+}
+.correct-answer-display,
+.correct-answer-display *,
+.correct-answer-text,
+.show-answer,
+.answer-reveal {
+  color: var(--uz-ok-fg) !important;
+  background: var(--uz-ok-bg) !important;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 700 !important;
+  display: inline-block;
+}
+html.dark .correct-answer-display, html[data-theme="dark"] .correct-answer-display {
+  color: #86efac !important;
+  background: rgba(34, 197, 94, 0.18) !important;
+}
+
+/* Results modal (both families) */
+#result-modal, #results-modal, .results-modal, .modal-overlay {
+  color: var(--os-fg, #0f172a) !important;
+}
+#result-modal .modal-content, #results-modal .modal-content, .results-modal .modal-content {
+  background: var(--os-bg, #fff) !important;
+  color: var(--os-fg, #0f172a) !important;
+  border: 1px solid var(--os-border, #e2e8f0) !important;
+}
+#result-details, #results-details, .results-details-container {
+  color: var(--os-fg, #0f172a) !important;
+}
+#result-details table, #result-details td, #result-details th {
+  color: var(--os-fg, #0f172a) !important;
+  border-color: var(--os-border, #e2e8f0) !important;
+  background: transparent !important;
+}
+#result-details td.result-correct, .result-correct { color: var(--uz-ok-fg) !important; font-weight: 700; }
+#result-details td.result-incorrect, .result-incorrect { color: var(--uz-bad-fg) !important; font-weight: 700; }
+
+.result-row { border-bottom: 1px solid var(--os-border, #e2e8f0) !important; color: var(--os-fg, #0f172a) !important; }
+.result-row.incorrect { background: var(--uz-bad-bg) !important; color: var(--uz-bad-fg) !important; }
+.result-row .user-ans { color: var(--os-muted, #64748b) !important; }
+.result-row.incorrect .user-ans { color: var(--uz-bad-fg) !important; }
+.result-row .correct-ans { color: var(--uz-ok-fg) !important; font-weight: 700 !important; }
+html.dark .result-row .correct-ans, html[data-theme="dark"] .result-row .correct-ans { color: #86efac !important; }
+
+#results-score, #results-band, #score-summary, .results-summary, .score-display, .band-display {
+  color: var(--os-fg, #0f172a) !important;
+}
+
+/* Passage highlights of correct answers (reading) */
+mark.answer-highlight, .passage-highlight, .highlight-answer {
+  background: var(--uz-ok-bg) !important;
+  color: var(--uz-ok-fg) !important;
+}
+
+/* Explanation modal */
+.explanation-modal, #explanationBody, #explanationTitle, .explanation-sub {
+  background: var(--os-bg, #fff) !important;
+  color: var(--os-fg, #0f172a) !important;
+}
+
+/* IELTSUZ badge in bottom-right after grading */
+#ieltsuz-graded-badge {
+  position: fixed; right: 14px; bottom: 14px; z-index: 99999;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; font: 600 13px/1 Inter, Arial, sans-serif;
+  padding: 10px 14px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  cursor: pointer; display: none; align-items: center; gap: 8px;
+}
+#ieltsuz-graded-badge.show { display: inline-flex; }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IELTS Full Reading Practice</title>
+    <title>IELTSUZ – Reading Test 3</title>
     <style>
         * {
             margin: 0;
@@ -625,7 +625,7 @@
         }
 
         .fa-check::before {
-            content: "вњ“";
+            content: "✓";
         }
 
         .hidden {
@@ -872,11 +872,11 @@
             color: #721c24;
         }
         .question li.correct::before {
-            content: 'вњ” ';
+            content: '✔ ';
             color: #28a745;
         }
         .question li.incorrect::before {
-            content: 'вњ– ';
+            content: '✖ ';
             color: #dc3545;
         }
 
@@ -1355,7 +1355,7 @@
             scrollbar-color: #888 transparent;
         }
 
-        /* в”Ђв”Ђ Intro overlay в”Ђв”Ђ */
+        /* ── Intro overlay ── */
         #intro-overlay {
             position: fixed; inset: 0; background: #e8edf5;
             z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -2110,7 +2110,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
 </head>
 <body>
 
-    <!-- в”Ђв”Ђ Intro overlay в”Ђв”Ђ -->
+    <!-- ── Intro overlay ── -->
     <div id="intro-overlay">
         <div class="intro-card">
             <h1>IELTS Reading</h1>
@@ -2168,11 +2168,11 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             <div class="passage-panel" id="passage-panel">
                 <div id="passage-text-1" class="reading-passage">
                     <h4 style="text-align:center; font-size:18px; font-weight:700; margin-bottom:16px; color:#111;">A food-stream contract</h4>
-                    <p>With rapid urbanisation, more people now live in cities than in the countryside, and this number is set to rise. For all the benefits cities bestow, they are expensive places. In some years, Tokyo records the highest cost of living; in others, Moscow. In 2014, for expatriates, Luanda, the capital of Angola, received the dubious accolade; and, for Angolans themselves, it had also suddenly become pricey with real estate going through the roof, so to speak, and food being prohibitive вЂ“ even locally sourced mangoes were $5 a kilo.</p>
+                    <p>With rapid urbanisation, more people now live in cities than in the countryside, and this number is set to rise. For all the benefits cities bestow, they are expensive places. In some years, Tokyo records the highest cost of living; in others, Moscow. In 2014, for expatriates, Luanda, the capital of Angola, received the dubious accolade; and, for Angolans themselves, it had also suddenly become pricey with real estate going through the roof, so to speak, and food being prohibitive – even locally sourced mangoes were $5 a kilo.</p>
                     
-                    <p>What can urbanites do to reduce the financial burden of paying for food? Diet? Grow their own? Beg for subsidies? Some economists have proposed that they buy contracts giving rights to a food stream in perpetuity, for example, a kilogram of beef would be delivered weekly from the date the contract started until the end of the owner's life. In essence, this is what house purchase is вЂ“ indefinite security of a single commodity. As is the case with buying a house, a loan from a financial institution might be necessary for the beef contract, even if it were merely for Australian blade steak and not Japanese Wagu. The contract could also be sold at the current market price if its owner moved out of delivery range or renounced beef.</p>
+                    <p>What can urbanites do to reduce the financial burden of paying for food? Diet? Grow their own? Beg for subsidies? Some economists have proposed that they buy contracts giving rights to a food stream in perpetuity, for example, a kilogram of beef would be delivered weekly from the date the contract started until the end of the owner's life. In essence, this is what house purchase is – indefinite security of a single commodity. As is the case with buying a house, a loan from a financial institution might be necessary for the beef contract, even if it were merely for Australian blade steak and not Japanese Wagu. The contract could also be sold at the current market price if its owner moved out of delivery range or renounced beef.</p>
                     
-                    <p>In order to maintain or increase the value of their investment, it is likely some owners would support national and international policies to limit food production вЂ“ a sound idea in a world where 40% of food goes to waste.</p>
+                    <p>In order to maintain or increase the value of their investment, it is likely some owners would support national and international policies to limit food production – a sound idea in a world where 40% of food goes to waste.</p>
                     
                     <p>But let's imagine, in this system, a consumer purchased a 25-year contract for beef, which, over time, doubled in value. Naturally, at sale, the owner would make a tidy profit. Conversely, if mad cow disease erupted, and no one dared eat beef, then the vendor would suп¬Ђer. If the owner had bought ten beef contracts, he or she might even go bankrupt in this scenario.</p>
                     
@@ -2531,8 +2531,8 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
 
     <!-- Navigation Arrows -->
     <div class="nav-arrows">
-        <button class="nav-arrow" onclick="previousQuestion()" id="prevBtn">вЂ№</button>
-        <button class="nav-arrow" onclick="nextQuestion()" id="nextBtn">вЂє</button>
+        <button class="nav-arrow" onclick="previousQuestion()" id="prevBtn">‹</button>
+        <button class="nav-arrow" onclick="nextQuestion()" id="nextBtn">›</button>
     </div>
 
     <!-- Bottom Navigation -->
@@ -2788,7 +2788,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
                         element.classList.add('incorrect');
                         const correctAnswerSpan = document.createElement('span');
                         correctAnswerSpan.className = 'correct-answer-display';
-                        correctAnswerSpan.innerHTML = `&nbsp;вћњ&nbsp;<span class="correct-answer-highlight">${correctAnswerText}</span>`;
+                        correctAnswerSpan.innerHTML = `&nbsp;➜&nbsp;<span class="correct-answer-highlight">${correctAnswerText}</span>`;
                         textInput.parentNode.insertBefore(correctAnswerSpan, textInput.nextSibling);
                     }
                 }
@@ -2909,7 +2909,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             if (inputEl) {
                 const displaySpan = document.createElement('span');
                 displaySpan.className = 'correct-answer-display';
-                displaySpan.textContent = ` вњ“ ${correctAnswer}`;
+                displaySpan.textContent = ` ✓ ${correctAnswer}`;
                 inputEl.insertAdjacentElement('afterend', displaySpan);
                 return; // Done
             }
@@ -2919,7 +2919,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             if (element) {
                 const displaySpan = document.createElement('span');
                 displaySpan.className = 'correct-answer-display';
-                displaySpan.textContent = ` вњ“ ${correctAnswer}`;
+                displaySpan.textContent = ` ✓ ${correctAnswer}`;
                 const itemContainer = element.querySelector('.tf-question-text');
                 if (itemContainer) {
                      itemContainer.appendChild(displaySpan);
@@ -3621,7 +3621,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
         initialize();
     });
     
-        // в”Ђв”Ђ Intro dismiss в”Ђв”Ђ
+        // ── Intro dismiss ──
         document.getElementById('start-test-btn').addEventListener('click', function() {
             document.getElementById('intro-overlay').style.display = 'none';
         });
@@ -3669,5 +3669,8 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
 })();
 </script>
 
+<!-- ieltsuz-shared -->
+<link rel="stylesheet" href="ieltsuz-mock.css">
+<script src="ieltsuz-bridge.js" defer></script>
 </body>
 </html>

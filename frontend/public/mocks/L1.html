@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IELTSUZ Listening Practice</title>
+    <title>IELTSUZ – Listening Test 1</title>
     <style>
         * {
             margin: 0;
@@ -583,7 +583,7 @@
         }
 
         .fa-check::before {
-            content: "вњ“";
+            content: "✓";
         }
 
         .hidden {
@@ -814,11 +814,11 @@
             color: #721c24;
         }
         .question li.correct::before {
-            content: 'вњ” ';
+            content: '✔ ';
             color: #28a745;
         }
         .question li.incorrect::before {
-            content: 'вњ– ';
+            content: '✖ ';
             color: #dc3545;
         }
 
@@ -1189,7 +1189,7 @@
             font-weight: bold;
         }
         .single-choice label.correct::before {
-            content: 'вњ” ';
+            content: '✔ ';
             color: #28a745;
         }
         .single-choice label.incorrect {
@@ -1197,7 +1197,7 @@
             text-decoration: line-through;
         }
         .single-choice label.incorrect::before {
-            content: 'вњ– ';
+            content: '✖ ';
             color: #dc3545;
         }
         .mcq-table tbody tr.correct {
@@ -2342,7 +2342,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             <div id="part-1" class="question-part">
                 <div class="part-header">
                     <p><strong>Part 1</strong></p>
-                    <p>Listen and answer questions 1вЂ“10.</p>
+                    <p>Listen and answer questions 1–10.</p>
                 </div>
                 <div class="questions-container">
                     <div class="question">
@@ -2377,7 +2377,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             <div id="part-2" class="question-part hidden">
                 <div class="part-header">
                     <p><strong>Part 2</strong></p>
-                    <p>Listen and answer questions 11вЂ“20.</p>
+                    <p>Listen and answer questions 11–20.</p>
                 </div>
                 <div class="questions-container">
                     <div class="question">
@@ -2511,7 +2511,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             <div id="part-3" class="question-part hidden">
                 <div class="part-header">
                     <p><strong>Part 3</strong></p>
-                    <p>Listen and answer questions 21вЂ“30.</p>
+                    <p>Listen and answer questions 21–30.</p>
                 </div>
                 <div class="questions-container">
                     <div class="question">
@@ -2603,7 +2603,7 @@ html.dark .section-banner,html.dark .part-header{background:#1e1e2e!important;bo
             <div id="part-4" class="question-part hidden">
                 <div class="part-header">
                     <p><strong>Part 4</strong></p>
-                    <p>Listen and answer questions 31вЂ“40.</p>
+                    <p>Listen and answer questions 31–40.</p>
                 </div>
                 <div class="questions-container">
                     <div class="question">
@@ -2668,7 +2668,7 @@ ZACH:                   Thanks Olivia! I passed just last week. It feels great t
 
 OLIVIA:                I really want to take driving lessons, but I haven't been able to find a driving school that will give lessons during the weekends (Example) so that I don't have to miss any classes at college.
 
-ZACH:                   The driving school that I used was brilliant and really flexible with their teaching hours. It's really close to school. The address is 67 King's (Q1) Road вЂ“ that's 67-KING-apostrophe-S Road.
+ZACH:                   The driving school that I used was brilliant and really flexible with their teaching hours. It's really close to school. The address is 67 King's (Q1) Road – that's 67-KING-apostrophe-S Road.
 
 OLIVIA:                Oh that's perfect! I don't like the idea of driving around busy streets. Did your teacher make you drive in urban areas or did he mainly teach you on roads in the countryside?
 
@@ -2789,15 +2789,15 @@ Roberts are also developing a model of this tiny camera for use during medical p
 
 If any of you have an interest in working in this field of technological invention, Roberts is a very diverse and fast-growing company that would be a fantastic internship opportunity. Every year they organise a series of competitions (Q40) where entrants stand the chance of winning a place in their internship programme, so I would suggest that all of you enter.
 
-That wraps up the lecture for today. Please remember that attendance is mandatoryвЂ¦ [fade out]</div>
+That wraps up the lecture for today. Please remember that attendance is mandatory… [fade out]</div>
     </div>
 
     <audio id="global-audio-player" class="hidden"></audio>
 
     <!-- Navigation Arrows -->
     <div class="nav-arrows">
-        <button class="nav-arrow" onclick="previousPart()" id="prevBtn">вЂ№</button>
-        <button class="nav-arrow" onclick="nextPart()" id="nextBtn">вЂє</button>
+        <button class="nav-arrow" onclick="previousPart()" id="prevBtn">‹</button>
+        <button class="nav-arrow" onclick="nextPart()" id="nextBtn">›</button>
     </div>
 
     <!-- Bottom Navigation -->
@@ -3400,7 +3400,7 @@ That wraps up the lecture for today. Please remember that attendance is mandator
                 span.appendChild(tooltip);
                 selectedRange.surroundContents(span);
             }catch(err){
-                console.warn('Complex selection вЂ“ cannot comment');
+                console.warn('Complex selection – cannot comment');
             }
             window.getSelection().removeAllRanges();
             closeContextMenu();
@@ -3736,10 +3736,10 @@ That wraps up the lecture for today. Please remember that attendance is mandator
                 let resultText;
                 let resultClass;
                 if (res.isCorrect) {
-                    resultText = 'вњ” Correct';
+                    resultText = '✔ Correct';
                     resultClass = 'result-correct';
                 } else {
-                    resultText = 'вњ– Incorrect';
+                    resultText = '✖ Incorrect';
                     resultClass = 'result-incorrect';
                 }
                 
@@ -4276,5 +4276,8 @@ That wraps up the lecture for today. Please remember that attendance is mandator
 })();
 </script>
 
+<!-- ieltsuz-shared -->
+<link rel="stylesheet" href="ieltsuz-mock.css">
+<script src="ieltsuz-bridge.js" defer></script>
 </body>
 </html>
