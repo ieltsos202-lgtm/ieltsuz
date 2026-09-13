@@ -9,7 +9,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Check, Crown, Smartphone } from "lucide-react";
 
-const MONTHLY_PRICE = "49,000 UZS";
+const MONTHLY_PRICE = "49 000 so'm";
 
 export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
@@ -47,20 +47,20 @@ export default function SubscriptionPage() {
   if (isPro) {
     return (
       <div className="mx-auto max-w-xl space-y-6">
-        <h1 className="text-2xl font-bold">Subscription</h1>
+        <h1 className="text-2xl font-bold">Obuna</h1>
         <Card className="space-y-4 p-6 text-center">
           <Crown className="mx-auto h-12 w-12 text-accent-yellow" />
-          <CardTitle className="text-lg">You are Pro!</CardTitle>
+          <CardTitle className="text-lg">Siz Pro foydalanuvchisiz!</CardTitle>
           <p className="text-content-secondary">
-            Unlimited access to all features is active.
+            Barcha imkoniyatlarga cheksiz kirish faol.
           </p>
           {expiresAt && (
             <p className="text-xs text-content-secondary">
-              Valid until: {new Date(expiresAt).toLocaleDateString()}
+              Amal qilish muddati: {new Date(expiresAt).toLocaleDateString("uz-UZ")}
             </p>
           )}
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Back to Dashboard
+            Bosh sahifaga qaytish
           </Button>
         </Card>
       </div>
@@ -70,25 +70,25 @@ export default function SubscriptionPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Upgrade to Pro</h1>
+        <h1 className="text-2xl font-bold">Pro'ga o'ting</h1>
         <p className="mt-2 text-content-secondary">
-          Unlock unlimited AI feedback and all premium features.
+          Cheksiz AI baholash va barcha premium imkoniyatlarni oching.
         </p>
       </div>
 
       <Card className="space-y-4 p-6">
         <div className="text-center">
           <p className="text-3xl font-bold text-accent">{MONTHLY_PRICE}</p>
-          <p className="text-sm text-content-secondary">per month</p>
+          <p className="text-sm text-content-secondary">oyiga · 3 va 12 oylik tariflarda arzonroq</p>
         </div>
         <ul className="space-y-2 text-sm text-content-secondary">
           {[
-            "Unlimited AI Writing Feedback",
-            "Unlimited AI Speaking Feedback",
-            "Full Listening & Reading Tests",
-            "Unlimited Mock Tests",
-            "Progress Tracking & Analytics",
-            "Vocabulary Builder",
+            "Cheksiz AI Writing baholash",
+            "Cheksiz AI Speaking amaliyot",
+            "To'liq Listening va Reading testlar",
+            "Cheksiz Mock testlar",
+            "Progress kuzatuvi va tahlil",
+            "Lug'at yig'uvchi (Vocabulary)",
           ].map((f) => (
             <li key={f} className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-400" /> {f}
@@ -100,13 +100,13 @@ export default function SubscriptionPage() {
       <Card className="space-y-4 p-6">
         <div className="flex items-center gap-3">
           <Smartphone className="h-6 w-6 text-accent-yellow" />
-          <h3 className="text-lg font-semibold">Pay with Payme / Click</h3>
+          <h3 className="text-lg font-semibold">Payme / Click orqali to'lov</h3>
         </div>
         <p className="text-sm text-content-secondary">
-          Pay in UZS via Payme or Click, then upload a screenshot for instant AI verification.
+          Payme yoki Click orqali to'lang, so'ng chek skrinshotini yuklang — AI darhol tekshiradi.
         </p>
         <Link href="/upgrade">
-          <Button className="w-full">Continue to Payment</Button>
+          <Button className="w-full">To'lovga o'tish</Button>
         </Link>
       </Card>
     </div>

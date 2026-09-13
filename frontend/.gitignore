@@ -8,4 +8,9 @@ tsconfig.tsbuildinfo
 
 # OS
 .DS_Store
+
+# Cloudflare / OpenNext
+.open-next/
+.wrangler/
+.dev.vars
 Thumbs.db

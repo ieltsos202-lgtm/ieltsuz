@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const PLAN_PRICES: Record<string, number> = {
       "1m": parseInt(process.env.MONTHLY_PRICE_UZS || "49000", 10),
       "3m": 99000,
-      "12m": 499000,
+      "12m": 399000,
     };
     const body = await req.json().catch(() => ({} as any));
     const plan = typeof body?.plan === "string" && PLAN_PRICES[body.plan] ? body.plan : "1m";

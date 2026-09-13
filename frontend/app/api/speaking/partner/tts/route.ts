@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 
-export const runtime = "edge";
-
 const TTS_PROVIDER = (process.env.TTS_PROVIDER || "elevenlabs").toLowerCase();
 const TTS_MODEL = process.env.TTS_MODEL || "gemini-2.5-flash-preview-tts";
 const TTS_VOICE = process.env.TTS_VOICE || "Aoede";

@@ -60,12 +60,12 @@ function sanitizeCard(raw?: string) {
 }
 
 const PRO_FEATURES = [
-  "Unlimited Writing evaluations",
-  "Unlimited Speaking practice",
-  "Unlimited Mock tests",
-  "Progress tracking & charts",
-  "Vocabulary builder",
-  "AI study coach",
+  "Cheksiz Writing baholash (AI examiner)",
+  "Cheksiz Speaking amaliyot (jonli AI examiner)",
+  "Cheksiz Mock testlar (Cambridge IELTS)",
+  "Progress kuzatuvi va grafiklar",
+  "Lug'at yig'uvchi (Vocabulary)",
+  "Shaxsiy AI o'quv rejasi",
 ];
 
 export default function UpgradePage() {
@@ -201,7 +201,7 @@ export default function UpgradePage() {
 
           {/* Social proof */}
           <div className="space-y-3 text-center">
-            <h1 className="text-3xl font-bold">IELTS OS Pro</h1>
+            <h1 className="text-3xl font-bold">IELTSUZ Pro</h1>
             <div className="flex items-center justify-center gap-1 text-lg">
               <span aria-hidden>⭐⭐⭐⭐⭐</span>
               <span className="ml-1 text-sm text-content-secondary">5 dan 4.9 · 1 847 ta sharh</span>

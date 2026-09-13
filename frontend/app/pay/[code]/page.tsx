@@ -11,6 +11,8 @@ function sanitizeCard(raw?: string) {
   return (raw || "").replace(/\D/g, "");
 }
 
+const fmtUZS = (n: number) => n.toLocaleString("en-US").replace(/,/g, " ");
+
 export default function MobilePayPage() {
   const params = useParams();
   const code = params.code as string;
@@ -27,6 +29,7 @@ export default function MobilePayPage() {
   const cardNumber = sanitizeCard(process.env.NEXT_PUBLIC_CARD_NUMBER);
   const cardOwner = process.env.NEXT_PUBLIC_CARD_OWNER || "IELTSUZ";
   const formattedCard = cardNumber.replace(/(\d{4})/g, "$1 ").trim();
+  const amountLabel = `${fmtUZS(Number(payment?.amount) || 49000)} so'm`;
 
   useEffect(() => {
     if (!code) return;
@@ -38,10 +41,10 @@ export default function MobilePayPage() {
             setStep("upload");
           }
         } else {
-          setError("Invalid or expired payment code.");
+          setError("To'lov kodi noto'g'ri yoki muddati tugagan.");
         }
       })
-      .catch(() => setError("Could not load payment details."))
+      .catch(() => setError("To'lov ma'lumotlarini yuklab bo'lmadi."))
       .finally(() => setLoading(false));
   }, [code]);
 
@@ -73,19 +76,19 @@ export default function MobilePayPage() {
         setUploadResult(res.verified ? "success" : "error");
         setUploadMessage(
           res.verified
-            ? "Payment verified! Pro is now active."
-            : res.message || "Verification failed. Please upload a clearer screenshot."
+            ? "To'lov tasdiqlandi! Pro faollashtirildi."
+            : res.message || "Tekshiruvdan o'tmadi. Aniqroq skrinshot yuklang."
         );
         if (res.verified) {
           setPayment((p: any) => ({ ...p, status: "approved" }));
         }
       } else {
         setUploadResult("error");
-        setUploadMessage(res.error || "Upload failed. Please try again.");
+        setUploadMessage(res.error || "Yuklashda xatolik. Qayta urinib ko'ring.");
       }
     } catch (err: any) {
       setUploadResult("error");
-      setUploadMessage(err.message || "Upload failed.");
+      setUploadMessage(err.message || "Yuklashda xatolik yuz berdi.");
     } finally {
       setUploading(false);
     }
@@ -104,7 +107,7 @@ export default function MobilePayPage() {
       <div className="flex h-screen flex-col items-center justify-center bg-bg-primary p-6 text-center">
         <AlertCircle className="mb-3 h-12 w-12 text-red-500" />
         <h1 className="text-xl font-bold text-red-600">{error}</h1>
-        <p className="mt-2 text-sm text-content-secondary">Go back to the main page and try again.</p>
+        <p className="mt-2 text-sm text-content-secondary">Asosiy sahifaga qaytib, qayta urinib ko'ring.</p>
       </div>
     );
   }
@@ -115,9 +118,9 @@ export default function MobilePayPage() {
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
           <Check className="h-10 w-10 text-emerald-600" />
         </div>
-        <h1 className="text-2xl font-bold">Payment verified!</h1>
-        <p className="mt-2 text-content-secondary">Pro is active on all your devices.</p>
-        <p className="mt-4 text-sm text-content-secondary">You can close this page and return to your computer.</p>
+        <h1 className="text-2xl font-bold">To'lov tasdiqlandi!</h1>
+        <p className="mt-2 text-content-secondary">Pro barcha qurilmalaringizda faol.</p>
+        <p className="mt-4 text-sm text-content-secondary">Bu sahifani yopib, kompyuteringizga qaytishingiz mumkin.</p>
       </div>
     );
   }
@@ -126,11 +129,11 @@ export default function MobilePayPage() {
     <div className="min-h-screen bg-bg-primary p-4">
       <div className="mb-4 text-center">
         <h1 className="text-2xl font-bold">IELTSUZ Pro</h1>
-        <p className="text-sm text-content-secondary">Payment page</p>
+        <p className="text-sm text-content-secondary">To'lov sahifasi</p>
       </div>
 
       <Card className="mb-4 border-accent/30 bg-accent/5 p-4 text-center">
-        <p className="text-xs text-content-secondary">Payment code</p>
+        <p className="text-xs text-content-secondary">To'lov kodi</p>
         <code className="text-2xl font-bold tracking-wider text-accent">{code}</code>
       </Card>
 
@@ -140,22 +143,22 @@ export default function MobilePayPage() {
             <div className="flex items-start gap-2">
               <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="space-y-1 text-sm text-amber-800 dark:text-amber-400">
-                <p className="font-bold">Important</p>
+                <p className="font-bold">Muhim</p>
                 <ul className="list-disc space-y-1 pl-4">
-                  <li>Amount must be exactly <strong>49,000 UZS</strong></li>
-                  <li>Double-check the card number before paying</li>
-                  <li>Take a screenshot after payment</li>
-                  <li>Screenshot must show a success / completed status</li>
+                  <li>Summa aniq <strong>{amountLabel}</strong> bo'lishi kerak</li>
+                  <li>To'lovdan oldin karta raqamini tekshirib qo'ying</li>
+                  <li>To'lovdan keyin skrinshot oling</li>
+                  <li>Skrinshotda muvaffaqiyatli / bajarildi holati ko'rinishi kerak</li>
                 </ul>
               </div>
             </div>
           </Card>
 
           <Card className="p-4">
-            <p className="mb-3 text-sm font-medium text-content-secondary">Card details:</p>
+            <p className="mb-3 text-sm font-medium text-content-secondary">Karta ma'lumotlari:</p>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-content-secondary">Card holder</span>
+                <span className="text-sm text-content-secondary">Karta egasi</span>
                 <span className="text-sm font-semibold">{cardOwner}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -166,8 +169,8 @@ export default function MobilePayPage() {
                 </Button>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-accent/10 p-3">
-                <span className="text-sm font-medium">Amount</span>
-                <span className="text-xl font-bold text-accent">49,000 UZS</span>
+                <span className="text-sm font-medium">Summa</span>
+                <span className="text-xl font-bold text-accent">{amountLabel}</span>
               </div>
             </div>
           </Card>
@@ -177,7 +180,7 @@ export default function MobilePayPage() {
             <ol className="space-y-3 text-sm text-content-secondary">
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">1</span>
-                <span>Yuqoridagi <strong>Copy</strong> tugmasi bilan karta raqamini nusxalang</span>
+                <span>Yuqoridagi <strong>nusxalash</strong> tugmasi bilan karta raqamini nusxalang</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">2</span>
@@ -189,7 +192,7 @@ export default function MobilePayPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">4</span>
-                <span>Miqdorni <strong>49,000 UZS</strong> deb kiritib, to'lovni tasdiqlang</span>
+                <span>Miqdorni <strong>{amountLabel}</strong> deb kiritib, to'lovni tasdiqlang</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">5</span>
@@ -221,7 +224,7 @@ export default function MobilePayPage() {
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-tertiary p-8 transition-colors hover:border-accent/50">
               <Upload className="mb-2 h-10 w-10 text-content-secondary" />
               <p className="text-sm text-content-secondary">
-                {file ? file.name : "Tap to select screenshot"}
+                {file ? file.name : "Skrinshotni tanlash uchun bosing"}
               </p>
               <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </label>
@@ -240,19 +243,19 @@ export default function MobilePayPage() {
 
             <Button className="mt-3 w-full bg-accent text-white hover:bg-accent/90" onClick={handleUpload} disabled={!file || uploading}>
               {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              {uploading ? "Verifying…" : "Upload and verify"}
+              {uploading ? "Tekshirilmoqda…" : "Yuklash va tasdiqlash"}
             </Button>
           </Card>
 
           <Button variant="ghost" className="w-full text-content-secondary" onClick={() => setStep("select")}>
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            Orqaga
           </Button>
         </div>
       )}
 
       <p className="mt-6 text-center text-xs text-content-secondary">
-        Need help? Telegram @ieltsosuzb
+        Yordam kerakmi? Telegram: @ieltsosuzb
       </p>
     </div>
   );
