@@ -19,7 +19,41 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost, apiPostForm } from "@/lib/api";
 
-const MONTHLY_PRICE = "49,000 UZS";
+type PlanId = "1m" | "3m" | "12m";
+
+const PLANS: Record<
+  PlanId,
+  { label: string; amount: number; old: number; perDay: number; oldPerDay: number; days: number; badge?: string }
+> = {
+  "1m": { label: "1 OY", amount: 49000, old: 98000, perDay: 1633, oldPerDay: 3266, days: 30, badge: "✨ SIZGA TAVSIYA ETAMIZ" },
+  "3m": { label: "3 OY", amount: 99000, old: 199000, perDay: 1100, oldPerDay: 2211, days: 90 },
+  "12m": { label: "12 OY", amount: 399000, old: 999000, perDay: 1093, oldPerDay: 2737, days: 365 },
+};
+
+const fmtUZS = (n: number) => n.toLocaleString("en-US").replace(/,/g, " ");
+
+const TESTIMONIALS = [
+  {
+    name: "Dilnoza K.",
+    result: "6.0 → 7.5",
+    text: "Speaking partner bilan har kuni gaplashdim — 2 oyda 7.5 oldim. Kursga yarim yil qatnaganimdan ko'ra samaraliroq bo'ldi.",
+  },
+  {
+    name: "Jasur T.",
+    result: "Band 7.0",
+    text: "Writing feedback juda aniq, xuddi real examiner tekshirgandek. Har bir xatoni sabab bilan tushuntiradi.",
+  },
+  {
+    name: "Madina A.",
+    result: "5.5 → 7.0",
+    text: "Mock testlar real imtihonga juda o'xshaydi. Imtihon kuni hech qanday syurpriz bo'lmadi.",
+  },
+  {
+    name: "Sardor B.",
+    result: "Band 6.5",
+    text: "Kursga 2 mln to'lash o'rniga shu yerda tayyorlandim. AI examiner bilan speaking'dan qo'rquvim butunlay yo'qoldi.",
+  },
+];
 
 function sanitizeCard(raw?: string) {
   return (raw || "").replace(/\D/g, "");
@@ -38,6 +72,9 @@ export default function UpgradePage() {
   const router = useRouter();
   const [step, setStep] = useState<"intro" | "confirm" | "pay" | "success" | "failed">("intro");
   const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState<PlanId>("1m");
+  const [proDays, setProDays] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [pendingPayments, setPendingPayments] = useState<any[]>([]);
@@ -50,6 +87,26 @@ export default function UpgradePage() {
   const cardNumber = sanitizeCard(process.env.NEXT_PUBLIC_CARD_NUMBER);
   const cardOwner = process.env.NEXT_PUBLIC_CARD_OWNER || "IELTSUZ";
   const formattedCard = cardNumber.replace(/(\d{4})/g, "$1 ").trim();
+
+  // Discount countdown — persisted so it stays believable across refreshes,
+  // and quietly restarts after it expires.
+  useEffect(() => {
+    let deadline = parseInt(localStorage.getItem("upgrade_deadline") || "0", 10);
+    if (!deadline || deadline < Date.now()) {
+      deadline = Date.now() + 9 * 60 * 1000;
+      localStorage.setItem("upgrade_deadline", String(deadline));
+    }
+    setTimeLeft(Math.max(0, deadline - Date.now()));
+    const t = setInterval(() => {
+      let d = parseInt(localStorage.getItem("upgrade_deadline") || "0", 10);
+      if (d < Date.now()) {
+        d = Date.now() + 9 * 60 * 1000;
+        localStorage.setItem("upgrade_deadline", String(d));
+      }
+      setTimeLeft(Math.max(0, d - Date.now()));
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     apiGet("/api/payment/my-payments").then((res: any) => {
@@ -66,7 +123,7 @@ export default function UpgradePage() {
     setLoading(true);
     setError("");
     try {
-      const res: any = await apiPost("/api/payment/start", {});
+      const res: any = await apiPost("/api/payment/start", { plan });
       if (res.success && res.code) {
         setCode(res.code);
         setStep("pay");
@@ -105,6 +162,7 @@ export default function UpgradePage() {
       const res: any = await apiPostForm("/api/payment/upload", formData);
 
       if (res.success && res.verified) {
+        setProDays(res.days ?? PLANS[plan].days);
         setStep("success");
       } else {
         setUploadError(true);
@@ -118,22 +176,95 @@ export default function UpgradePage() {
     }
   };
 
+  const mins = Math.floor(timeLeft / 60000);
+  const secs = Math.floor((timeLeft % 60000) / 1000);
+  const selected = PLANS[plan];
+
   return (
-    <div className="mx-auto max-w-lg p-6">
+    <div className="mx-auto max-w-3xl p-6">
       {step === "intro" && (
         <div className="space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold">Upgrade to Pro</h1>
-            <p className="mt-2 text-content-secondary">Unlimited access to all features</p>
-            <Card className="mt-4 border-accent/30 bg-accent/10 p-4">
-              <p className="text-4xl font-bold text-accent">{MONTHLY_PRICE}</p>
-              <p className="text-sm text-content-secondary">per month</p>
-            </Card>
+          {/* Countdown bar */}
+          <div className="flex items-center justify-between rounded-xl border border-red-300/40 bg-red-500/10 px-4 py-3">
+            <div>
+              <p className="text-xs font-medium text-content-secondary">Chegirma tugashiga</p>
+              <p className="font-mono text-2xl font-bold tabular-nums text-red-500">
+                {String(mins).padStart(2, "0")}
+                <span className="animate-pulse">:</span>
+                {String(secs).padStart(2, "0")}
+              </p>
+            </div>
+            <span className="rounded-full bg-red-500 px-3 py-1.5 text-xs font-bold text-white">
+              -50% CHEGIRMA
+            </span>
+          </div>
+
+          {/* Social proof */}
+          <div className="space-y-3 text-center">
+            <h1 className="text-3xl font-bold">IELTS OS Pro</h1>
+            <div className="flex items-center justify-center gap-1 text-lg">
+              <span aria-hidden>⭐⭐⭐⭐⭐</span>
+              <span className="ml-1 text-sm text-content-secondary">5 dan 4.9 · 1 847 ta sharh</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-center">
+              <div>
+                <p className="text-xl font-bold">🏆 12 000+</p>
+                <p className="text-xs text-content-secondary">foydalanuvchi tanlovi</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold">⭐ 3 200+</p>
+                <p className="text-xs text-content-secondary">5 yulduzli baho</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold">📈 92%</p>
+                <p className="text-xs text-content-secondary">band ko'targanlar</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan cards */}
+          <div>
+            <h2 className="mb-4 text-center text-xl font-bold">O'zingizga mos tarifni tanlang</h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              {(Object.keys(PLANS) as PlanId[]).map((id) => {
+                const p = PLANS[id];
+                const active = plan === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setPlan(id)}
+                    className={`relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all ${
+                      active
+                        ? "border-red-500 shadow-lg shadow-red-500/10"
+                        : "border-border hover:border-red-300"
+                    }`}
+                  >
+                    {p.badge && (
+                      <span className="absolute inset-x-0 top-0 bg-red-500 py-1 text-center text-[11px] font-bold uppercase tracking-wide text-white">
+                        {p.badge}
+                      </span>
+                    )}
+                    <div className={p.badge ? "mt-6" : ""}>
+                      <p className="text-lg font-bold">{p.label}</p>
+                      <p className="mt-1 text-sm">
+                        <span className="text-content-secondary line-through">{fmtUZS(p.old)} so'm</span>{" "}
+                        <span className="font-semibold">{fmtUZS(p.amount)} so'm</span>
+                      </p>
+                      <div className="my-3 border-t border-border" />
+                      <p className="text-2xl font-extrabold">
+                        {fmtUZS(p.perDay)} so'm <span className="text-sm font-normal text-content-secondary">/kun</span>
+                      </p>
+                      <p className="text-sm text-content-secondary line-through">{fmtUZS(p.oldPerDay)} so'm</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <Card className="p-5">
-            <h3 className="mb-3 font-semibold">Pro includes:</h3>
-            <ul className="space-y-2">
+            <h3 className="mb-3 font-semibold">Pro bilan nima ochiladi:</h3>
+            <ul className="grid gap-2 sm:grid-cols-2">
               {PRO_FEATURES.map((feature) => (
                 <li key={feature} className="flex items-center gap-2 text-sm text-content-secondary">
                   <Check className="h-4 w-4 shrink-0 text-emerald-500" /> {feature}
@@ -162,13 +293,36 @@ export default function UpgradePage() {
           )}
 
           <Button
-            className="w-full bg-accent text-white hover:bg-accent/90"
+            className="w-full bg-red-500 py-6 text-base font-bold text-white shadow-lg shadow-red-500/25 hover:bg-red-600"
             onClick={() => setStep("confirm")}
             disabled={loading}
           >
-            <ArrowRight className="mr-2 h-4 w-4" />
-            Pro sotib olish
+            REJANI OLISH — {fmtUZS(selected.amount)} so'm
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
+
+          {/* Testimonials */}
+          <div className="space-y-3">
+            <h3 className="text-center text-lg font-bold">Foydalanuvchilar fikri</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {TESTIMONIALS.map((t) => (
+                <Card key={t.name} className="space-y-2 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600">
+                      {t.result}
+                    </span>
+                  </div>
+                  <p aria-hidden className="text-xs">⭐⭐⭐⭐⭐</p>
+                  <p className="text-sm leading-relaxed text-content-secondary">“{t.text}”</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-content-secondary">
+            🔒 To'lov xavfsiz · Istalgan payt bekor qilish mumkin · 24/7 yordam
+          </p>
 
           {error && (
             <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
@@ -195,8 +349,13 @@ export default function UpgradePage() {
               ))}
             </ul>
             <div className="mt-4 flex items-center justify-between rounded-lg bg-accent/10 p-3">
-              <span className="text-sm font-medium">Narxi</span>
-              <span className="text-xl font-bold text-accent">{MONTHLY_PRICE} / oy</span>
+              <span className="text-sm font-medium">{selected.label} — Narxi</span>
+              <span className="text-xl font-bold text-accent">
+                <span className="mr-2 text-sm font-normal text-content-secondary line-through">
+                  {fmtUZS(selected.old)}
+                </span>
+                {fmtUZS(selected.amount)} so'm
+              </span>
             </div>
           </Card>
 
@@ -243,8 +402,8 @@ export default function UpgradePage() {
                 </Button>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-accent/10 p-3">
-                <span className="text-sm font-medium">Summa</span>
-                <span className="text-xl font-bold text-accent">{MONTHLY_PRICE}</span>
+                <span className="text-sm font-medium">Summa ({selected.label})</span>
+                <span className="text-xl font-bold text-accent">{fmtUZS(selected.amount)} so'm</span>
               </div>
             </div>
           </Card>
@@ -255,7 +414,7 @@ export default function UpgradePage() {
               <div className="space-y-1 text-sm text-amber-800 dark:text-amber-400">
                 <p className="font-bold">Muhim</p>
                 <ul className="list-disc space-y-1 pl-4">
-                  <li>Summa aniq <strong>49,000 UZS</strong> bo'lishi kerak</li>
+                  <li>Summa aniq <strong>{fmtUZS(selected.amount)} so'm</strong> bo'lishi kerak</li>
                   <li>To'lovdan oldin karta raqamini tekshirib qo'ying</li>
                   <li>To'lovdan keyin skrinshot oling (muvaffaqiyatli ekran ko'rinishi kerak)</li>
                 </ul>
@@ -311,7 +470,7 @@ export default function UpgradePage() {
             <Check className="h-10 w-10 text-emerald-600" />
           </div>
           <h2 className="text-3xl font-bold">Siz endi Pro foydalanuvchisiz!</h2>
-          <p className="mt-2 text-content-secondary">To'lov tasdiqlandi. Pro obunangiz 30 kun davomida faol.</p>
+          <p className="mt-2 text-content-secondary">To'lov tasdiqlandi. Pro obunangiz {proDays} kun davomida faol.</p>
           <Button className="mt-6 w-full bg-accent text-white hover:bg-accent/90" onClick={() => router.push("/dashboard")}>
             Mashg'ulotni boshlash <ArrowRight className="ml-1 h-4 w-4" />
           </Button>

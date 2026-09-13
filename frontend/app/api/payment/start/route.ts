@@ -16,14 +16,24 @@ export async function POST(req: NextRequest) {
     }
 
     const code = generateCode();
-    const MONTHLY_PRICE = parseInt(process.env.MONTHLY_PRICE_UZS || "49000", 10);
+
+    // Plan → price map. Duration is derived from the amount at verification
+    // time (payment/upload), so no schema change is needed.
+    const PLAN_PRICES: Record<string, number> = {
+      "1m": parseInt(process.env.MONTHLY_PRICE_UZS || "49000", 10),
+      "3m": 99000,
+      "12m": 499000,
+    };
+    const body = await req.json().catch(() => ({} as any));
+    const plan = typeof body?.plan === "string" && PLAN_PRICES[body.plan] ? body.plan : "1m";
+    const amount = PLAN_PRICES[plan];
 
     const { data: payment, error } = await supabase
       .from("payments")
       .insert({
         user_id: user.id,
         payment_code: code,
-        amount: MONTHLY_PRICE,
+        amount,
         payment_method: "payme",
         status: "pending",
       })

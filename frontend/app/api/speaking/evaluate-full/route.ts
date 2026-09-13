@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, updateSpeakingProgress } from "@/lib/supabaseServer";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -217,6 +217,10 @@ Return ONLY valid JSON:
             weaknesses: feedback.weaknesses,
             transcriptions,
           },
+        });
+        await updateSpeakingProgress(supabase, user.id, {
+          bandScore: feedback.overall_band,
+          grammarErrors: feedback.grammar_errors,
         });
       } catch (saveErr) {
         console.error("Failed to save speaking result:", saveErr);

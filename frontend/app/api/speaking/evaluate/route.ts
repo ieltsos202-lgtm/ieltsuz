@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, updateSpeakingProgress } from "@/lib/supabaseServer";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -168,6 +168,10 @@ Return ONLY valid JSON:
             pronunciation_tips: feedback.pronunciation_tips,
             feedback: feedback.feedback,
           });
+          await updateSpeakingProgress(supabase, user.id, {
+            bandScore: feedback.band_score,
+            grammarErrors: feedback.grammar_errors,
+          });
         }
 
         // Update job as completed (only if we created one)
@@ -250,6 +254,10 @@ Return ONLY valid JSON:
           vocabulary_suggestions: feedback.vocabulary_suggestions,
           pronunciation_tips: feedback.pronunciation_tips,
           feedback: feedback.feedback,
+        });
+        await updateSpeakingProgress(supabase, user.id, {
+          bandScore: feedback.band_score,
+          grammarErrors: feedback.grammar_errors,
         });
       }
       return NextResponse.json({

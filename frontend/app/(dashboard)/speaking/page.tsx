@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useTrialGuard } from "@/hooks/useTrialGuard";
-import { Mic, ArrowRight } from "lucide-react";
+import { Mic, ArrowRight, GraduationCap, MessagesSquare } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SpeakingProgressPanel } from "@/components/speaking/SpeakingProgressPanel";
 
 const PARTS = [
   {
@@ -27,37 +28,68 @@ const PARTS = [
 
 export default function SpeakingPage() {
   useTrialGuard("speaking");
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Speaking Practice</h1>
-        <p className="mt-1 text-content-secondary">
-          Record your answers and get AI feedback on fluency, vocabulary,
-          grammar, and pronunciation.
-        </p>
-      </div>
-
-      {/* Full Test — primary action */}
-      <Card className="flex flex-col items-center gap-4 border-accent/20 bg-accent/5 p-6 text-center sm:flex-row sm:text-left">
-        <div className="flex-1 space-y-2">
-          <p className="text-lg font-semibold text-content-primary">Full Speaking Test</p>
-          <p className="text-sm text-content-secondary">
-            Complete all 3 parts in one session (Part 1 → Part 2 → Part 3).
-            Answers are recorded and evaluated together at the end for an overall band score.
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Speaking Practice</h1>
+          <p className="mt-1 text-content-secondary">
+            Haqiqiy AI examiner bilan jonli IELTS Speaking imtihoni — ielts.gg dan ham ilg&apos;or.
           </p>
         </div>
-        <Link href="/speaking/full-test">
+      </div>
+
+      <SpeakingProgressPanel />
+
+      {/* AI Speaking Examiner — primary (ielts.gg style) */}
+      <Card className="flex flex-col items-center gap-4 border-accent/30 bg-gradient-to-r from-accent/10 to-accent-purple/10 p-6 text-center sm:flex-row sm:text-left">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-purple text-2xl">
+          🎓
+        </div>
+        <div className="flex-1 space-y-1">
+          <p className="text-lg font-semibold text-content-primary">
+            AI Speaking Examiner — Full Mock Test
+          </p>
+          <p className="text-sm text-content-secondary">
+            Adam haqiqiy IELTS test o&apos;tkazadi: Part 1 → Part 2 cue card → Part 3.
+            Tabiiy odam ovozi, tez javob, oxirida to&apos;liq band hisobot.
+          </p>
+        </div>
+        <Link href="/speaking/partner?mode=exam">
           <Button variant="gradient" size="lg">
-            <Mic className="mr-2 h-4 w-4" />
-            Start Full Test
+            <GraduationCap className="mr-2 h-4 w-4" />
+            Start Mock Test
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
       </Card>
 
-      {/* Individual parts — secondary */}
+      {/* Friendly chat — secondary */}
+      <Card className="flex flex-col items-center gap-4 border-accent-purple/30 bg-gradient-to-r from-accent-purple/10 to-accent/5 p-6 text-center sm:flex-row sm:text-left">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-purple to-accent text-2xl">
+          🗣️
+        </div>
+        <div className="flex-1 space-y-1">
+          <p className="text-lg font-semibold text-content-primary">Friendly Chat with Adam</p>
+          <p className="text-sm text-content-secondary">
+            Do&apos;stingizdek gaplashadi, sizni eslab qoladi, har xatoni o&apos;zbekcha tushuntiradi —
+            dangasa bo&apos;lsangiz koyadi ham.
+          </p>
+        </div>
+        <Link href="/speaking/partner?mode=chat">
+          <Button variant="outline" size="lg">
+            <MessagesSquare className="mr-2 h-4 w-4" />
+            Start Chat
+          </Button>
+        </Link>
+      </Card>
+
+      {/* Individual parts — tertiary */}
       <div>
-        <p className="mb-3 text-sm font-medium text-content-secondary">Practice individual parts</p>
+        <p className="mb-3 text-sm font-medium text-content-secondary">
+          Drill individual parts (record &amp; evaluate)
+        </p>
         <div className="grid gap-4 md:grid-cols-3">
           {PARTS.map((p) => (
             <Card key={p.id} className="flex flex-col gap-4">
@@ -67,6 +99,7 @@ export default function SpeakingPage() {
               </div>
               <Link href={`/speaking/${p.id}`} className="mt-auto">
                 <Button variant="outline" size="sm" className="w-full">
+                  <Mic className="mr-2 h-3.5 w-3.5" />
                   Practice {p.title}
                 </Button>
               </Link>

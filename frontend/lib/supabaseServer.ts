@@ -112,6 +112,59 @@ export async function checkAndDecrementTrial(
 }
 
 /**
+ * Updates the aggregated `speaking_progress` row for a user after a speaking
+ * session is evaluated (called from /api/speaking/evaluate and
+ * /api/speaking/evaluate-full). Appends a band_trend point, merges recurring
+ * grammar errors (deduped, counted), and bumps total_sessions.
+ * Best-effort: never throws, since it must not break the evaluation response.
+ */
+export async function updateSpeakingProgress(
+  supabase: SupabaseClient,
+  userId: string,
+  session: {
+    bandScore: number;
+    grammarErrors?: { error: string; correction: string }[];
+  }
+): Promise<void> {
+  try {
+    const { data: existing } = await (supabase as any)
+      .from("speaking_progress")
+      .select("total_sessions, recurring_errors, band_trend")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const bandTrend: { date: string; band_estimate: number }[] = existing?.band_trend ?? [];
+    bandTrend.push({ date: new Date().toISOString(), band_estimate: session.bandScore });
+    const trimmedTrend = bandTrend.slice(-30);
+
+    const recurring: { error: string; correction: string; count: number }[] =
+      existing?.recurring_errors ?? [];
+    for (const ge of session.grammarErrors ?? []) {
+      const key = (ge.error || "").trim().toLowerCase();
+      if (!key) continue;
+      const match = recurring.find((r) => r.error.trim().toLowerCase() === key);
+      if (match) {
+        match.count += 1;
+      } else {
+        recurring.push({ error: ge.error, correction: ge.correction, count: 1 });
+      }
+    }
+    recurring.sort((a, b) => b.count - a.count);
+    const trimmedRecurring = recurring.slice(0, 20);
+
+    await (supabase as any).from("speaking_progress").upsert({
+      user_id: userId,
+      total_sessions: (existing?.total_sessions ?? 0) + 1,
+      recurring_errors: trimmedRecurring,
+      band_trend: trimmedTrend,
+      last_session_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("updateSpeakingProgress failed:", err);
+  }
+}
+
+/**
  * Refunds a previously-decremented trial credit. Used when a background AI
  * evaluation (writing/speaking) fails AFTER the trial was already charged,
  * so the user doesn't lose an attempt to a transient server/AI error.

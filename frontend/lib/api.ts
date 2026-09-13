@@ -40,6 +40,37 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+/**
+ * Like apiPost, but for endpoints that return raw binary (e.g. TTS audio)
+ * instead of JSON. Returns a Blob the caller can play directly via
+ * URL.createObjectURL — no JSON parsing or base64 decoding needed.
+ */
+export async function apiPostBinary(path: string, body: unknown): Promise<Blob> {
+  const headers = await authHeader();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await readError(res, `POST ${path}`));
+  return res.blob();
+}
+
+/**
+ * Like apiPostBinary but returns the raw Response so the caller can consume
+ * `res.body` as a stream (e.g. progressive audio playback via MediaSource).
+ */
+export async function apiPostStream(path: string, body: unknown): Promise<Response> {
+  const headers = await authHeader();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(await readError(res, `POST ${path}`));
+  return res;
+}
+
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   const headers = await authHeader();
   const res = await fetch(`${API_URL}${path}`, {

@@ -33,7 +33,6 @@ const nav = [
   { label: "Games", href: "/game", icon: Gamepad2 },
   { label: "Vocabulary", href: "/vocabulary", icon: Library },
   { label: "Progress", href: "/progress", icon: TrendingUp },
-  { label: "Upgrade", href: "/upgrade", icon: Crown },
 ];
 
 interface SidebarProps {
@@ -50,14 +49,14 @@ export function Sidebar({ open = true }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-bg-secondary p-4 transition-transform duration-300 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col overflow-hidden border-r border-border bg-bg-secondary p-4 transition-transform duration-300 ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
     >
-      <Link href="/dashboard" className="mb-8 px-3 py-2 text-xl font-extrabold gradient-text">
+      <Link href="/dashboard" className="shrink-0 px-3 py-2 text-xl font-extrabold gradient-text">
         IELTSUZ
       </Link>
-      <nav className="flex flex-1 flex-col gap-1">
+      <nav className="flex flex-1 flex-col gap-1 overflow-y-auto min-h-0 py-6">
         {items.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -78,15 +77,24 @@ export function Sidebar({ open = true }: SidebarProps) {
           );
         })}
       </nav>
-      <a
-        href="https://t.me/ieltsosuzb"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-4 flex items-center gap-2 rounded-[var(--radius)] border border-border px-3 py-2 text-xs font-medium text-content-secondary transition-colors hover:bg-bg-tertiary hover:text-accent"
-      >
-        <ExternalLink className="h-4 w-4" />
-        Join our Telegram
-      </a>
+      <div className="shrink-0 space-y-2 border-t border-border pt-4">
+        <Link
+          href="/upgrade"
+          className="flex items-center gap-2 rounded-[var(--radius)] bg-gradient-to-r from-accent/20 to-accent-purple/20 px-3 py-2.5 text-sm font-semibold text-content-primary transition-colors hover:from-accent/30 hover:to-accent-purple/30"
+        >
+          <Crown className="h-5 w-5 text-accent-yellow" />
+          Upgrade
+        </Link>
+        <a
+          href="https://t.me/ieltsosuzb"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 rounded-[var(--radius)] border border-border px-3 py-2 text-xs font-medium text-content-secondary transition-colors hover:bg-bg-tertiary hover:text-accent"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Join our channel
+        </a>
+      </div>
     </aside>
   );
 }

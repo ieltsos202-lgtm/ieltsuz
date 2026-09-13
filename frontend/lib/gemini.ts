@@ -13,10 +13,16 @@ const JSON_CONFIG: GenerationConfig = {
   responseMimeType: "application/json",
 };
 
-export function getModel(modelName = "gemini-2.5-flash", jsonMode = false) {
+export function getModel(
+  modelName = "gemini-2.5-flash",
+  jsonMode = false,
+  overrideConfig?: Record<string, unknown>
+) {
   return genAI.getGenerativeModel({
     model: modelName,
-    ...(jsonMode ? { generationConfig: JSON_CONFIG } : {}),
+    ...(jsonMode || overrideConfig
+      ? { generationConfig: { ...(jsonMode ? JSON_CONFIG : {}), ...overrideConfig } as GenerationConfig }
+      : {}),
   });
 }
 

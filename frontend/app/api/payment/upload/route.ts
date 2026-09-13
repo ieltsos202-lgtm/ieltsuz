@@ -128,8 +128,11 @@ Respond ONLY in this JSON format:
       // Grant Pro first — if this fails we bail out with an error and leave
       // the payment "pending" so the user can safely retry the upload
       // instead of being told "success" while Pro was never granted.
+      // Subscription length depends on which plan was paid for.
+      const AMOUNT_TO_DAYS: Record<number, number> = { 49000: 30, 99000: 90, 399000: 365 };
+      const proDays = AMOUNT_TO_DAYS[payment.amount] ?? 30;
       const proExpiresAt = new Date();
-      proExpiresAt.setDate(proExpiresAt.getDate() + 30);
+      proExpiresAt.setDate(proExpiresAt.getDate() + proDays);
 
       const { error: profileError } = await supabase
         .from("profiles")
@@ -164,6 +167,7 @@ Respond ONLY in this JSON format:
       return NextResponse.json({
         success: true,
         verified: true,
+        days: proDays,
         message: "Payment verified and Pro activated!",
       });
     } else {

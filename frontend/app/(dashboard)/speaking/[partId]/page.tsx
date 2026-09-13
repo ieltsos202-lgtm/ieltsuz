@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTrialGuard } from "@/hooks/useTrialGuard";
+import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { FullscreenToggle } from "@/components/shared/FullscreenToggle";
 
@@ -30,6 +31,7 @@ type PendingJob = {
 
 export default function SpeakingPartPage() {
   useTrialGuard("speaking");
+  const { examinerName } = useSpeakingExaminer();
   const router = useRouter();
   const params = useParams<{ partId: string }>();
   const part = Number(params.partId) || 1;
@@ -93,6 +95,15 @@ export default function SpeakingPartPage() {
   useEffect(() => {
     setQuestionSpoken(false);
   }, [index]);
+
+  // Show ready banner once when all background analyses finish
+  useEffect(() => {
+    if (done && analyzing === 0 && answers.length > 0) {
+      setShowReadyBanner(true);
+      const t = setTimeout(() => setShowReadyBanner(false), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [done, analyzing, answers.length]);
 
   // Poll pending evaluation jobs in the background
   useEffect(() => {
@@ -229,15 +240,6 @@ export default function SpeakingPartPage() {
 
     const sortedAnswers = [...answers].sort((a, b) => a._i - b._i);
 
-    // Show ready banner once when transitioning from analyzing to done
-    useEffect(() => {
-      if (done && analyzing === 0 && sortedAnswers.length > 0) {
-        setShowReadyBanner(true);
-        const t = setTimeout(() => setShowReadyBanner(false), 6000);
-        return () => clearTimeout(t);
-      }
-    }, [done, analyzing, sortedAnswers.length]);
-
     // Calculate average speaking band
     const avgBand = sortedAnswers.length > 0
       ? sortedAnswers.reduce((sum, a) => sum + (a.feedback?.band_score || 0), 0) / sortedAnswers.length
@@ -373,7 +375,9 @@ export default function SpeakingPartPage() {
               <div className="h-3 w-3 animate-ping rounded-full bg-accent" />
               <div className="absolute inset-0 h-3 w-3 rounded-full bg-accent" />
             </div>
-            <p className="text-sm font-medium text-content-secondary">The examiner is asking the question...</p>
+            <p className="text-sm font-medium text-content-secondary">
+              {examinerName ? `${examinerName} is asking the question...` : "The examiner is asking the question..."}
+            </p>
           </div>
         </Card>
       )}
