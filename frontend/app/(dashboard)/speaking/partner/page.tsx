@@ -156,7 +156,9 @@ function SpeakingPartnerContent() {
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
-        autoGainControl: true,
+        // AGC must stay OFF: it ramps the gain up while the speaker is quiet,
+        // so room noise rises to speech level and silence never "arrives".
+        autoGainControl: false,
         channelCount: 1,
       },
     });
@@ -441,29 +443,36 @@ function SpeakingPartnerContent() {
       let analyser = analyserRef.current;
       if (!analyser || analyserStreamRef.current !== stream) {
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.4;
         audioCtx.createMediaStreamSource(stream).connect(analyser);
         analyserRef.current = analyser;
         analyserStreamRef.current = stream;
       }
+      // Detection reads frequency data, so the analyser's own smoothing adds
+      // decay: keep it low or the level lingers ~1s after speech stops.
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.15;
 
-      // --- Voice activity detection ---
-      // Float RMS (8-bit data quantises at 0.0078 — useless for a threshold of
-      // a few thousandths). The noise floor is calibrated for 300ms and then
-      // keeps tracking the quietest recent level, so a fan switching on can't
-      // masquerade as speech. "Voice" = level above floor*3 (clamped). The
-      // turn ends when no voice frame has been seen for silenceMs — a plain
-      // timestamp rule, so noise hovering between two hysteresis thresholds
-      // can never keep the recorder alive forever.
-      const sensitivity = 1 + Math.min(3, silenceStrikesRef.current) * 0.35;
-      const data = new Float32Array(analyser.fftSize);
+      // --- Voice activity detection (relative, speech-band) ---
+      // Absolute RMS thresholds are unusable in the real world: a loud room, a
+      // different mic gain or a fan can sit permanently above any fixed value,
+      // and then silence never "arrives". Instead we measure the energy in the
+      // speech band (300-3400Hz, which skips low-frequency rumble) in dB and
+      // compare it to a rolling noise floor. Voice = at least VOICE_MARGIN_DB
+      // above that floor. The floor drops instantly and rises slowly, so any
+      // steady noise becomes the new floor within a second or two and the turn
+      // still ends. Ending is a plain timestamp rule: no voice frame for
+      // silenceMs => stop.
+      const VOICE_MARGIN_DB = 9 - Math.min(3, silenceStrikesRef.current) * 1.2;
+      const spectrum = new Float32Array(analyser.frequencyBinCount);
+      const binHz = audioCtx.sampleRate / analyser.fftSize;
+      const loBin = Math.max(1, Math.floor(300 / binHz));
+      const hiBin = Math.min(analyser.frequencyBinCount - 1, Math.ceil(3400 / binHz));
       let frame = 0;
-      let noiseFloor = 0;
-      let calSamples = 0;
-      let smooth = 0;
-      let peak = 0;
-      let rawMax = 0;
+      let floorDb = 0;
+      let calibrated = false;
+      let smoothDb = -100;
+      let bestDb = -Infinity;
+      let bestMargin = 0;
       let voiceMs = 0;
       let lastVoiceAt = 0;
       let lastFrameAt = Date.now();
@@ -476,43 +485,62 @@ function SpeakingPartnerContent() {
       const monitor = () => {
         const a = analyserRef.current;
         if (!a || !aliveRef.current) return;
-        a.getFloatTimeDomainData(data);
+        a.getFloatFrequencyData(spectrum);
         let sum = 0;
-        for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
-        const rms = Math.sqrt(sum / data.length);
-        smooth = smooth * 0.6 + rms * 0.4;
-        rawMax = Math.max(rawMax, rms);
+        let n = 0;
+        for (let i = loBin; i <= hiBin; i++) {
+          const v = spectrum[i];
+          if (Number.isFinite(v)) {
+            sum += v;
+            n++;
+          }
+        }
+        // Pure digital silence reports -Infinity in every bin.
+        const bandDb = n > 0 ? sum / n : -140;
+        smoothDb = smoothDb * 0.5 + bandDb * 0.5;
+        bestDb = Math.max(bestDb, smoothDb);
         frame++;
 
         const now = Date.now();
         const dt = now - lastFrameAt;
         lastFrameAt = now;
         const listenedMs = now - listenStartRef.current;
-        if (now < calibrateUntil) {
-          noiseFloor = (noiseFloor * calSamples + rms) / (calSamples + 1);
-          calSamples++;
-          rafRef.current = requestAnimationFrame(monitor);
-          return;
+
+        if (!calibrated) {
+          floorDb = frame === 1 ? smoothDb : Math.min(floorDb, smoothDb);
+          if (now < calibrateUntil) {
+            rafRef.current = requestAnimationFrame(monitor);
+            return;
+          }
+          calibrated = true;
         }
-        noiseFloor = Math.min(0.02, Math.max(0.0005, noiseFloor));
-        // Slowly follow quiet frames (down fast, up very slowly).
-        if (rms < noiseFloor) noiseFloor = noiseFloor * 0.9 + rms * 0.1;
-        else if (rms < noiseFloor * 2) noiseFloor = noiseFloor * 0.995 + rms * 0.005;
-        peak = Math.max(peak, smooth);
 
-        const voiceThreshold = Math.min(0.05, Math.max(0.008, noiseFloor * 3)) / sensitivity;
-        if (frame % 2 === 0) setMicLevel(Math.max(0, smooth - voiceThreshold * 0.5) * 1.2);
+        // Asymmetric tracking: follow quiet frames immediately, creep upward
+        // very slowly (~1.5 dB/s) so sustained noise is re-learned as silence
+        // while real speech always stays well above.
+        if (smoothDb < floorDb) floorDb = floorDb + (smoothDb - floorDb) * 0.4;
+        else floorDb += Math.min(0.05, (dt / 1000) * 1.5);
 
-        // A mic that delivers pure digital silence for 4s is muted / wrong device.
-        if (listenedMs > 4000 && rawMax < 0.0005 && micHealthyRef.current) {
+        const margin = smoothDb - floorDb;
+        bestMargin = Math.max(bestMargin, margin);
+        if (frame % 2 === 0) setMicLevel(Math.max(0, Math.min(1, margin / 26)));
+        if (process.env.NODE_ENV !== "production" && frame % 30 === 0) {
+          console.debug(
+            `[vad] band=${smoothDb.toFixed(1)}dB floor=${floorDb.toFixed(1)}dB margin=${margin.toFixed(1)}dB ` +
+              `voice=${margin >= VOICE_MARGIN_DB} silent=${hasSpokenRef.current ? now - lastVoiceAt : 0}ms`
+          );
+        }
+
+        // A mic that never produces any signal at all is muted / wrong device.
+        if (listenedMs > 4000 && bestDb < -120 && micHealthyRef.current) {
           micHealthyRef.current = false;
           setMicHint("Mikrofon ovoz olmayapti. Brauzer manzil satridagi mikrofon belgisini va tizimdagi kirish qurilmasini tekshiring.");
-        } else if (rawMax >= 0.0005 && !micHealthyRef.current) {
+        } else if (bestDb >= -120 && !micHealthyRef.current) {
           micHealthyRef.current = true;
           setMicHint(null);
         }
 
-        if (smooth > voiceThreshold) {
+        if (margin >= VOICE_MARGIN_DB) {
           lastVoiceAt = now;
           voiceMs += dt;
           if (!hasSpokenRef.current && voiceMs >= 200) hasSpokenRef.current = true;
@@ -524,10 +552,10 @@ function SpeakingPartnerContent() {
             return;
           }
         } else if (listenedMs > NO_SPEECH_MS) {
-          // No clear speech. If there was *some* energy above the room floor,
+          // No clear speech. If something clearly rose above the room floor,
           // still send it — let the model decide rather than telling a quiet
           // speaker "I can't hear you".
-          discardRef.current = !(peak > noiseFloor * 2 && peak > 0.004);
+          discardRef.current = bestMargin < VOICE_MARGIN_DB * 0.6;
           stopOnce();
           return;
         }
