@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
-import {
-  appendSpeakingMemory,
-  describeMemory,
-  loadSpeakingMemory,
-  type SpeakingMemory,
-} from "@/lib/speakingMemory";
+import { describeMemory, loadSpeakingMemory, type SpeakingMemory } from "@/lib/speakingMemory";
 
 const PARTNER_MODEL = process.env.PARTNER_MODEL || "gemini-2.5-flash";
 
@@ -88,15 +83,12 @@ Now LISTEN to the attached audio — the candidate's latest spoken response.
 - Transcribe exactly what they said (word for word, keep hesitations).
 - If silent/unintelligible, set "user_transcript" to "" and politely ask them to repeat.
 
-Respond with ONLY this compact JSON, no extra text:
+Respond with ONLY this compact JSON, no extra text (speed matters — the candidate is waiting):
 {
   "user_transcript": "exact transcription",
   "reply": "your next spoken line as the examiner — plain English, ready for TTS, occasional short Uzbek phrases allowed, no markdown, no emoji",
-  "emotion": "neutral | happy | laughing | excited | thinking | surprised | sad | annoyed | encouraging",
-  "cue_card": { "topic": "Describe ...", "bullets": ["...", "...", "...", "..."] } or null (ONLY when the stage instruction says to present a cue card),
-  "correction": { "you_said": "...", "better": "...", "note": "short note in English or O'zbekcha" } or null,
-  "vocab_tip": { "instead_of": "...", "try": "...", "example": "..." } or null,
-  "remember": { "facts": ["new personal fact about the candidate"], "weak_points": ["a mistake pattern you noticed"], "topics": ["topic discussed"] }
+  "emotion": "neutral | happy | laughing | excited | thinking | surprised | sad | annoyed | encouraging"${ctx.instruction.includes("cue_card") ? `,
+  "cue_card": { "topic": "Describe ...", "bullets": ["...", "...", "...", "..."] }` : ""}
 }`;
 }
 
@@ -132,8 +124,7 @@ CORRECTION RULES — ANALYSE EVERY SENTENCE THEY SAY:
 - Listen for grammar, word choice AND pronunciation mistakes in the audio (e.g. "th" said as "t/s", wrong word stress, "v"/"w" confusion, dropped endings). If there's a mistake, correct it IN YOUR SPOKEN REPLY immediately: (English) stop them → (Uzbek) what they said, the correct form, one-line reason → (English) "Repeat after me: ..." and continue.
 - For pronunciation, spell out how to say it in Uzbek terms: "'Think' so'zida 'th' — tilni tishlar orasiga qo'yib ayt, 'sink' emas, 'think'."
 - Make them REPEAT the corrected sentence when the mistake is important.
-- Also fill the "correction" JSON field (the biggest mistake of this turn) or null if clean.
-- If they said something clean and good — say so briefly in English ("Good — that was a clean sentence."), then push harder with a tougher question or a cooler word ("vocab_tip").
+- If they said something clean and good — say so briefly in English ("Good — that was a clean sentence."), then push harder with a tougher question or a cooler word.
 
 OFF-TOPIC / TIME-WASTING:
 - If they ask something unrelated to English or IELTS (maths homework, politics gossip, unrelated tasks, joking around instead of speaking) — shut it down in Uzbek, hard and funny: "Nimaga boshqa mavzuga o'tding? Darsingni qil — imtihoning yaqin." Then in English: "Now answer my question." and repeat the question.
@@ -156,18 +147,18 @@ ${listeningBlock(lastQuestion, userName || "the learner")}
 LISTEN to the attached audio — ${userName || "the learner"}'s latest turn.
 - If completely silent: user_transcript="", scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".
 
-Reply INSTANTLY — ONLY this JSON:
+Reply INSTANTLY — ONLY this JSON (they are waiting for your voice):
 {
   "user_transcript": "exact words",
   "reply": "your spoken reply: English conversation; Uzbek ONLY as separate full sentences for correcting or scolding. Plain text for TTS, no emoji, no markdown",
-  "emotion": "happy | laughing | excited | neutral | thinking | surprised | sad | annoyed | encouraging",
-  "correction": { "you_said": "...", "better": "...", "note": "O'zbekcha qisqa izoh" } or null,
-  "vocab_tip": { "instead_of": "...", "try": "...", "example": "..." } or null,
-  "remember": { "facts": ["new personal fact you learned (short)"], "weak_points": ["mistake pattern, e.g. 'drops articles'"], "topics": ["topic of this turn"] }
+  "emotion": "happy | laughing | excited | neutral | thinking | surprised | sad | annoyed | encouraging"
 }`;
 }
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
+  const marks: string[] = [];
+  const mark = (name: string, since: number) => marks.push(`${name};dur=${Date.now() - since}`);
   try {
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File | null;
@@ -189,7 +180,9 @@ export async function POST(req: NextRequest) {
       history = [];
     }
 
+    const tAuth = Date.now();
     const { supabase, user } = await getAuth(req);
+    mark("auth", tAuth);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -210,14 +203,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No audio provided" }, { status: 400 });
     }
 
+    const tMem = Date.now();
     const [audioBytes, memory] = await Promise.all([
       audioFile.arrayBuffer(),
       loadSpeakingMemory(supabase, user.id),
     ]);
+    mark("memory", tMem);
     const audioBase64 = Buffer.from(audioBytes).toString("base64");
 
+    // Only the spoken reply is on the critical path. Corrections, vocab tips
+    // and memory extraction run in /partner/analyze while the voice plays.
     const model = getModel(PARTNER_MODEL, true, {
-      maxOutputTokens: mode === "exam" ? 500 : 400,
+      maxOutputTokens: mode === "exam" ? 320 : 220,
       temperature: mode === "exam" ? 0.7 : 0.85,
       thinkingConfig: { thinkingBudget: 0 },
     });
@@ -233,6 +230,7 @@ export async function POST(req: NextRequest) {
         : buildPrompt(partnerName, userName, history, memory, lastQuestion);
 
     let result;
+    const tModel = Date.now();
     try {
       result = await model.generateContent([
         { text: prompt },
@@ -255,23 +253,9 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
+    mark("gemini", tModel);
 
     const parsed = parseJSONFromText(result.response.text());
-
-    const strList = (v: unknown) =>
-      Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()).map((x) => String(x).slice(0, 120)).slice(0, 3) : [];
-    const rem = parsed.remember || {};
-    const delta = {
-      facts: strList(rem.facts),
-      weak_points: strList(rem.weak_points),
-      topics: strList(rem.topics),
-    };
-    if (parsed.correction?.you_said && parsed.correction?.better) {
-      delta.weak_points.push(`${parsed.correction.you_said} -> ${parsed.correction.better}`.slice(0, 120));
-    }
-    if (delta.facts.length || delta.weak_points.length || delta.topics.length) {
-      void appendSpeakingMemory(supabase, user.id, memory, delta);
-    }
 
     const VALID_EMOTIONS = [
       "happy",
@@ -285,19 +269,21 @@ export async function POST(req: NextRequest) {
       "encouraging",
     ];
 
-    return NextResponse.json({
-      user_transcript: typeof parsed.user_transcript === "string" ? parsed.user_transcript : "",
-      reply: typeof parsed.reply === "string" && parsed.reply.trim()
-        ? parsed.reply.trim()
-        : "Sorry, I didn't catch that — could you say it again?",
-      emotion: VALID_EMOTIONS.includes(parsed.emotion) ? parsed.emotion : "neutral",
-      cue_card:
-        parsed.cue_card && parsed.cue_card.topic && Array.isArray(parsed.cue_card.bullets)
-          ? { topic: String(parsed.cue_card.topic), bullets: parsed.cue_card.bullets.slice(0, 4).map(String) }
-          : null,
-      correction: parsed.correction && parsed.correction.you_said ? parsed.correction : null,
-      vocab_tip: parsed.vocab_tip && parsed.vocab_tip.try ? parsed.vocab_tip : null,
-    });
+    mark("total", t0);
+    return NextResponse.json(
+      {
+        user_transcript: typeof parsed.user_transcript === "string" ? parsed.user_transcript : "",
+        reply: typeof parsed.reply === "string" && parsed.reply.trim()
+          ? parsed.reply.trim()
+          : "Sorry, I didn't catch that — could you say it again?",
+        emotion: VALID_EMOTIONS.includes(parsed.emotion) ? parsed.emotion : "neutral",
+        cue_card:
+          parsed.cue_card && parsed.cue_card.topic && Array.isArray(parsed.cue_card.bullets)
+            ? { topic: String(parsed.cue_card.topic), bullets: parsed.cue_card.bullets.slice(0, 4).map(String) }
+            : null,
+      },
+      { headers: { "Server-Timing": marks.join(", ") } }
+    );
   } catch (error: any) {
     console.error("Speaking partner error:", error);
     return NextResponse.json(

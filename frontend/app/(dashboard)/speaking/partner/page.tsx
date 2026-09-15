@@ -539,7 +539,7 @@ function SpeakingPartnerContent() {
         typeof MediaRecorder.isTypeSupported === "function" ? MediaRecorder.isTypeSupported(m) : false
       );
       const recorder = mime
-        ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 96000 })
+        ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32000 })
         : new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
@@ -724,15 +724,17 @@ function SpeakingPartnerContent() {
       }
       form.append("history", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
 
+      const tSend = performance.now();
       const res = await apiPostForm<{
         user_transcript: string;
         reply: string;
         emotion: StudioEmotion;
         cue_card: StudioCueCard | null;
-        correction: StudioTurn["correction"];
-        vocab_tip: StudioTurn["vocab_tip"];
       }>("/api/speaking/partner", form);
       if (!aliveRef.current) return;
+      if (process.env.NODE_ENV !== "production") {
+        console.debug(`[studio] partner reply in ${Math.round(performance.now() - tSend)}ms`);
+      }
 
       firstTurnRef.current = false;
 
@@ -757,16 +759,36 @@ function SpeakingPartnerContent() {
         }
       }
 
-      // Show text immediately — user reads while TTS loads (feels much faster)
+      // Voice first — the TTS request goes out before any other work.
+      void playPartner(res.reply, res.emotion, modeRef.current);
+
+      const userTurnIndex = turnsRef.current.length;
       setTurns((prev) => [
         ...prev,
-        ...(res.user_transcript
-          ? [{ role: "user" as const, text: res.user_transcript, correction: res.correction, vocab_tip: res.vocab_tip }]
-          : []),
+        ...(res.user_transcript ? [{ role: "user" as const, text: res.user_transcript }] : []),
         { role: "partner" as const, text: res.reply, emotion: res.emotion },
       ]);
       setEmotion(res.emotion);
-      void playPartner(res.reply, res.emotion, modeRef.current);
+
+      // Correction / vocab tip / memory run on a small text model while the
+      // examiner is already talking; the bubble fills in when it arrives.
+      if (res.user_transcript) {
+        void apiPost<{ correction: StudioTurn["correction"]; vocab_tip: StudioTurn["vocab_tip"] }>(
+          "/api/speaking/partner/analyze",
+          { transcript: res.user_transcript, question: lastQuestion, mode: modeRef.current }
+        )
+          .then((a) => {
+            if (!aliveRef.current || (!a?.correction && !a?.vocab_tip)) return;
+            setTurns((prev) =>
+              prev.map((t, i) =>
+                i === userTurnIndex && t.role === "user"
+                  ? { ...t, correction: a.correction ?? null, vocab_tip: a.vocab_tip ?? null }
+                  : t
+              )
+            );
+          })
+          .catch(() => {});
+      }
     } catch (e: unknown) {
       if (!aliveRef.current) return;
       const msg = (e as Error)?.message || "";

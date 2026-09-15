@@ -25,8 +25,34 @@ export function getAuthedClient(req: Request): { supabase: SupabaseClient; token
 export async function getAuth(req: Request): Promise<{ supabase: SupabaseClient; user: any | null }> {
   const { supabase, token } = getAuthedClient(req);
   if (!token) return { supabase, user: null };
+  const cached = authCache.get(token);
+  if (cached && cached.until > Date.now()) return { supabase, user: cached.user };
   const { data: { user } } = await supabase.auth.getUser(token);
+  if (user) {
+    authCache.set(token, { user, until: Math.min(Date.now() + AUTH_CACHE_MS, jwtExpiryMs(token)) });
+    if (authCache.size > 500) {
+      const oldest = authCache.keys().next().value;
+      if (oldest) authCache.delete(oldest);
+    }
+  }
   return { supabase, user };
+}
+
+// Verified-token cache. Voice routes (/partner, /partner/tts) are hit several
+// times per minute by the same user; re-verifying the same JWT against
+// Supabase Auth on every call costs ~200-400ms per request. A token that was
+// valid a moment ago stays trusted for a short window (never past its exp).
+const AUTH_CACHE_MS = 5 * 60 * 1000;
+const authCache = new Map<string, { user: any; until: number }>();
+
+function jwtExpiryMs(token: string): number {
+  try {
+    const payload = token.split(".")[1];
+    const json = JSON.parse(Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+    return typeof json.exp === "number" ? json.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
 }
 
 /**
