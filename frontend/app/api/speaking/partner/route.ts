@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { generateWithFallback, parseJSONFromText, QuotaError } from "@/lib/gemini";
+import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 import { describeMemory, loadSpeakingMemory, type SpeakingMemory } from "@/lib/speakingMemory";
-
-const PARTNER_MODEL = process.env.PARTNER_MODEL || "gemini-2.5-flash";
 
 export type PartnerEmotion =
   | "happy"
@@ -189,8 +187,10 @@ export async function POST(req: NextRequest) {
 
     // One speaking trial credit is charged when a conversation session starts.
     // Subsequent turns in the same session are free.
+    let charged: Awaited<ReturnType<typeof checkAndDecrementTrial>> | null = null;
     if (firstTurn) {
       const trial = await checkAndDecrementTrial(req, "speaking");
+      charged = trial;
       if (!trial.ok) {
         return NextResponse.json(
           { error: "Trial limit reached. Please upgrade to Pro." },
@@ -211,13 +211,6 @@ export async function POST(req: NextRequest) {
     mark("memory", tMem);
     const audioBase64 = Buffer.from(audioBytes).toString("base64");
 
-    // Only the spoken reply is on the critical path. Corrections, vocab tips
-    // and memory extraction run in /partner/analyze while the voice plays.
-    const model = getModel(PARTNER_MODEL, true, {
-      maxOutputTokens: mode === "exam" ? 320 : 220,
-      temperature: mode === "exam" ? 0.7 : 0.85,
-      thinkingConfig: { thinkingBudget: 0 },
-    });
     const prompt =
       mode === "exam"
         ? buildExamPrompt(partnerName, userName, history, {
@@ -229,33 +222,45 @@ export async function POST(req: NextRequest) {
           }, memory)
         : buildPrompt(partnerName, userName, history, memory, lastQuestion);
 
-    let result;
+    // Only the spoken reply is on the critical path. Corrections, vocab tips
+    // and memory extraction run in /partner/analyze while the voice plays.
+    let text: string;
     const tModel = Date.now();
     try {
-      result = await model.generateContent([
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: (audioFile.type || "audio/webm").split(";")[0],
-            data: audioBase64,
+      text = await generateWithFallback(
+        [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: (audioFile.type || "audio/webm").split(";")[0],
+              data: audioBase64,
+            },
           },
-        },
-      ]);
+        ],
+        {
+          config: {
+            maxOutputTokens: mode === "exam" ? 320 : 220,
+            temperature: mode === "exam" ? 0.7 : 0.85,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }
+      );
     } catch (e: any) {
-      const msg = e?.message || "";
-      const isQuota = msg.includes("quota") || msg.includes("429") || msg.includes("billing");
+      // The turn produced nothing, so the session credit must not be spent.
+      if (charged?.ok) await refundTrial(supabase, charged);
       return NextResponse.json(
         {
-          error: isQuota
-            ? "AI xizmati hozircha band (limit). Bir ozdan keyin qayta urinib ko'ring."
-            : "AI javob bera olmadi. Qayta urinib ko'ring.",
+          error:
+            e instanceof QuotaError
+              ? "AI xizmati hozircha juda band. 20-30 soniyadan keyin 'Davom etish'ni bosing."
+              : "AI javob bera olmadi. Qayta urinib ko'ring.",
         },
         { status: 503 }
       );
     }
     mark("gemini", tModel);
 
-    const parsed = parseJSONFromText(result.response.text());
+    const parsed = parseJSONFromText(text);
 
     const VALID_EMOTIONS = [
       "happy",

@@ -725,12 +725,24 @@ function SpeakingPartnerContent() {
       form.append("history", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
 
       const tSend = performance.now();
-      const res = await apiPostForm<{
+      type PartnerRes = {
         user_transcript: string;
         reply: string;
         emotion: StudioEmotion;
         cue_card: StudioCueCard | null;
-      }>("/api/speaking/partner", form);
+      };
+      let res: PartnerRes;
+      try {
+        res = await apiPostForm<PartnerRes>("/api/speaking/partner", form);
+      } catch (first: unknown) {
+        // One silent retry for a transient rate-limit / overload, so the
+        // conversation doesn't break on a single busy upstream call.
+        const m = (first as Error)?.message || "";
+        if (!/band|503|urinib/i.test(m) || !aliveRef.current) throw first;
+        await new Promise((r) => setTimeout(r, 1500));
+        if (!aliveRef.current) return;
+        res = await apiPostForm<PartnerRes>("/api/speaking/partner", form);
+      }
       if (!aliveRef.current) return;
       if (process.env.NODE_ENV !== "production") {
         console.debug(`[studio] partner reply in ${Math.round(performance.now() - tSend)}ms`);

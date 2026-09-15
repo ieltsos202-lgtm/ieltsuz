@@ -1,8 +1,97 @@
-import { GoogleGenerativeAI, GenerationConfig } from "@google/generative-ai";
+import { GoogleGenerativeAI, GenerationConfig, Part } from "@google/generative-ai";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 
 const genAI = new GoogleGenerativeAI(API_KEY);
+
+// Free-tier quota is counted per API key AND per model, so when one pair is
+// exhausted another usually still works. All configured keys are tried in
+// order; add spares as GEMINI_API_KEY_2 / _3 / _4.
+const API_KEYS = [
+  API_KEY,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+  process.env.GEMINI_API_KEY_4,
+].filter((k): k is string => !!k && k.trim().length > 0);
+
+const clients = new Map<string, GoogleGenerativeAI>();
+function clientFor(key: string) {
+  let c = clients.get(key);
+  if (!c) {
+    c = new GoogleGenerativeAI(key);
+    clients.set(key, c);
+  }
+  return c;
+}
+
+/** Models that share the audio-capable Flash family, cheapest-latency first. */
+export const LIVE_MODEL_CHAIN = [
+  process.env.PARTNER_MODEL || "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+];
+
+function isExhausted(err: any): boolean {
+  const msg = String(err?.message || err || "").toLowerCase();
+  const status = err?.status || 0;
+  return (
+    status === 429 ||
+    status === 503 ||
+    status === 500 ||
+    msg.includes("quota") ||
+    msg.includes("429") ||
+    msg.includes("rate limit") ||
+    msg.includes("resource_exhausted") ||
+    msg.includes("overloaded") ||
+    msg.includes("503")
+  );
+}
+
+export class QuotaError extends Error {}
+
+/**
+ * Generate content, walking the model chain and every configured API key when
+ * a model/key pair is rate-limited or overloaded. Used by the live speaking
+ * routes, where failing the request means the conversation dies mid-sentence.
+ * Throws QuotaError only when every combination is exhausted.
+ */
+export async function generateWithFallback(
+  parts: (string | Part)[],
+  options?: { models?: string[]; config?: Record<string, unknown>; jsonMode?: boolean }
+): Promise<string> {
+  const models = options?.models?.length ? options.models : LIVE_MODEL_CHAIN;
+  const keys = API_KEYS.length ? API_KEYS : [API_KEY];
+  let exhausted = false;
+  let lastErr: any = null;
+
+  for (const modelName of models) {
+    for (const key of keys) {
+      try {
+        const model = clientFor(key).getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            ...(options?.jsonMode === false ? {} : JSON_CONFIG),
+            ...(options?.config || {}),
+          } as GenerationConfig,
+        });
+        const res = await model.generateContent(parts as Part[]);
+        const text = res.response.text();
+        if (text && text.trim()) return text;
+      } catch (err) {
+        lastErr = err;
+        if (isExhausted(err)) {
+          exhausted = true;
+          continue;
+        }
+        // A non-quota error (bad request, safety block) won't be fixed by
+        // another key — try the next model instead.
+        break;
+      }
+    }
+  }
+  if (exhausted) throw new QuotaError(String(lastErr?.message || "All models rate-limited"));
+  throw new Error(String(lastErr?.message || "Model returned no text"));
+}
 
 // Low temperature => consistent, reproducible IELTS band scoring.
 // JSON response mode => no markdown fences, far fewer parse failures.

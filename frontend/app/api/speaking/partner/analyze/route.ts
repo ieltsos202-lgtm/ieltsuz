@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
+import { generateWithFallback, parseJSONFromText } from "@/lib/gemini";
 import { getAuth } from "@/lib/supabaseServer";
 import { appendSpeakingMemory, loadSpeakingMemory } from "@/lib/speakingMemory";
 
@@ -7,7 +7,11 @@ import { appendSpeakingMemory, loadSpeakingMemory } from "@/lib/speakingMemory";
 // model while the examiner's voice is already playing, so it never delays the
 // conversation. Produces the on-screen correction / vocab tip and updates the
 // long-term memory (facts, weak points, topics).
-const ANALYZE_MODEL = process.env.PARTNER_ANALYZE_MODEL || "gemini-2.5-flash-lite";
+const ANALYZE_MODELS = [
+  process.env.PARTNER_ANALYZE_MODEL || "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-2.5-flash",
+];
 
 const strList = (v: unknown, max = 3) =>
   Array.isArray(v)
@@ -41,16 +45,13 @@ Return ONLY JSON:
 }
 Rules: only flag mistakes that are clearly present in the words above — never invent. Empty arrays are fine.${mode === "exam" ? " Be strict, like an examiner's notes." : ""}`;
 
-    const model = getModel(ANALYZE_MODEL, true, {
-      maxOutputTokens: 300,
-      temperature: 0.3,
-      thinkingConfig: { thinkingBudget: 0 },
-    });
-
     let parsed: any = {};
     try {
-      const res = await model.generateContent(prompt);
-      parsed = parseJSONFromText(res.response.text());
+      const raw = await generateWithFallback([{ text: prompt }], {
+        models: ANALYZE_MODELS,
+        config: { maxOutputTokens: 300, temperature: 0.3, thinkingConfig: { thinkingBudget: 0 } },
+      });
+      parsed = parseJSONFromText(raw);
     } catch {
       return NextResponse.json({ correction: null, vocab_tip: null });
     }

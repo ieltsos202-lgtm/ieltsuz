@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
+import { generateWithFallback, parseJSONFromText } from "@/lib/gemini";
 import { getAuth } from "@/lib/supabaseServer";
 import { describeMemory, loadSpeakingMemory, saveSpeakingMemory } from "@/lib/speakingMemory";
-
-const MODEL = process.env.PARTNER_MODEL || "gemini-2.5-flash";
 
 const VALID_EMOTIONS = [
   "happy", "laughing", "excited", "neutral", "thinking",
@@ -56,18 +54,14 @@ Write your OPENING line for today's voice chat (2-4 short spoken sentences). Rul
 
 Return ONLY JSON: {"text": "...", "emotion": "happy | laughing | excited | neutral | surprised | encouraging | annoyed"}`;
 
-    const model = getModel(MODEL, true, {
-      maxOutputTokens: 300,
-      temperature: 1.15,
-      thinkingConfig: { thinkingBudget: 0 },
-    });
-
     let text = "";
     let emotion = mode === "exam" ? "neutral" : "happy";
     let cueCard: { topic: string; bullets: string[] } | null = null;
     try {
-      const res = await model.generateContent(prompt);
-      const parsed = parseJSONFromText(res.response.text());
+      const raw = await generateWithFallback([{ text: prompt }], {
+        config: { maxOutputTokens: 300, temperature: 1.15, thinkingConfig: { thinkingBudget: 0 } },
+      });
+      const parsed = parseJSONFromText(raw);
       if (typeof parsed.text === "string" && parsed.text.trim()) text = parsed.text.trim();
       if (VALID_EMOTIONS.includes(parsed.emotion)) emotion = parsed.emotion;
       if (parsed.cue_card?.topic && Array.isArray(parsed.cue_card.bullets)) {
