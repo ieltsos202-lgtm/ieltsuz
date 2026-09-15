@@ -912,6 +912,16 @@ function SpeakingPartnerContent() {
     }
   };
 
+  // "Javobni tugatdim" — manual end-of-turn. Stopping the recorder runs the
+  // normal onstop path, which sends whatever was captured to the examiner.
+  const finishAnswer = useCallback(() => {
+    const rec = mediaRecorderRef.current;
+    if (rec && rec.state === "recording") {
+      discardRef.current = false;
+      rec.stop();
+    }
+  }, []);
+
   const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   if (upgradeNeeded) return <StudioUpgrade />;
@@ -963,6 +973,7 @@ function SpeakingPartnerContent() {
         void startRecording();
       }}
       onResume={resume}
+      onDone={finishAnswer}
       onSkipPrep={() => {
         if (prepTimerRef.current) clearInterval(prepTimerRef.current);
         prepTimerRef.current = null;

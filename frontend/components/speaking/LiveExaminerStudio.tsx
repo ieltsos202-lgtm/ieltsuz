@@ -17,6 +17,7 @@ import {
   Zap,
   Volume2,
   Laugh,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -210,7 +211,7 @@ export function StudioIntro({
 }) {
   const features = [
     { icon: Laugh, text: "Sizni eslab qoladi — har safar boshqacha kutib oladi" },
-    { icon: Zap, text: "To'liq avtomatik — tugma bosish shart emas, faqat gapiring" },
+    { icon: Zap, text: "Gapiring — jim tursangiz o'zi yuboradi, yoki tugmani bosing" },
     { icon: Volume2, text: "Har gapingizni tahlil qiladi, xatoni o'zbekcha tushuntiradi" },
     { icon: Award, text: "Oxirida to'liq IELTS band hisoboti" },
   ];
@@ -312,44 +313,24 @@ export function StudioTranscript({
   phase: StudioPhase;
   chatEndRef: RefObject<HTMLDivElement>;
 }) {
+  // Only the examiner's lines are shown — the candidate's own speech is never
+  // written out, so the screen stays a clean list of Adam's questions.
+  const partnerTurns = turns.filter((t) => t.role === "partner");
   return (
     <div className="max-h-[38vh] space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl sm:p-5">
       <AnimatePresence initial={false}>
-        {turns.map((t, i) => (
+        {partnerTurns.map((t, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className={cn("flex", t.role === "user" ? "justify-end" : "justify-start")}
+            className="flex justify-start"
           >
             <div className="max-w-[88%] space-y-2">
-              <div
-                className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-lg",
-                  t.role === "user"
-                    ? "rounded-br-md bg-gradient-to-br from-accent to-accent-purple text-white"
-                    : "rounded-bl-md border border-white/10 bg-white/10 text-content-primary backdrop-blur-sm"
-                )}
-              >
+              <div className="rounded-2xl rounded-bl-md border border-white/10 bg-white/10 px-4 py-2.5 text-sm leading-relaxed text-content-primary shadow-lg backdrop-blur-sm">
                 {t.text}
               </div>
-              {t.correction && (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs backdrop-blur-sm">
-                  <span className="text-accent-red line-through">{t.correction.you_said}</span>{" "}
-                  → <span className="font-medium text-accent-green">{t.correction.better}</span>
-                  <p className="mt-0.5 text-content-secondary">{t.correction.note}</p>
-                </div>
-              )}
-              {t.vocab_tip && (
-                <div className="flex items-start gap-1.5 rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs backdrop-blur-sm">
-                  <Lightbulb className="mt-0.5 h-3 w-3 shrink-0 text-accent" />
-                  <span>
-                    <span className="font-medium text-accent">&quot;{t.vocab_tip.try}&quot;</span>{" "}
-                    ishlating — {t.vocab_tip.example}
-                  </span>
-                </div>
-              )}
             </div>
           </motion.div>
         ))}
@@ -387,6 +368,7 @@ export function StudioSession({
   onGenerateReport,
   onExit,
   onResume,
+  onDone,
   userAnswerCount,
   fmt,
 }: {
@@ -409,6 +391,7 @@ export function StudioSession({
   onGenerateReport: () => void;
   onExit: () => void;
   onResume: () => void;
+  onDone: () => void;
   userAnswerCount: number;
   fmt: (s: number) => string;
 }) {
@@ -548,7 +531,7 @@ export function StudioSession({
           </AnimatePresence>
 
           <AnimatePresence>
-            {liveCorrection && (phase === "speaking" || phase === "listening") && (
+            {liveCorrection && (phase === "speaking" || phase === "listening" || phase === "thinking") && (
               <motion.div
                 key={liveCorrection.you_said}
                 initial={{ opacity: 0, y: 8 }}
@@ -602,7 +585,18 @@ export function StudioSession({
         {error && <p className="text-center text-sm text-accent-red">{error}</p>}
 
         {/* Footer: only the essentials */}
-        <div className="flex items-center justify-center gap-3 pb-6">
+        <div className="flex flex-col items-center justify-center gap-2 pb-6">
+          {phase === "listening" && (
+            <>
+              <Button variant="gradient" size="lg" onClick={onDone} className="px-8">
+                <Check className="mr-2 h-5 w-5" /> Javobni tugatdim
+              </Button>
+              <p className="text-xs text-content-secondary">
+                yoki jim turing — {mode === "exam" && examPart === 2 ? "~2s" : "~1s"} da o&apos;zi yuboradi
+              </p>
+            </>
+          )}
+          <div className="flex items-center justify-center gap-3">
           {phase === "idle" && (
             <Button variant="gradient" size="sm" onClick={onResume}>
               <Mic className="mr-2 h-4 w-4" /> Davom etish
@@ -613,6 +607,7 @@ export function StudioSession({
               <FileText className="mr-2 h-4 w-4" /> Hisobot
             </Button>
           )}
+          </div>
         </div>
       </div>
     </div>
