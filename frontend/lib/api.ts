@@ -60,12 +60,17 @@ export async function apiPostBinary(path: string, body: unknown): Promise<Blob> 
  * Like apiPostBinary but returns the raw Response so the caller can consume
  * `res.body` as a stream (e.g. progressive audio playback via MediaSource).
  */
-export async function apiPostStream(path: string, body: unknown): Promise<Response> {
+export async function apiPostStream(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal
+): Promise<Response> {
   const headers = await authHeader();
   const res = await fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
+    signal,
   });
   if (!res.ok) throw new Error(await readError(res, `POST ${path}`));
   return res;

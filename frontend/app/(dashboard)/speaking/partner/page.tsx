@@ -113,6 +113,28 @@ function SpeakingPartnerContent() {
   const silenceStrikesRef = useRef(0);
   const pendingAudioRef = useRef<HTMLAudioElement | null>(null);
   const memorySyncedRef = useRef(false);
+  const aliveRef = useRef(true);
+  const ttsAbortRef = useRef<AbortController | null>(null);
+  const audioCleanupRef = useRef<(() => void) | null>(null);
+
+  // Hard stop for whatever the examiner is saying: pauses, detaches the source
+  // so a MediaSource pump can't keep feeding it, and cancels the TTS download.
+  const stopAudio = useCallback(() => {
+    ttsAbortRef.current?.abort();
+    ttsAbortRef.current = null;
+    const a = audioRef.current;
+    audioRef.current = null;
+    pendingAudioRef.current = null;
+    if (a) {
+      a.onended = null;
+      a.onerror = null;
+      a.pause();
+      a.removeAttribute("src");
+      a.load();
+    }
+    audioCleanupRef.current?.();
+    audioCleanupRef.current = null;
+  }, []);
 
   useEffect(() => { turnsRef.current = turns; }, [turns]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [turns, phase]);
@@ -150,9 +172,16 @@ function SpeakingPartnerContent() {
   }, [releaseStream]);
 
   useEffect(() => {
+    aliveRef.current = true;
     return () => {
+      aliveRef.current = false;
       window.speechSynthesis.cancel();
-      audioRef.current?.pause();
+      stopAudio();
+      const rec = mediaRecorderRef.current;
+      if (rec && rec.state !== "inactive") {
+        rec.onstop = null;
+        rec.stop();
+      }
       streamRef.current?.getTracks().forEach((t) => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -160,9 +189,10 @@ function SpeakingPartnerContent() {
       if (prepTimerRef.current) clearInterval(prepTimerRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
-  }, []);
+  }, [stopAudio]);
 
   const handlePartnerDone = useCallback(() => {
+    if (!aliveRef.current) return;
     const next = afterSpeakRef.current;
     afterSpeakRef.current = "auto";
     if (next === "prep") { startPrepRef.current(); return; }
@@ -183,16 +213,28 @@ function SpeakingPartnerContent() {
   // TTS with mode-aware voice + show text immediately for perceived speed
   const playPartner = useCallback(
     async (text: string, emo: StudioEmotion, ttsMode: StudioMode) => {
+      if (!aliveRef.current) return;
+      stopAudio();
       setPhase("speaking");
+      const abort = new AbortController();
+      ttsAbortRef.current = abort;
       try {
-        const res = await apiPostStream("/api/speaking/partner/tts", {
-          text,
-          emotion: emo,
-          mode: ttsMode,
-        });
+        const res = await apiPostStream(
+          "/api/speaking/partner/tts",
+          { text, emotion: emo, mode: ttsMode },
+          abort.signal
+        );
+        // The user left the page (or interrupted) while TTS was downloading.
+        if (!aliveRef.current || abort.signal.aborted) {
+          res.body?.cancel().catch(() => {});
+          return;
+        }
         const audio = new Audio();
         audioRef.current = audio;
         let url = "";
+        audioCleanupRef.current = () => {
+          if (url) URL.revokeObjectURL(url);
+        };
 
         // Progressive playback: feed mp3 chunks into MediaSource as they arrive
         // so the voice starts on the first bytes instead of the full file.
@@ -208,6 +250,7 @@ function SpeakingPartnerContent() {
           ms.addEventListener("sourceopen", () => {
             const sb = ms.addSourceBuffer("audio/mpeg");
             const reader = res.body!.getReader();
+            abort.signal.addEventListener("abort", () => reader.cancel().catch(() => {}), { once: true });
             const finish = () => {
               if (ms.readyState !== "open") return;
               if (sb.updating) sb.addEventListener("updateend", finish, { once: true });
@@ -216,7 +259,7 @@ function SpeakingPartnerContent() {
             const pump = async () => {
               try {
                 const { done, value } = await reader.read();
-                if (done) {
+                if (done || abort.signal.aborted || audioRef.current !== audio) {
                   finish();
                   return;
                 }
@@ -233,23 +276,24 @@ function SpeakingPartnerContent() {
           });
         } else {
           const blob = await res.blob();
+          if (!aliveRef.current || abort.signal.aborted) return;
           url = URL.createObjectURL(blob);
           audio.src = url;
         }
 
-        audio.onended = () => {
+        const done = () => {
+          if (audioRef.current !== audio) return;
           URL.revokeObjectURL(url);
           audioRef.current = null;
+          audioCleanupRef.current = null;
           handlePartnerDone();
         };
-        audio.onerror = () => {
-          URL.revokeObjectURL(url);
-          audioRef.current = null;
-          handlePartnerDone();
-        };
+        audio.onended = done;
+        audio.onerror = done;
         try {
           await audio.play();
         } catch (err) {
+          if (!aliveRef.current) return;
           // Autoplay blocked — wait for one tap, then continue automatically.
           if ((err as Error)?.name === "NotAllowedError") {
             pendingAudioRef.current = audio;
@@ -259,13 +303,14 @@ function SpeakingPartnerContent() {
           }
           throw err;
         }
-      } catch {
+      } catch (err) {
+        if (!aliveRef.current || (err as Error)?.name === "AbortError") return;
         audioRef.current = null;
         setError("Ovoz xizmatida xatolik. Qayta urinib ko'ring.");
         setPhase("idle");
       }
     },
-    [handlePartnerDone]
+    [handlePartnerDone, stopAudio]
   );
 
   const resume = useCallback(() => {
@@ -341,6 +386,7 @@ function SpeakingPartnerContent() {
     } catch {
       /* fallback greeting already set */
     }
+    if (!aliveRef.current) return;
 
     if (m === "exam" && startPart === 2) {
       const cc = greetingCue ?? FALLBACK_CUE;
@@ -367,23 +413,24 @@ function SpeakingPartnerContent() {
   }, [searchParams, phase]);
 
   const startRecording = useCallback(async () => {
+    if (!aliveRef.current) return;
     setError(null);
     window.speechSynthesis.cancel();
-    audioRef.current?.pause();
-    audioRef.current = null;
+    stopAudio();
     discardRef.current = false;
     hasSpokenRef.current = false;
     listenStartRef.current = Date.now();
 
     const isLongTurn = modeRef.current === "exam" && examPartRef.current === 2;
     recordLimitRef.current = isLongTurn ? 120 : 89;
-    // Learners pause to think — a too-short window cuts sentences in half and
-    // makes the examiner "not understand". Long turn gets the most patience.
-    silenceMsRef.current = isLongTurn ? 2600 : modeRef.current === "exam" ? 1700 : 1400;
+    // 3s of silence ends the turn (the long turn gets a little extra room for
+    // thinking pauses).
+    silenceMsRef.current = isLongTurn ? 3500 : 3000;
     setEmotion("neutral");
 
     try {
       const stream = await ensureStream();
+      if (!aliveRef.current) return;
 
       const AudioCtx =
         window.AudioContext ||
@@ -401,21 +448,24 @@ function SpeakingPartnerContent() {
         analyserStreamRef.current = stream;
       }
 
-      // --- Adaptive voice activity detection ---
-      // Calibrate the room's noise floor for the first 300ms (capped so a fan or
-      // AC can't push the threshold out of reach), then use hysteresis. After
-      // each silent strike we get more sensitive — a soft voice must never be
-      // mistaken for silence.
-      const sensitivity = 1 + Math.min(3, silenceStrikesRef.current) * 0.45;
-      const data = new Uint8Array(analyser.fftSize);
+      // --- Voice activity detection ---
+      // Float RMS (8-bit data quantises at 0.0078 — useless for a threshold of
+      // a few thousandths). The noise floor is calibrated for 300ms and then
+      // keeps tracking the quietest recent level, so a fan switching on can't
+      // masquerade as speech. "Voice" = level above floor*3 (clamped). The
+      // turn ends when no voice frame has been seen for silenceMs — a plain
+      // timestamp rule, so noise hovering between two hysteresis thresholds
+      // can never keep the recorder alive forever.
+      const sensitivity = 1 + Math.min(3, silenceStrikesRef.current) * 0.35;
+      const data = new Float32Array(analyser.fftSize);
       let frame = 0;
-      let noiseFloor = 0.004;
+      let noiseFloor = 0;
       let calSamples = 0;
       let smooth = 0;
       let peak = 0;
       let rawMax = 0;
-      let speaking = false;
-      let speechMs = 0;
+      let voiceMs = 0;
+      let lastVoiceAt = 0;
       let lastFrameAt = Date.now();
       const calibrateUntil = Date.now() + 300;
       const stopOnce = () => {
@@ -425,66 +475,59 @@ function SpeakingPartnerContent() {
 
       const monitor = () => {
         const a = analyserRef.current;
-        if (!a) return;
-        a.getByteTimeDomainData(data);
+        if (!a || !aliveRef.current) return;
+        a.getFloatTimeDomainData(data);
         let sum = 0;
-        for (let i = 0; i < data.length; i++) {
-          const v = data[i] / 128.0 - 1;
-          sum += v * v;
-        }
+        for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
         const rms = Math.sqrt(sum / data.length);
-        smooth = smooth * 0.7 + rms * 0.3;
+        smooth = smooth * 0.6 + rms * 0.4;
         rawMax = Math.max(rawMax, rms);
         frame++;
-        if (frame % 2 === 0) setMicLevel(Math.max(0, smooth - noiseFloor) * 1.5);
 
         const now = Date.now();
         const dt = now - lastFrameAt;
         lastFrameAt = now;
         const listenedMs = now - listenStartRef.current;
         if (now < calibrateUntil) {
-          noiseFloor = Math.min(0.015, (noiseFloor * calSamples + rms) / (calSamples + 1));
+          noiseFloor = (noiseFloor * calSamples + rms) / (calSamples + 1);
           calSamples++;
           rafRef.current = requestAnimationFrame(monitor);
           return;
         }
+        noiseFloor = Math.min(0.02, Math.max(0.0005, noiseFloor));
+        // Slowly follow quiet frames (down fast, up very slowly).
+        if (rms < noiseFloor) noiseFloor = noiseFloor * 0.9 + rms * 0.1;
+        else if (rms < noiseFloor * 2) noiseFloor = noiseFloor * 0.995 + rms * 0.005;
         peak = Math.max(peak, smooth);
 
+        const voiceThreshold = Math.min(0.05, Math.max(0.008, noiseFloor * 3)) / sensitivity;
+        if (frame % 2 === 0) setMicLevel(Math.max(0, smooth - voiceThreshold * 0.5) * 1.2);
+
         // A mic that delivers pure digital silence for 4s is muted / wrong device.
-        if (listenedMs > 4000 && rawMax < 0.0008 && micHealthyRef.current) {
+        if (listenedMs > 4000 && rawMax < 0.0005 && micHealthyRef.current) {
           micHealthyRef.current = false;
           setMicHint("Mikrofon ovoz olmayapti. Brauzer manzil satridagi mikrofon belgisini va tizimdagi kirish qurilmasini tekshiring.");
-        } else if (rawMax >= 0.0008 && !micHealthyRef.current) {
+        } else if (rawMax >= 0.0005 && !micHealthyRef.current) {
           micHealthyRef.current = true;
           setMicHint(null);
         }
 
-        // Quiet speech through noiseSuppression+AGC can sit at RMS ~0.006.
-        const onThreshold = Math.max(0.0045, noiseFloor * 2.2) / sensitivity;
-        const offThreshold = Math.max(0.003, noiseFloor * 1.4) / sensitivity;
-
-        if (!speaking && smooth > onThreshold) {
-          speaking = true;
-        } else if (speaking && smooth < offThreshold) {
-          speaking = false;
+        if (smooth > voiceThreshold) {
+          lastVoiceAt = now;
+          voiceMs += dt;
+          if (!hasSpokenRef.current && voiceMs >= 200) hasSpokenRef.current = true;
         }
 
-        if (speaking) {
-          // Cumulative speech time — brief dips below the threshold during
-          // normal speech must not reset the counter.
-          speechMs += dt;
-          if (!hasSpokenRef.current && speechMs >= 180) hasSpokenRef.current = true;
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = null;
+        if (hasSpokenRef.current) {
+          if (now - lastVoiceAt >= silenceMsRef.current) {
+            stopOnce();
+            return;
           }
-        } else if (hasSpokenRef.current && !silenceTimerRef.current) {
-          silenceTimerRef.current = setTimeout(stopOnce, silenceMsRef.current);
-        } else if (!hasSpokenRef.current && listenedMs > NO_SPEECH_MS) {
-          // VAD saw no clear speech. If there was *any* real energy above the
-          // room floor, still send it — let the model decide rather than
-          // telling a quiet speaker "I can't hear you".
-          discardRef.current = !(peak > noiseFloor * 1.5 && peak > 0.0025);
+        } else if (listenedMs > NO_SPEECH_MS) {
+          // No clear speech. If there was *some* energy above the room floor,
+          // still send it — let the model decide rather than telling a quiet
+          // speaker "I can't hear you".
+          discardRef.current = !(peak > noiseFloor * 2 && peak > 0.004);
           stopOnce();
           return;
         }
@@ -503,6 +546,7 @@ function SpeakingPartnerContent() {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       recorder.onstop = () => {
+        if (!aliveRef.current) return;
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         if (timerRef.current) clearInterval(timerRef.current);
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -556,7 +600,7 @@ function SpeakingPartnerContent() {
       setPhase("idle");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [turns, partnerName, profile, ensureStream]);
+  }, [turns, partnerName, profile, ensureStream, stopAudio]);
 
   startRecordingRef.current = startRecording;
 
@@ -579,8 +623,7 @@ function SpeakingPartnerContent() {
 
   const generateReport = useCallback(async () => {
     window.speechSynthesis.cancel();
-    audioRef.current?.pause();
-    audioRef.current = null;
+    stopAudio();
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
     releaseStream();
     setPhase("report_loading");
@@ -592,21 +635,23 @@ function SpeakingPartnerContent() {
       form.append("turns", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
       userBlobsRef.current.forEach((b, i) => form.append("audio", b, `turn-${i}.webm`));
       const res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
+      if (!aliveRef.current) return;
       setReport(res);
       setPhase("report");
     } catch (e: unknown) {
+      if (!aliveRef.current) return;
       setError((e as Error)?.message || "Hisobot tayyorlashda xatolik.");
       setPhase("idle");
     }
-  }, [partnerName, syncMemory, releaseStream]);
+  }, [partnerName, syncMemory, releaseStream, stopAudio]);
   generateReportRef.current = generateReport;
 
   const exitSession = useCallback(() => {
     syncMemory();
-    audioRef.current?.pause();
+    stopAudio();
     releaseStream();
     router.push("/speaking");
-  }, [router, syncMemory, releaseStream]);
+  }, [router, syncMemory, releaseStream, stopAudio]);
 
   const buildExamInstruction = () => {
     const part = examPartRef.current;
@@ -687,6 +732,7 @@ function SpeakingPartnerContent() {
         correction: StudioTurn["correction"];
         vocab_tip: StudioTurn["vocab_tip"];
       }>("/api/speaking/partner", form);
+      if (!aliveRef.current) return;
 
       firstTurnRef.current = false;
 
@@ -722,6 +768,7 @@ function SpeakingPartnerContent() {
       setEmotion(res.emotion);
       void playPartner(res.reply, res.emotion, modeRef.current);
     } catch (e: unknown) {
+      if (!aliveRef.current) return;
       const msg = (e as Error)?.message || "";
       if (msg.includes("Trial limit") || msg.includes("402")) setUpgradeNeeded(true);
       else setError(msg || "Xatolik yuz berdi.");
@@ -776,8 +823,7 @@ function SpeakingPartnerContent() {
       chatEndRef={chatEndRef}
       onInterrupt={() => {
         if (phase !== "speaking") return;
-        audioRef.current?.pause();
-        audioRef.current = null;
+        stopAudio();
         void startRecording();
       }}
       onResume={resume}
