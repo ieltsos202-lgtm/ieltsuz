@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
+import { PLANS } from "@/lib/pro";
 
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -17,16 +18,11 @@ export async function POST(req: NextRequest) {
 
     const code = generateCode();
 
-    // Plan → price map. Duration is derived from the amount at verification
-    // time (payment/upload), so no schema change is needed.
-    const PLAN_PRICES: Record<string, number> = {
-      "1m": parseInt(process.env.MONTHLY_PRICE_UZS || "49000", 10),
-      "3m": 99000,
-      "12m": 399000,
-    };
+    // Prices live in lib/pro so the amount written here is the same amount the
+    // verification step maps back to a subscription length.
     const body = await req.json().catch(() => ({} as any));
-    const plan = typeof body?.plan === "string" && PLAN_PRICES[body.plan] ? body.plan : "1m";
-    const amount = PLAN_PRICES[plan];
+    const selected = PLANS.find((p) => p.id === body?.plan) ?? PLANS[0];
+    const amount = selected.amount;
 
     const { data: payment, error } = await supabase
       .from("payments")

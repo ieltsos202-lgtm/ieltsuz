@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient, getAdminClient } from "@/lib/supabaseServer";
+import { extendedExpiry, planDaysFromAmount } from "@/lib/pro";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import crypto from "crypto";
 
@@ -128,17 +129,21 @@ Respond ONLY in this JSON format:
       // Grant Pro first — if this fails we bail out with an error and leave
       // the payment "pending" so the user can safely retry the upload
       // instead of being told "success" while Pro was never granted.
-      // Subscription length depends on which plan was paid for.
-      const AMOUNT_TO_DAYS: Record<number, number> = { 49000: 30, 99000: 90, 399000: 365 };
-      const proDays = AMOUNT_TO_DAYS[payment.amount] ?? 30;
-      const proExpiresAt = new Date();
-      proExpiresAt.setDate(proExpiresAt.getDate() + proDays);
+      // Subscription length depends on which plan was paid for, and renewing
+      // before the current period ends must add to the remaining time.
+      const proDays = planDaysFromAmount(payment.amount);
+      const { data: current } = await supabase
+        .from("profiles")
+        .select("pro_expires_at")
+        .eq("id", payment.user_id)
+        .single();
+      const proExpiresAt = extendedExpiry(current?.pro_expires_at, proDays);
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           is_pro: true,
-          pro_expires_at: proExpiresAt.toISOString(),
+          pro_expires_at: proExpiresAt,
         })
         .eq("id", payment.user_id);
 
@@ -168,6 +173,7 @@ Respond ONLY in this JSON format:
         success: true,
         verified: true,
         days: proDays,
+        pro_expires_at: proExpiresAt,
         message: "Payment verified and Pro activated!",
       });
     } else {

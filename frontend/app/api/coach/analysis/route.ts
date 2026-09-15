@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 import { generateJSON } from "@/lib/gemini";
 
+// Per-user and auth-header dependent: never prerender.
+export const dynamic = "force-dynamic";
+
 type Skill = "listening" | "reading" | "writing" | "speaking";
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 const TABLE: Record<Skill, string> = {

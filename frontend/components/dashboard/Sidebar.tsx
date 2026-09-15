@@ -21,6 +21,8 @@ import {
 
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { formatExpiry } from "@/lib/pro";
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -42,6 +44,7 @@ interface SidebarProps {
 export function Sidebar({ open = true }: SidebarProps) {
   const pathname = usePathname();
   const { profile } = useAuth();
+  const { active, expiresAt, daysLeft, plan } = useSubscription();
 
   const items = profile?.is_admin
     ? [...nav, { label: "Analytics", href: "/analytics", icon: BarChart3 }, { label: "Admin", href: "/admin", icon: Shield }]
@@ -58,7 +61,7 @@ export function Sidebar({ open = true }: SidebarProps) {
       </Link>
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto min-h-0 py-6">
         {items.map((item) => {
-          const active =
+          const isCurrent =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
@@ -66,25 +69,44 @@ export function Sidebar({ open = true }: SidebarProps) {
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-[var(--radius)] px-3 py-2.5 text-sm font-medium transition-colors",
-                active
+                isCurrent
                   ? "bg-accent/15 text-content-primary"
                   : "text-content-secondary hover:bg-bg-tertiary hover:text-content-primary"
               )}
             >
-              <item.icon className={cn("h-5 w-5", active && "text-accent")} />
+              <item.icon className={cn("h-5 w-5", isCurrent && "text-accent")} />
               {item.label}
             </Link>
           );
         })}
       </nav>
       <div className="shrink-0 space-y-2 border-t border-border pt-4">
-        <Link
-          href="/upgrade"
-          className="flex items-center gap-2 rounded-[var(--radius)] bg-gradient-to-r from-accent/20 to-accent-purple/20 px-3 py-2.5 text-sm font-semibold text-content-primary transition-colors hover:from-accent/30 hover:to-accent-purple/30"
-        >
-          <Crown className="h-5 w-5 text-accent-yellow" />
-          Upgrade
-        </Link>
+        {active ? (
+          // Pro users must never see an "Upgrade" call to action — they see
+          // which plan is running and how much of it is left.
+          <Link
+            href="/settings/subscription"
+            className="block rounded-[var(--radius)] bg-gradient-to-r from-accent/20 to-accent-purple/20 px-3 py-2.5 transition-colors hover:from-accent/30 hover:to-accent-purple/30"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-content-primary">
+              <Crown className="h-5 w-5 text-accent-yellow" />
+              Pro{plan ? ` · ${plan.label}` : ""}
+            </span>
+            <span className="mt-1 block text-xs text-content-secondary">
+              {expiresAt
+                ? `${daysLeft} kun qoldi · ${formatExpiry(expiresAt)}`
+                : "Muddatsiz faol"}
+            </span>
+          </Link>
+        ) : (
+          <Link
+            href="/upgrade"
+            className="flex items-center gap-2 rounded-[var(--radius)] bg-gradient-to-r from-accent/20 to-accent-purple/20 px-3 py-2.5 text-sm font-semibold text-content-primary transition-colors hover:from-accent/30 hover:to-accent-purple/30"
+          >
+            <Crown className="h-5 w-5 text-accent-yellow" />
+            Upgrade
+          </Link>
+        )}
         <a
           href="https://t.me/ieltsosuzb"
           target="_blank"

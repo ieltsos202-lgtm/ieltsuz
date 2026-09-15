@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
+import { extendedExpiry, planDaysFromAmount } from "@/lib/pro";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     // Get payment
     const { data: payment } = await supabase
       .from("payments")
-      .select("id, user_id, status")
+      .select("id, user_id, status, amount")
       .eq("id", payment_id)
       .single();
 
@@ -36,17 +37,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment already processed" }, { status: 400 });
     }
 
-    // Grant 30-day Pro access first — if this fails we bail out and leave
-    // the payment "pending" so the admin can safely retry the approval
-    // instead of getting stuck with an "approved" payment but no Pro granted.
-    const proExpiresAt = new Date();
-    proExpiresAt.setDate(proExpiresAt.getDate() + 30);
+    // Grant Pro first — if this fails we bail out and leave the payment
+    // "pending" so the admin can safely retry the approval instead of getting
+    // stuck with an "approved" payment but no Pro granted.
+    // The length comes from the amount actually paid (1/3/12 months), and an
+    // early renewal adds to the time the user still has left.
+    const proDays = planDaysFromAmount(payment.amount);
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("pro_expires_at")
+      .eq("id", payment.user_id)
+      .single();
+    const proExpiresAt = extendedExpiry(current?.pro_expires_at, proDays);
 
     const { error: profileError } = await supabase
       .from("profiles")
       .update({
         is_pro: true,
-        pro_expires_at: proExpiresAt.toISOString(),
+        pro_expires_at: proExpiresAt,
       })
       .eq("id", payment.user_id);
 
@@ -66,7 +74,12 @@ export async function POST(req: NextRequest) {
       console.error("Mark payment approved error:", updateError, "payment_id:", payment_id);
     }
 
-    return NextResponse.json({ success: true, message: "Payment approved and Pro activated" });
+    return NextResponse.json({
+      success: true,
+      days: proDays,
+      pro_expires_at: proExpiresAt,
+      message: "Payment approved and Pro activated",
+    });
   } catch (error: any) {
     console.error("Approve payment error:", error);
     return NextResponse.json({ error: "Failed to approve payment" }, { status: 500 });

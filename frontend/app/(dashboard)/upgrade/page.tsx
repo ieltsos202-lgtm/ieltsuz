@@ -18,6 +18,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { apiGet, apiPost, apiPostForm } from "@/lib/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { formatExpiry } from "@/lib/pro";
 
 type PlanId = "1m" | "3m" | "12m";
 
@@ -70,6 +72,8 @@ const PRO_FEATURES = [
 
 export default function UpgradePage() {
   const router = useRouter();
+  const { active: proActive, expiresAt: proExpiresAt, daysLeft: proDaysLeft, plan: proPlan } =
+    useSubscription();
   const [step, setStep] = useState<"intro" | "confirm" | "pay" | "success" | "failed">("intro");
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<PlanId>("1m");
@@ -184,6 +188,21 @@ export default function UpgradePage() {
     <div className="mx-auto max-w-3xl p-6">
       {step === "intro" && (
         <div className="space-y-6">
+          {/* Already Pro: this page becomes a renewal, not an upsell. Paying
+              again adds days on top of what is left. */}
+          {proActive && (
+            <Card className="border-emerald-500/30 bg-emerald-500/10 p-4">
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                Pro allaqachon faol{proPlan ? ` · ${proPlan.label} tarif` : ""}
+              </p>
+              <p className="mt-1 text-xs text-content-secondary">
+                {proExpiresAt
+                  ? `${proDaysLeft} kun qoldi (${formatExpiry(proExpiresAt)}). Hozir to'lasangiz, yangi muddat shu kunlarga qo'shiladi.`
+                  : "Obunangiz muddatsiz faol."}
+              </p>
+            </Card>
+          )}
+
           {/* Countdown bar */}
           <div className="flex items-center justify-between rounded-xl border border-red-300/40 bg-red-500/10 px-4 py-3">
             <div>
@@ -471,7 +490,14 @@ export default function UpgradePage() {
           </div>
           <h2 className="text-3xl font-bold">Siz endi Pro foydalanuvchisiz!</h2>
           <p className="mt-2 text-content-secondary">To'lov tasdiqlandi. Pro obunangiz {proDays} kun davomida faol.</p>
-          <Button className="mt-6 w-full bg-accent text-white hover:bg-accent/90" onClick={() => router.push("/dashboard")}>
+          {/* Full reload, not a client-side push: the cached profile still says
+              "free", which would leave the sidebar showing Upgrade. */}
+          <Button
+            className="mt-6 w-full bg-accent text-white hover:bg-accent/90"
+            onClick={() => {
+              window.location.href = "/dashboard";
+            }}
+          >
             Mashg'ulotni boshlash <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>

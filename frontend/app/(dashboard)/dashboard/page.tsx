@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Headphones, BookOpen, PenLine, Mic, AlertTriangle, Target, Calendar, Clock, BookOpen as BookIcon, Sparkles, Gift, Copy, Check, GraduationCap } from "lucide-react";
+import { Headphones, BookOpen, PenLine, Mic, AlertTriangle, Target, Calendar, Clock, BookOpen as BookIcon, Sparkles, Gift, Copy, Check, GraduationCap, Crown } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { formatExpiry } from "@/lib/pro";
 import { useProgress } from "@/hooks/useProgress";
 import { useStudyPlan } from "@/hooks/useStudyPlan";
 import { apiGet } from "@/lib/api";
@@ -36,6 +38,12 @@ export default function DashboardPage() {
   const { profile } = useAuth();
   const { overview, loading } = useProgress();
   const { plan: studyPlan, loading: planLoading } = useStudyPlan();
+  const {
+    active: proActive,
+    expiresAt: proExpiresAt,
+    daysLeft: proDaysLeft,
+    plan: proPlan,
+  } = useSubscription();
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [dailyMessage, setDailyMessage] = useState<string | null>(null);
@@ -100,8 +108,32 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      {/* Subscription state: Pro users see what they have, not an upsell. */}
+      {proActive && (
+        <Card className="border-accent/30 bg-gradient-to-r from-accent/10 to-accent-purple/10">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Crown className="h-6 w-6 text-accent-yellow" />
+              <div>
+                <p className="text-sm font-semibold">
+                  Pro faol{proPlan ? ` · ${proPlan.label} tarif` : ""}
+                </p>
+                <p className="text-xs text-content-secondary">
+                  {proExpiresAt
+                    ? `${proDaysLeft} kun qoldi · ${formatExpiry(proExpiresAt)}gacha`
+                    : "Muddatsiz faol obuna"}
+                </p>
+              </div>
+            </div>
+            <Link href="/settings/subscription">
+              <Button variant="outline" size="sm">Obunani ko&apos;rish</Button>
+            </Link>
+          </div>
+        </Card>
+      )}
+
       {/* Trial usage */}
-      {profile && !profile.is_pro && (
+      {profile && !proActive && (
         <Card className="border-accent-yellow/30 bg-accent-yellow/5">
           <p className="text-sm font-semibold text-accent-yellow">Free Trials Remaining</p>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">

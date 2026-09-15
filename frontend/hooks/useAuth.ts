@@ -41,9 +41,21 @@ export function useAuth() {
       loadProfile(session?.user ?? null);
     });
 
+    // The profile changes outside this tab (a payment activating Pro, an admin
+    // approval), so refresh it whenever the user comes back to the tab —
+    // otherwise the UI keeps showing stale trial/Upgrade state until a reload.
+    const onFocus = () => {
+      if (document.visibilityState === "hidden") return;
+      void supabase.auth.getUser().then(({ data }) => loadProfile(data.user ?? null));
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, []);
 

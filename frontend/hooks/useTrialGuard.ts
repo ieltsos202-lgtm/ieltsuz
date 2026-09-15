@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { isProActive } from "@/lib/pro";
 
 export function useTrialGuard(skill: "listening" | "reading" | "speaking" | "writing" | "mock") {
   const router = useRouter();
@@ -10,9 +11,7 @@ export function useTrialGuard(skill: "listening" | "reading" | "speaking" | "wri
 
   useEffect(() => {
     if (loading || !profile) return;
-    const proActive =
-      profile.is_pro && (!profile.pro_expires_at || new Date(profile.pro_expires_at) >= new Date());
-    if (proActive) return;
+    if (isProActive(profile)) return;
 
     const remainingMap = {
       listening: profile.trial_listening_remaining ?? 0,

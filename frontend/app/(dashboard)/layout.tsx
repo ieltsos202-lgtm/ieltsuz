@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Header } from "@/components/dashboard/Header";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { isProActive } from "@/lib/pro";
 
 /** Routes accessible after free trials are exhausted (non-Pro users). */
 const TRIAL_EXEMPT_PREFIXES = ["/upgrade", "/settings", "/progress", "/coach"];
@@ -33,7 +34,9 @@ export default function DashboardLayout({
       router.replace("/onboarding");
       return;
     }
-    if (!loading && user && profile && !profile.is_pro) {
+    // An expired Pro subscription must fall back to trial rules, so the
+    // check is the shared expiry-aware one, not the raw is_pro flag.
+    if (!loading && user && profile && !isProActive(profile)) {
       const mockRemaining =
         (profile.trial_mock_remaining ?? 0) + (profile.bonus_mock_remaining ?? 0);
       const allTrialsUsed =

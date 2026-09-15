@@ -1,7 +1,13 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { isProActive } from "@/lib/pro";
 
+/**
+ * One-off Pro check for non-React code paths. Prefer useSubscription() in
+ * components. Expiry is evaluated by lib/pro, so a stale `is_pro` flag in the
+ * database can never grant access.
+ */
 export async function checkIsPro(): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
@@ -12,18 +18,5 @@ export async function checkIsPro(): Promise<boolean> {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_pro) return false;
-
-  if (profile.pro_expires_at) {
-    const expires = new Date(profile.pro_expires_at);
-    if (expires < new Date()) {
-      await supabase
-        .from("profiles")
-        .update({ is_pro: false })
-        .eq("id", user.id);
-      return false;
-    }
-  }
-
-  return true;
+  return isProActive(profile);
 }

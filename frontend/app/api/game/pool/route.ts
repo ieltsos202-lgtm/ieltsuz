@@ -4,6 +4,9 @@ import { getAllItems, getAllSentences } from "@/lib/gameStaticData";
 import { pickAdaptiveItems } from "@/lib/gameAdaptive";
 import { levelFromXp } from "@/lib/gameEngine";
 
+// Per-user and auth-header dependent: never prerender.
+export const dynamic = "force-dynamic";
+
 // Returns an adaptive, non-repetitive slice of the hand-curated static
 // master pool (extracted directly from the real Reading & Listening test
 // bank) for any of the Word Games to consume. Instead of pure random

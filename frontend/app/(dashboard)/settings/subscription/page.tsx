@@ -1,67 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Check, Crown, Smartphone } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { formatExpiry } from "@/lib/pro";
 
 const MONTHLY_PRICE = "49 000 so'm";
 
 export default function SubscriptionPage() {
-  const [loading, setLoading] = useState(true);
-  const [isPro, setIsPro] = useState(false);
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_pro, pro_expires_at")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.is_pro && profile.pro_expires_at) {
-        const expires = new Date(profile.pro_expires_at);
-        if (expires > new Date()) {
-          setIsPro(true);
-          setExpiresAt(profile.pro_expires_at);
-        }
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const { active, expired, expiresAt, daysLeft, plan, loading } = useSubscription();
 
   if (loading) return <LoadingSpinner />;
 
-  if (isPro) {
+  if (active) {
     return (
       <div className="mx-auto max-w-xl space-y-6">
         <h1 className="text-2xl font-bold">Obuna</h1>
         <Card className="space-y-4 p-6 text-center">
           <Crown className="mx-auto h-12 w-12 text-accent-yellow" />
-          <CardTitle className="text-lg">Siz Pro foydalanuvchisiz!</CardTitle>
+          <CardTitle className="text-lg">
+            Pro faol{plan ? ` · ${plan.label} tarif` : ""}
+          </CardTitle>
           <p className="text-content-secondary">
             Barcha imkoniyatlarga cheksiz kirish faol.
           </p>
-          {expiresAt && (
-            <p className="text-xs text-content-secondary">
-              Amal qilish muddati: {new Date(expiresAt).toLocaleDateString("uz-UZ")}
-            </p>
+          {expiresAt ? (
+            <div className="space-y-1">
+              <p className="text-2xl font-bold text-accent">{daysLeft} kun qoldi</p>
+              <p className="text-xs text-content-secondary">
+                Amal qilish muddati: {formatExpiry(expiresAt)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-content-secondary">Muddatsiz faol obuna</p>
           )}
-          <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Bosh sahifaga qaytish
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Link href="/upgrade">
+              {/* Renewing early adds to the days left, it never resets them. */}
+              <Button className="w-full sm:w-auto">Muddatni uzaytirish</Button>
+            </Link>
+            <Button variant="outline" onClick={() => router.push("/dashboard")}>
+              Bosh sahifaga qaytish
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -69,6 +55,13 @@ export default function SubscriptionPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
+      {expired && (
+        <Card className="border-accent-yellow/30 bg-accent-yellow/5 p-4 text-center text-sm text-accent-yellow">
+          Pro obunangiz muddati tugagan
+          {expiresAt ? ` (${formatExpiry(expiresAt)})` : ""}. Davom etish uchun uzaytiring.
+        </Card>
+      )}
+
       <div className="text-center">
         <h1 className="text-2xl font-bold">Pro'ga o'ting</h1>
         <p className="mt-2 text-content-secondary">
