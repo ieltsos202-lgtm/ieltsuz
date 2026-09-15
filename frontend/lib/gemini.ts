@@ -31,7 +31,12 @@ export const LIVE_MODEL_CHAIN = [
   "gemini-2.0-flash",
 ];
 
-function isExhausted(err: any): boolean {
+/** Every configured key, primary first. */
+export function geminiKeys(): string[] {
+  return API_KEYS.length ? API_KEYS : [API_KEY];
+}
+
+export function isExhausted(err: any): boolean {
   const msg = String(err?.message || err || "").toLowerCase();
   const status = err?.status || 0;
   return (

@@ -108,6 +108,26 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return res.json();
 }
 
+/**
+ * Multipart POST that returns the raw Response, for endpoints that stream
+ * their answer (e.g. the live speaking turn's NDJSON event stream).
+ */
+export async function apiPostFormStream(
+  path: string,
+  form: FormData,
+  signal?: AbortSignal
+): Promise<Response> {
+  const headers = await authHeader();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers,
+    body: form,
+    signal,
+  });
+  if (!res.ok) throw new Error(await readError(res, `POST ${path}`));
+  return res;
+}
+
 export async function apiPostForm<T>(path: string, form: FormData): Promise<T> {
   const headers = await authHeader();
   const res = await fetch(`${API_URL}${path}`, {

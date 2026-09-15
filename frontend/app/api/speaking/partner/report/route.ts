@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth, updateSpeakingProgress } from "@/lib/supabaseServer";
+import { computeSessionMetrics, describeMetrics } from "@/lib/speaking/metrics";
 
 const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
 
@@ -51,6 +52,20 @@ export async function POST(req: NextRequest) {
       }))
     );
 
+    // Measured speaking time per answer, sent by the client (0 if unavailable).
+    let speakingSeconds = 0;
+    try {
+      const parsedDurations = JSON.parse((formData.get("durations") as string) || "[]");
+      if (Array.isArray(parsedDurations)) {
+        speakingSeconds = parsedDurations
+          .map((n: unknown) => (typeof n === "number" && isFinite(n) ? n : 0))
+          .reduce((a: number, b: number) => a + b, 0);
+      }
+    } catch {
+      speakingSeconds = 0;
+    }
+    const metrics = computeSessionMetrics(userTurns.map((t) => t.text), speakingSeconds);
+
     const transcriptBlock = turns
       .map((t) => `${t.role === "user" ? "Candidate" : examinerName}: ${t.text}`)
       .join("\n");
@@ -66,6 +81,9 @@ export async function POST(req: NextRequest) {
 
 FULL SESSION TRANSCRIPT:
 ${transcriptBlock}
+
+MEASURED SESSION METRICS (counted from the transcript and the recordings — treat these as facts, do not contradict them):
+${describeMetrics(metrics)}
 
 Assess the candidate across the four official IELTS Speaking criteria, weighted equally:
 
@@ -165,6 +183,7 @@ OUTPUT — return strict JSON, no markdown, matching this shape:
         : [],
       corrected_examples: correctedExamples,
       examiner_summary: typeof parsed.examiner_summary === "string" ? parsed.examiner_summary : "",
+      metrics,
     };
 
     // Best-effort persistence — never blocks the report.

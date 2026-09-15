@@ -6,7 +6,8 @@ import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
-import { apiPost, apiPostForm, apiPostStream } from "@/lib/api";
+import { apiPost, apiPostForm, apiPostFormStream, apiPostStream } from "@/lib/api";
+import { playLiveTurn } from "@/lib/speaking/livePlayer";
 import {
   StudioIntro,
   StudioSession,
@@ -89,6 +90,8 @@ function SpeakingPartnerContent() {
   const answersInPartRef = useRef(0);
   const afterSpeakRef = useRef<"auto" | "prep" | "finish">("auto");
   const userBlobsRef = useRef<Blob[]>([]);
+  // Measured speaking seconds per answer; the report turns these into wpm.
+  const turnDurationsRef = useRef<number[]>([]);
   const recordLimitRef = useRef(89);
   const silenceMsRef = useRef(1000);
   const prepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -116,12 +119,21 @@ function SpeakingPartnerContent() {
   const aliveRef = useRef(true);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const audioCleanupRef = useRef<(() => void) | null>(null);
+  // One element for every streamed turn: reusing it keeps the autoplay
+  // permission granted by the user's first tap.
+  const liveAudioRef = useRef<HTMLAudioElement | null>(null);
+  const liveAbortRef = useRef<AbortController | null>(null);
 
   // Hard stop for whatever the examiner is saying: pauses, detaches the source
   // so a MediaSource pump can't keep feeding it, and cancels the TTS download.
   const stopAudio = useCallback(() => {
     ttsAbortRef.current?.abort();
     ttsAbortRef.current = null;
+    // Barge-in: kill the live turn's event stream and silence its element.
+    liveAbortRef.current?.abort();
+    liveAbortRef.current = null;
+    const live = liveAudioRef.current;
+    if (live && !live.paused) live.pause();
     const a = audioRef.current;
     audioRef.current = null;
     pendingAudioRef.current = null;
@@ -342,6 +354,7 @@ function SpeakingPartnerContent() {
     cueCardRef.current = null;
     afterSpeakRef.current = "auto";
     userBlobsRef.current = [];
+    turnDurationsRef.current = [];
     firstTurnRef.current = true;
     silenceStrikesRef.current = 0;
     memorySyncedRef.current = false;
@@ -360,6 +373,15 @@ function SpeakingPartnerContent() {
     }
     // Ask for the mic now (inside the user gesture) while the greeting loads.
     void ensureStream().catch(() => {});
+    // Create the reusable playback element inside the gesture so streamed
+    // turns never hit an autoplay block, and warm the upstream connections
+    // (DNS + TLS to Gemini/ElevenLabs) before the first real turn.
+    if (!liveAudioRef.current) {
+      const el = new Audio();
+      el.preload = "auto";
+      liveAudioRef.current = el;
+    }
+    void apiPost("/api/speaking/warmup", {}).catch(() => {});
 
     const firstName = profile?.full_name ? profile.full_name.split(" ")[0] : "";
     let greeting =
@@ -425,9 +447,10 @@ function SpeakingPartnerContent() {
 
     const isLongTurn = modeRef.current === "exam" && examPartRef.current === 2;
     recordLimitRef.current = isLongTurn ? 120 : 89;
-    // 3s of silence ends the turn (the long turn gets a little extra room for
-    // thinking pauses).
-    silenceMsRef.current = isLongTurn ? 3500 : 3000;
+    // End-of-turn detection has to be fast for the conversation to feel live:
+    // ~0.9s of silence closes a normal answer, the Part 2 long turn keeps more
+    // room for thinking pauses.
+    silenceMsRef.current = isLongTurn ? 1800 : 900;
     setEmotion("neutral");
 
     try {
@@ -598,6 +621,9 @@ function SpeakingPartnerContent() {
           return;
         }
         silenceStrikesRef.current = 0;
+        // Trailing silence is what ended the turn, so it isn't speaking time.
+        const spoken = (Date.now() - listenStartRef.current - silenceMsRef.current) / 1000;
+        turnDurationsRef.current.push(Math.max(1, Math.round(spoken)));
         void sendTurn(blob);
       };
       mediaRecorderRef.current = recorder;
@@ -662,6 +688,7 @@ function SpeakingPartnerContent() {
       form.append("partner_name", partnerName);
       form.append("turns", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
       userBlobsRef.current.forEach((b, i) => form.append("audio", b, `turn-${i}.webm`));
+      form.append("durations", JSON.stringify(turnDurationsRef.current));
       const res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
       if (!aliveRef.current) return;
       setReport(res);
@@ -732,96 +759,141 @@ function SpeakingPartnerContent() {
     userBlobsRef.current.push(blob);
     const isExam = modeRef.current === "exam";
     const exam = isExam ? buildExamInstruction() : null;
+    const lastQuestion = [...turnsRef.current].reverse().find((t) => t.role === "partner")?.text || "";
+
+    const form = new FormData();
+    form.append("audio", blob, blob.type.includes("mp4") ? "turn.m4a" : "turn.webm");
+    form.append("last_question", lastQuestion.slice(0, 400));
+    form.append("partner_name", partnerName);
+    form.append("user_name", profile?.full_name || "");
+    form.append("first_turn", firstTurnRef.current ? "1" : "0");
+    form.append("mode", modeRef.current);
+    if (exam) {
+      form.append("exam_instruction", exam.instruction);
+      form.append("exam_part", String(examPartRef.current));
+      form.append("exam_elapsed", String(Math.round((Date.now() - partStartRef.current) / 1000)));
+      if (exam.transition === "to_part2") form.append("wants_cue_card", "1");
+      const cc = cueCardRef.current;
+      if (cc && examPartRef.current >= 2) {
+        form.append("exam_cue", `${cc.topic} (${cc.bullets.join("; ")})`);
+      }
+    }
+    form.append("history", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
+
+    const audio = liveAudioRef.current || new Audio();
+    liveAudioRef.current = audio;
+    const abort = new AbortController();
+    liveAbortRef.current = abort;
+
+    const tSend = performance.now();
+    let partnerIndex = -1;
+    let userIndex = -1;
+    let userTranscript = "";
+    let replyText = "";
+    let streamError: string | null = null;
+
     try {
-      const form = new FormData();
-      form.append("audio", blob, blob.type.includes("mp4") ? "turn.m4a" : "turn.webm");
-      const lastQuestion = [...turnsRef.current].reverse().find((t) => t.role === "partner")?.text || "";
-      form.append("last_question", lastQuestion.slice(0, 400));
-      form.append("partner_name", partnerName);
-      form.append("user_name", profile?.full_name || "");
-      form.append("first_turn", firstTurnRef.current ? "1" : "0");
-      form.append("mode", modeRef.current);
-      if (exam) {
-        form.append("exam_instruction", exam.instruction);
-        form.append("exam_part", String(examPartRef.current));
-        form.append("exam_elapsed", String(Math.round((Date.now() - partStartRef.current) / 1000)));
-        const cc = cueCardRef.current;
-        if (cc && examPartRef.current >= 2) {
-          form.append("exam_cue", `${cc.topic} (${cc.bullets.join("; ")})`);
-        }
+      // One streamed request: the examiner starts speaking sentence 1 while the
+      // model is still writing the rest.
+      const res = await apiPostFormStream("/api/speaking/live", form, abort.signal);
+      if (!aliveRef.current || abort.signal.aborted) {
+        void res.body?.cancel().catch(() => {});
+        return;
       }
-      form.append("history", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
-
-      const tSend = performance.now();
-      type PartnerRes = {
-        user_transcript: string;
-        reply: string;
-        emotion: StudioEmotion;
-        cue_card: StudioCueCard | null;
-      };
-      let res: PartnerRes;
-      try {
-        res = await apiPostForm<PartnerRes>("/api/speaking/partner", form);
-      } catch (first: unknown) {
-        // One silent retry for a transient rate-limit / overload, so the
-        // conversation doesn't break on a single busy upstream call.
-        const m = (first as Error)?.message || "";
-        if (!/band|503|urinib/i.test(m) || !aliveRef.current) throw first;
-        await new Promise((r) => setTimeout(r, 1500));
-        if (!aliveRef.current) return;
-        res = await apiPostForm<PartnerRes>("/api/speaking/partner", form);
-      }
-      if (!aliveRef.current) return;
-      if (process.env.NODE_ENV !== "production") {
-        console.debug(`[studio] partner reply in ${Math.round(performance.now() - tSend)}ms`);
-      }
-
       firstTurnRef.current = false;
 
-      if (exam) {
-        answersInPartRef.current += 1;
-        if (exam.transition === "to_part2") {
-          examPartRef.current = 2;
-          setExamPart(2);
-          answersInPartRef.current = 0;
-          partStartRef.current = Date.now();
-          const cc = res.cue_card ?? FALLBACK_CUE;
-          cueCardRef.current = cc;
-          setCueCard(cc);
-          afterSpeakRef.current = "prep";
-        } else if (exam.transition === "to_part3") {
-          examPartRef.current = 3;
-          setExamPart(3);
-          answersInPartRef.current = 0;
-          partStartRef.current = Date.now();
-        } else if (exam.transition === "finish") {
-          afterSpeakRef.current = "finish";
-        }
+      await playLiveTurn(
+        res,
+        audio,
+        {
+          onMeta: (meta) => {
+            if (!aliveRef.current) return;
+            userTranscript = meta.transcript || "";
+            const emo = (meta.emotion || "neutral") as StudioEmotion;
+            setEmotion(emo);
+
+            if (exam) {
+              answersInPartRef.current += 1;
+              if (exam.transition === "to_part2") {
+                examPartRef.current = 2;
+                setExamPart(2);
+                answersInPartRef.current = 0;
+                partStartRef.current = Date.now();
+                const cc = meta.cue_card?.topic
+                  ? { topic: meta.cue_card.topic, bullets: meta.cue_card.bullets || [] }
+                  : FALLBACK_CUE;
+                cueCardRef.current = cc;
+                setCueCard(cc);
+                afterSpeakRef.current = "prep";
+              } else if (exam.transition === "to_part3") {
+                examPartRef.current = 3;
+                setExamPart(3);
+                answersInPartRef.current = 0;
+                partStartRef.current = Date.now();
+              } else if (exam.transition === "finish") {
+                afterSpeakRef.current = "finish";
+              }
+            }
+
+            setTurns((prev) => {
+              const next = [...prev];
+              if (userTranscript) {
+                userIndex = next.length;
+                next.push({ role: "user" as const, text: userTranscript });
+              }
+              partnerIndex = next.length;
+              next.push({ role: "partner" as const, text: "", emotion: emo });
+              return next;
+            });
+          },
+          onSentence: (sentence) => {
+            if (!aliveRef.current) return;
+            replyText = replyText ? `${replyText} ${sentence}` : sentence;
+            const text = replyText;
+            setTurns((prev) =>
+              prev.map((t, i) => (i === partnerIndex && t.role === "partner" ? { ...t, text } : t))
+            );
+          },
+          onPlaybackStart: () => {
+            if (aliveRef.current) setPhase("speaking");
+          },
+          onError: (msg) => {
+            streamError = msg;
+          },
+          onTiming: (timing) => {
+            if (process.env.NODE_ENV !== "production") {
+              console.debug(
+                `[studio] turn ${Math.round(performance.now() - tSend)}ms`,
+                timing
+              );
+            }
+          },
+        },
+        abort.signal
+      );
+
+      if (!aliveRef.current || abort.signal.aborted) return;
+      if (liveAbortRef.current === abort) liveAbortRef.current = null;
+
+      if (streamError) {
+        setError(streamError);
+        setPhase("idle");
+        return;
       }
 
-      // Voice first — the TTS request goes out before any other work.
-      void playPartner(res.reply, res.emotion, modeRef.current);
-
-      const userTurnIndex = turnsRef.current.length;
-      setTurns((prev) => [
-        ...prev,
-        ...(res.user_transcript ? [{ role: "user" as const, text: res.user_transcript }] : []),
-        { role: "partner" as const, text: res.reply, emotion: res.emotion },
-      ]);
-      setEmotion(res.emotion);
-
-      // Correction / vocab tip / memory run on a small text model while the
-      // examiner is already talking; the bubble fills in when it arrives.
-      if (res.user_transcript) {
+      // Correction / vocab tip run on a small text model while the examiner is
+      // already talking; the bubble fills in when it arrives.
+      if (userTranscript && userIndex >= 0) {
+        const idx = userIndex;
         void apiPost<{ correction: StudioTurn["correction"]; vocab_tip: StudioTurn["vocab_tip"] }>(
           "/api/speaking/partner/analyze",
-          { transcript: res.user_transcript, question: lastQuestion, mode: modeRef.current }
+          { transcript: userTranscript, question: lastQuestion, mode: modeRef.current }
         )
           .then((a) => {
             if (!aliveRef.current || (!a?.correction && !a?.vocab_tip)) return;
             setTurns((prev) =>
               prev.map((t, i) =>
-                i === userTurnIndex && t.role === "user"
+                i === idx && t.role === "user"
                   ? { ...t, correction: a.correction ?? null, vocab_tip: a.vocab_tip ?? null }
                   : t
               )
@@ -829,12 +901,14 @@ function SpeakingPartnerContent() {
           })
           .catch(() => {});
       }
+
+      handlePartnerDone();
     } catch (e: unknown) {
-      if (!aliveRef.current) return;
+      if (!aliveRef.current || (e as Error)?.name === "AbortError") return;
       const msg = (e as Error)?.message || "";
       if (msg.includes("Trial limit") || msg.includes("402")) setUpgradeNeeded(true);
       else setError(msg || "Xatolik yuz berdi.");
-      setPhase(turns.length > 0 ? "idle" : "intro");
+      setPhase(turnsRef.current.length > 0 ? "idle" : "intro");
     }
   };
 

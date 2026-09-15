@@ -81,6 +81,17 @@ export interface StudioReport {
   l1_interference_notes: string[];
   corrected_examples: { said: string; better: string; why: string }[];
   examiner_summary: string;
+  metrics?: {
+    words: number;
+    speaking_seconds: number;
+    words_per_minute: number;
+    words_per_answer: number;
+    filler_count: number;
+    filler_rate: number;
+    vocabulary_diversity: number;
+    overused_words: string[];
+    answers: number;
+  };
 }
 
 const PART_LABELS: Record<1 | 2 | 3, string> = {
@@ -693,6 +704,43 @@ export function StudioReportView({
             );
           })}
         </div>
+
+        {report.metrics && report.metrics.words > 0 && (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+            <p className="mb-3 font-semibold">O&apos;lchangan ko&apos;rsatkichlar</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  label: "Tezlik",
+                  value: report.metrics.words_per_minute
+                    ? `${report.metrics.words_per_minute} so'z/daq`
+                    : "—",
+                },
+                { label: "Jami so'z", value: String(report.metrics.words) },
+                {
+                  label: "Filler",
+                  value: `${report.metrics.filler_count} (${report.metrics.filler_rate}%)`,
+                },
+                {
+                  label: "Lug'at xilma-xilligi",
+                  value: `${Math.round(report.metrics.vocabulary_diversity * 100)}%`,
+                },
+              ].map((m) => (
+                <div key={m.label} className="rounded-xl bg-white/5 p-3 text-center">
+                  <p className="text-lg font-semibold">{m.value}</p>
+                  <p className="mt-0.5 text-[11px] uppercase tracking-wide text-content-secondary">
+                    {m.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {report.metrics.overused_words.length > 0 && (
+              <p className="mt-3 text-sm text-content-secondary">
+                Ko&apos;p takrorlangan so&apos;zlar: {report.metrics.overused_words.join(", ")}
+              </p>
+            )}
+          </div>
+        )}
 
         {report.examiner_summary && (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
