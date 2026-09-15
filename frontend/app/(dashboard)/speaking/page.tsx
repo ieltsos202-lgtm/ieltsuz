@@ -88,7 +88,7 @@ export default function SpeakingPage() {
       {/* Individual parts — tertiary */}
       <div>
         <p className="mb-3 text-sm font-medium text-content-secondary">
-          Drill individual parts (record &amp; evaluate)
+          Alohida qismlarni mashq qiling — Adam bilan, o&apos;sha jonli examiner rejimida
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           {PARTS.map((p) => (
@@ -97,7 +97,7 @@ export default function SpeakingPage() {
                 <p className="text-lg font-semibold">{p.title}</p>
                 <p className="mt-1 text-sm text-content-secondary">{p.desc}</p>
               </div>
-              <Link href={`/speaking/${p.id}`} className="mt-auto">
+              <Link href={`/speaking/partner?mode=exam&part=${p.id}`} className="mt-auto">
                 <Button variant="outline" size="sm" className="w-full">
                   <Mic className="mr-2 h-3.5 w-3.5" />
                   Practice {p.title}

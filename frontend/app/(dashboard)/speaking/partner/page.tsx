@@ -23,6 +23,14 @@ import {
 
 const P1_QUESTIONS = 4;
 const P3_QUESTIONS = 5;
+const GREETING_TIMEOUT_MS = 3500;
+const NO_SPEECH_MS = 15000;
+
+type ExamPart = 1 | 2 | 3;
+
+function parsePart(v: string | null): ExamPart | null {
+  return v === "1" || v === "2" || v === "3" ? (Number(v) as ExamPart) : null;
+}
 
 const SILENCE_NUDGES: { text: string; emotion: StudioEmotion }[] = [
   { text: "Hey, I'm waiting. Uxlab qoldingmi? Answer the question.", emotion: "annoyed" },
@@ -63,7 +71,9 @@ function SpeakingPartnerContent() {
   const [seconds, setSeconds] = useState(0);
   const [micLevel, setMicLevel] = useState(0);
   const [mode, setMode] = useState<StudioMode>("chat");
-  const [examPart, setExamPart] = useState<1 | 2 | 3>(1);
+  const [examPart, setExamPart] = useState<ExamPart>(1);
+  const [onlyPart, setOnlyPart] = useState<ExamPart | null>(null);
+  const [micHint, setMicHint] = useState<string | null>(null);
   const [cueCard, setCueCard] = useState<StudioCueCard | null>(null);
   const [prepSeconds, setPrepSeconds] = useState(60);
   const [report, setReport] = useState<StudioReport | null>(null);
@@ -71,7 +81,11 @@ function SpeakingPartnerContent() {
   const firstTurnRef = useRef(true);
   const autoStartedRef = useRef(false);
   const modeRef = useRef<StudioMode>("chat");
-  const examPartRef = useRef<1 | 2 | 3>(1);
+  const examPartRef = useRef<ExamPart>(1);
+  const onlyPartRef = useRef<ExamPart | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const analyserStreamRef = useRef<MediaStream | null>(null);
+  const micHealthyRef = useRef(true);
   const answersInPartRef = useRef(0);
   const afterSpeakRef = useRef<"auto" | "prep" | "finish">("auto");
   const userBlobsRef = useRef<Blob[]>([]);
@@ -102,6 +116,38 @@ function SpeakingPartnerContent() {
 
   useEffect(() => { turnsRef.current = turns; }, [turns]);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [turns, phase]);
+
+  const releaseStream = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    analyserRef.current = null;
+    analyserStreamRef.current = null;
+  }, []);
+
+  // One mic stream for the whole session: asking getUserMedia on every turn
+  // costs 200-600ms and is the main reason the first word gets cut off.
+  const ensureStream = useCallback(async (): Promise<MediaStream> => {
+    const cur = streamRef.current;
+    if (cur && cur.getAudioTracks().some((t) => t.readyState === "live")) return cur;
+    releaseStream();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1,
+      },
+    });
+    stream.getAudioTracks().forEach((t) => {
+      t.onmute = () => setMicHint("Mikrofon o'chib qoldi (mute). Tizim/brauzer sozlamalarini tekshiring.");
+      t.onunmute = () => setMicHint(null);
+      t.onended = () => {
+        if (streamRef.current === stream) streamRef.current = null;
+      };
+    });
+    streamRef.current = stream;
+    return stream;
+  }, [releaseStream]);
 
   useEffect(() => {
     return () => {
@@ -235,11 +281,15 @@ function SpeakingPartnerContent() {
     startRecordingRef.current();
   }, []);
 
-  const startSession = async (m: StudioMode) => {
+  const startSession = async (m: StudioMode, part: ExamPart | null = null) => {
+    const startPart: ExamPart = m === "exam" && part ? part : 1;
     setMode(m);
     modeRef.current = m;
-    examPartRef.current = 1;
-    setExamPart(1);
+    onlyPartRef.current = m === "exam" ? part : null;
+    setOnlyPart(m === "exam" ? part : null);
+    examPartRef.current = startPart;
+    setExamPart(startPart);
+    setMicHint(null);
     answersInPartRef.current = 0;
     partStartRef.current = Date.now();
     cueCardRef.current = null;
@@ -261,23 +311,42 @@ function SpeakingPartnerContent() {
       audioCtxRef.current = new AudioCtx();
       audioCtxRef.current.resume().catch(() => {});
     }
+    // Ask for the mic now (inside the user gesture) while the greeting loads.
+    void ensureStream().catch(() => {});
 
     const firstName = profile?.full_name ? profile.full_name.split(" ")[0] : "";
     let greeting =
       m === "exam"
-        ? `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}, your examiner today. Let's begin with Part 1. Could you tell me your full name, please?`
+        ? startPart === 2
+          ? `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}. We'll go straight to Part 2. You have one minute to prepare, then speak for one to two minutes. Your topic is: ${FALLBACK_CUE.topic}`
+          : startPart === 3
+          ? `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}. Let's go straight to Part 3. Why do you think some people are more influential in society than others?`
+          : `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}, your examiner today. Let's begin with Part 1. Could you tell me your full name, please?`
         : `Hey${firstName ? " " + firstName : ""}, it's ${partnerName}. Ready to work? Tell me — what did you actually do today?`;
     let emo: StudioEmotion = m === "exam" ? "neutral" : "happy";
+    let greetingCue: StudioCueCard | null = null;
 
     try {
-      const g = await apiPost<{ text: string; emotion: StudioEmotion }>(
-        "/api/speaking/partner/greeting",
-        { mode: m, partner_name: partnerName, user_name: profile?.full_name || "" }
-      );
+      // Personalised greeting is nice-to-have; never let it delay the voice.
+      const g = await Promise.race([
+        apiPost<{ text: string; emotion: StudioEmotion; cue_card?: StudioCueCard | null }>(
+          "/api/speaking/partner/greeting",
+          { mode: m, part: startPart, partner_name: partnerName, user_name: profile?.full_name || "" }
+        ),
+        new Promise<null>((r) => setTimeout(() => r(null), GREETING_TIMEOUT_MS)),
+      ]);
       if (g?.text) greeting = g.text;
       if (g?.emotion) emo = g.emotion;
+      if (g?.cue_card?.topic) greetingCue = g.cue_card;
     } catch {
       /* fallback greeting already set */
+    }
+
+    if (m === "exam" && startPart === 2) {
+      const cc = greetingCue ?? FALLBACK_CUE;
+      cueCardRef.current = cc;
+      setCueCard(cc);
+      afterSpeakRef.current = "prep";
     }
 
     setTurns([{ role: "partner", text: greeting, emotion: emo }]);
@@ -293,7 +362,7 @@ function SpeakingPartnerContent() {
     const requested = searchParams.get("mode");
     if ((requested === "exam" || requested === "chat") && phase === "intro" && !autoStartedRef.current) {
       autoStartedRef.current = true;
-      void startSessionRef.current(requested);
+      void startSessionRef.current(requested, parsePart(searchParams.get("part")));
     }
   }, [searchParams, phase]);
 
@@ -314,16 +383,7 @@ function SpeakingPartnerContent() {
     setEmotion("neutral");
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-          sampleRate: 48000,
-        },
-      });
-      streamRef.current = stream;
+      const stream = await ensureStream();
 
       const AudioCtx =
         window.AudioContext ||
@@ -331,31 +391,42 @@ function SpeakingPartnerContent() {
       const audioCtx = audioCtxRef.current || new AudioCtx();
       audioCtxRef.current = audioCtx;
       await audioCtx.resume().catch(() => {});
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 2048;
-      analyser.smoothingTimeConstant = 0.4;
-      audioCtx.createMediaStreamSource(stream).connect(analyser);
+      let analyser = analyserRef.current;
+      if (!analyser || analyserStreamRef.current !== stream) {
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.4;
+        audioCtx.createMediaStreamSource(stream).connect(analyser);
+        analyserRef.current = analyser;
+        analyserStreamRef.current = stream;
+      }
 
       // --- Adaptive voice activity detection ---
-      // Calibrate the room's noise floor for the first 350ms, then require the
-      // smoothed level to exceed floor*3 (hysteresis: stays "speaking" until it
-      // drops below floor*1.8). Speech must last >=250ms to count — filters clicks.
+      // Calibrate the room's noise floor for the first 300ms (capped so a fan or
+      // AC can't push the threshold out of reach), then use hysteresis. After
+      // each silent strike we get more sensitive — a soft voice must never be
+      // mistaken for silence.
+      const sensitivity = 1 + Math.min(3, silenceStrikesRef.current) * 0.45;
       const data = new Uint8Array(analyser.fftSize);
       let frame = 0;
       let noiseFloor = 0.004;
       let calSamples = 0;
       let smooth = 0;
+      let peak = 0;
+      let rawMax = 0;
       let speaking = false;
       let speechMs = 0;
       let lastFrameAt = Date.now();
-      const calibrateUntil = Date.now() + 350;
+      const calibrateUntil = Date.now() + 300;
       const stopOnce = () => {
         const r = mediaRecorderRef.current;
         if (r && r.state === "recording") r.stop();
       };
 
       const monitor = () => {
-        analyser.getByteTimeDomainData(data);
+        const a = analyserRef.current;
+        if (!a) return;
+        a.getByteTimeDomainData(data);
         let sum = 0;
         for (let i = 0; i < data.length; i++) {
           const v = data[i] / 128.0 - 1;
@@ -363,22 +434,34 @@ function SpeakingPartnerContent() {
         }
         const rms = Math.sqrt(sum / data.length);
         smooth = smooth * 0.7 + rms * 0.3;
+        rawMax = Math.max(rawMax, rms);
         frame++;
         if (frame % 2 === 0) setMicLevel(Math.max(0, smooth - noiseFloor) * 1.5);
 
         const now = Date.now();
         const dt = now - lastFrameAt;
         lastFrameAt = now;
+        const listenedMs = now - listenStartRef.current;
         if (now < calibrateUntil) {
-          noiseFloor = (noiseFloor * calSamples + rms) / (calSamples + 1);
+          noiseFloor = Math.min(0.015, (noiseFloor * calSamples + rms) / (calSamples + 1));
           calSamples++;
           rafRef.current = requestAnimationFrame(monitor);
           return;
         }
-        // Quiet speech through noiseSuppression+AGC can sit at RMS ~0.008 —
-        // keep the floor low so soft voices still register.
-        const onThreshold = Math.max(0.006, noiseFloor * 2.5);
-        const offThreshold = Math.max(0.0035, noiseFloor * 1.5);
+        peak = Math.max(peak, smooth);
+
+        // A mic that delivers pure digital silence for 4s is muted / wrong device.
+        if (listenedMs > 4000 && rawMax < 0.0008 && micHealthyRef.current) {
+          micHealthyRef.current = false;
+          setMicHint("Mikrofon ovoz olmayapti. Brauzer manzil satridagi mikrofon belgisini va tizimdagi kirish qurilmasini tekshiring.");
+        } else if (rawMax >= 0.0008 && !micHealthyRef.current) {
+          micHealthyRef.current = true;
+          setMicHint(null);
+        }
+
+        // Quiet speech through noiseSuppression+AGC can sit at RMS ~0.006.
+        const onThreshold = Math.max(0.0045, noiseFloor * 2.2) / sensitivity;
+        const offThreshold = Math.max(0.003, noiseFloor * 1.4) / sensitivity;
 
         if (!speaking && smooth > onThreshold) {
           speaking = true;
@@ -390,15 +473,18 @@ function SpeakingPartnerContent() {
           // Cumulative speech time — brief dips below the threshold during
           // normal speech must not reset the counter.
           speechMs += dt;
-          if (!hasSpokenRef.current && speechMs >= 200) hasSpokenRef.current = true;
+          if (!hasSpokenRef.current && speechMs >= 180) hasSpokenRef.current = true;
           if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
             silenceTimerRef.current = null;
           }
         } else if (hasSpokenRef.current && !silenceTimerRef.current) {
           silenceTimerRef.current = setTimeout(stopOnce, silenceMsRef.current);
-        } else if (!hasSpokenRef.current && now - listenStartRef.current > 12000) {
-          discardRef.current = true;
+        } else if (!hasSpokenRef.current && listenedMs > NO_SPEECH_MS) {
+          // VAD saw no clear speech. If there was *any* real energy above the
+          // room floor, still send it — let the model decide rather than
+          // telling a quiet speaker "I can't hear you".
+          discardRef.current = !(peak > noiseFloor * 1.5 && peak > 0.0025);
           stopOnce();
           return;
         }
@@ -418,7 +504,6 @@ function SpeakingPartnerContent() {
       };
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        stream.getTracks().forEach((t) => t.stop());
         if (timerRef.current) clearInterval(timerRef.current);
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         if (silenceTimerRef.current) {
@@ -459,12 +544,19 @@ function SpeakingPartnerContent() {
           return s + 1;
         });
       }, 1000);
-    } catch {
-      setError("Mikrofonga ruxsat bering.");
+    } catch (err) {
+      const name = (err as Error)?.name || "";
+      setError(
+        name === "NotFoundError" || name === "DevicesNotFoundError"
+          ? "Mikrofon topilmadi. Qurilmani ulab, qayta urinib ko'ring."
+          : name === "NotReadableError"
+          ? "Mikrofon boshqa dastur tomonidan band. Uni yopib, qayta urinib ko'ring."
+          : "Mikrofonga ruxsat bering."
+      );
       setPhase("idle");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [turns, partnerName, profile]);
+  }, [turns, partnerName, profile, ensureStream]);
 
   startRecordingRef.current = startRecording;
 
@@ -490,6 +582,7 @@ function SpeakingPartnerContent() {
     audioRef.current?.pause();
     audioRef.current = null;
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    releaseStream();
     setPhase("report_loading");
     syncMemory();
     try {
@@ -505,23 +598,31 @@ function SpeakingPartnerContent() {
       setError((e as Error)?.message || "Hisobot tayyorlashda xatolik.");
       setPhase("idle");
     }
-  }, [partnerName, syncMemory]);
+  }, [partnerName, syncMemory, releaseStream]);
   generateReportRef.current = generateReport;
 
   const exitSession = useCallback(() => {
     syncMemory();
     audioRef.current?.pause();
+    releaseStream();
     router.push("/speaking");
-  }, [router, syncMemory]);
+  }, [router, syncMemory, releaseStream]);
 
   const buildExamInstruction = () => {
     const part = examPartRef.current;
     const answered = answersInPartRef.current + 1;
+    const single = onlyPartRef.current !== null;
     if (part === 1) {
       if (answered < P1_QUESTIONS) {
         return {
           instruction: `Part 1: candidate answered ${answered}/${P1_QUESTIONS}. Brief ack, then next Part 1 question — follow-up or new familiar topic.`,
           transition: "none" as const,
+        };
+      }
+      if (single) {
+        return {
+          instruction: `Final Part 1 question done. Thank them briefly: "That is the end of Part 1." No more questions.`,
+          transition: "finish" as const,
         };
       }
       return {
@@ -530,6 +631,12 @@ function SpeakingPartnerContent() {
       };
     }
     if (part === 2) {
+      if (single) {
+        return {
+          instruction: `Part 2 long turn finished. Thank them briefly: "Thank you. That is the end of Part 2." No more questions.`,
+          transition: "finish" as const,
+        };
+      }
       return {
         instruction: `Part 2 long turn finished. Thank them, introduce Part 3, ask first abstract question.`,
         transition: "to_part3" as const,
@@ -658,8 +765,10 @@ function SpeakingPartnerContent() {
       phase={phase}
       emotion={emotion}
       micLevel={micLevel}
+      micHint={micHint}
       turns={turns}
       examPart={examPart}
+      onlyPart={onlyPart}
       cueCard={cueCard}
       prepSeconds={prepSeconds}
       seconds={seconds}

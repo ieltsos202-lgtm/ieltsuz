@@ -210,9 +210,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No audio provided" }, { status: 400 });
     }
 
-    const audioBytes = await audioFile.arrayBuffer();
+    const [audioBytes, memory] = await Promise.all([
+      audioFile.arrayBuffer(),
+      loadSpeakingMemory(supabase, user.id),
+    ]);
     const audioBase64 = Buffer.from(audioBytes).toString("base64");
-    const memory = await loadSpeakingMemory(supabase, user.id);
 
     const model = getModel(PARTNER_MODEL, true, {
       maxOutputTokens: mode === "exam" ? 500 : 400,

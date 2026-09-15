@@ -362,8 +362,10 @@ export function StudioSession({
   phase,
   emotion,
   micLevel,
+  micHint = null,
   turns,
   examPart,
+  onlyPart = null,
   cueCard,
   prepSeconds,
   seconds,
@@ -382,8 +384,10 @@ export function StudioSession({
   phase: StudioPhase;
   emotion: StudioEmotion;
   micLevel: number;
+  micHint?: string | null;
   turns: StudioTurn[];
   examPart: 1 | 2 | 3;
+  onlyPart?: 1 | 2 | 3 | null;
   cueCard: StudioCueCard | null;
   prepSeconds: number;
   seconds: number;
@@ -429,7 +433,7 @@ export function StudioSession({
                   : "bg-accent-purple/20 text-accent-purple"
               )}
             >
-              {mode === "exam" ? "Mock Exam" : "Friendly Chat"}
+              {mode === "exam" ? (onlyPart ? `Part ${onlyPart} Drill` : "Mock Exam") : "Friendly Chat"}
             </span>
             {phase === "listening" && (
               <span className="flex items-center gap-1 font-mono text-xs tabular-nums text-accent-red">
@@ -446,7 +450,7 @@ export function StudioSession({
         {/* Exam progress */}
         {mode === "exam" && (
           <div className="flex justify-center gap-2">
-            {([1, 2, 3] as const).map((p) => (
+            {([1, 2, 3] as const).filter((p) => !onlyPart || p === onlyPart).map((p) => (
               <span
                 key={p}
                 className={cn(
@@ -486,6 +490,30 @@ export function StudioSession({
             )}
             {statusText}
           </div>
+
+          {/* Mic level — lets the learner see the mic is actually picking them up */}
+          {phase === "listening" && (
+            <div className="flex h-3 items-end gap-[3px]" aria-hidden>
+              {Array.from({ length: 14 }).map((_, i) => {
+                const active = micLevel * 60 > i;
+                return (
+                  <span
+                    key={i}
+                    className={cn(
+                      "w-1 rounded-full transition-all duration-75",
+                      active ? "bg-accent" : "bg-white/10"
+                    )}
+                    style={{ height: active ? `${6 + i * 0.5}px` : "4px" }}
+                  />
+                );
+              })}
+            </div>
+          )}
+          {micHint && (
+            <p className="max-w-md rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-200">
+              {micHint}
+            </p>
+          )}
 
           {/* Live caption: what the examiner is saying / asked */}
           <AnimatePresence mode="wait">

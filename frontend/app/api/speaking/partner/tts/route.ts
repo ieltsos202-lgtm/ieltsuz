@@ -9,11 +9,13 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
 // George — warm British male that holds up well across languages (incl. Turkic).
 // Swap via ELEVENLABS_VOICE_ID for another voice.
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb";
-// Primary: v3 conversational (~280ms first byte, 70+ langs, emotion tags).
-// Fallback: turbo v2.5 (fast). If the primary is not enabled on the account we
-// remember that for 10 minutes so every turn doesn't pay for a failed request.
-const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_v3_conversational";
-const ELEVENLABS_FALLBACK_MODEL_ID = process.env.ELEVENLABS_FALLBACK_MODEL_ID || "eleven_turbo_v2_5";
+// Primary: turbo v2.5 (~250ms first byte, 32 langs, good quality).
+// Fallback: flash v2.5 (~75ms). multilingual_v2 sounds slightly richer but its
+// ~1s+ first byte is the single biggest source of "the examiner is slow".
+// If the primary is not enabled on the account we remember that for 10
+// minutes so every turn doesn't pay for a failed request.
+const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_turbo_v2_5";
+const ELEVENLABS_FALLBACK_MODEL_ID = process.env.ELEVENLABS_FALLBACK_MODEL_ID || "eleven_flash_v2_5";
 let primaryDisabledUntil = 0;
 
 // v3 understands inline performance tags — lets the voice actually sound angry / laugh.
@@ -43,12 +45,21 @@ function normalizeUzbekForTTS(text: string): string {
 function isV3(modelId: string) {
   return modelId.startsWith("eleven_v3");
 }
+function isFast(modelId: string) {
+  return /turbo|flash/.test(modelId);
+}
 
 function settingsFor(modelId: string, s: VoiceSettings) {
-  if (!isV3(modelId)) return s;
-  // v3 only accepts stability 0 (creative) / 0.5 (natural) / 1 (robust)
-  const stability = s.stability < 0.33 ? 0 : s.stability < 0.75 ? 0.5 : 1;
-  return { stability, similarity_boost: s.similarity_boost, use_speaker_boost: s.use_speaker_boost };
+  if (isV3(modelId)) {
+    // v3 only accepts stability 0 (creative) / 0.5 (natural) / 1 (robust)
+    const stability = s.stability < 0.33 ? 0 : s.stability < 0.75 ? 0.5 : 1;
+    return { stability, similarity_boost: s.similarity_boost, use_speaker_boost: s.use_speaker_boost };
+  }
+  // On turbo/flash, style exaggeration and speaker boost both add latency.
+  if (isFast(modelId)) {
+    return { ...s, style: Math.min(s.style, 0.3), use_speaker_boost: false };
+  }
+  return s;
 }
 
 async function elevenRequest(modelId: string, text: string, settings: VoiceSettings) {
