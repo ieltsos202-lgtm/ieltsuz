@@ -12,8 +12,10 @@ export interface VoiceSettings {
 }
 
 export const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb";
-// turbo v2.5: ~250ms first byte. flash v2.5: ~75ms, slightly flatter delivery.
-export const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_turbo_v2_5";
+// multilingual_v2: ElevenLabs' most lifelike model — best-in-class English AND
+// the only model that pronounces Uzbek (via Turkish) correctly. One model for
+// both languages keeps Adam's voice identical when he switches.
+export const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
 export const ELEVENLABS_FALLBACK_MODEL_ID =
   process.env.ELEVENLABS_FALLBACK_MODEL_ID || "eleven_flash_v2_5";
 // Uzbek sentences go to the multilingual model — turbo/flash are tuned for

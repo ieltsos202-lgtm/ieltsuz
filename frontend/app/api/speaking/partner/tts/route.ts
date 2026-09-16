@@ -74,7 +74,7 @@ async function elevenRequest(modelId: string, text: string, settings: VoiceSetti
     voice_settings: settingsFor(modelId, settings),
     output_format: "mp3_44100_128",
   };
-  if (!isV3(modelId)) body.optimize_streaming_latency = 3;
+  if (!isV3(modelId)) body.optimize_streaming_latency = isFast(modelId) ? 3 : 0;
   return fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}/stream`, {
     method: "POST",
     headers: {

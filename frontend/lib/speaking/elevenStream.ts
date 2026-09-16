@@ -383,7 +383,11 @@ async function synthesize(
     voice_settings: voiceSettingsFor(opts.mode, opts.emotion, modelId),
     output_format: ELEVENLABS_OUTPUT_FORMAT,
   };
-  if (!isV3(modelId)) body.optimize_streaming_latency = ELEVENLABS_LATENCY_MODE;
+  // Latency trimming costs quality — only worth it on turbo/flash. The
+  // multilingual model runs at full quality (0).
+  if (!isV3(modelId)) {
+    body.optimize_streaming_latency = /turbo|flash/.test(modelId) ? ELEVENLABS_LATENCY_MODE : 0;
+  }
 
   const call = (id: string) =>
     fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}/stream`, {
