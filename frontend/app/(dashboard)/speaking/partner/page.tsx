@@ -149,7 +149,8 @@ function SpeakingPartnerContent() {
   }, []);
 
   useEffect(() => { turnsRef.current = turns; }, [turns]);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [turns, phase]);
+  // NOTE: no page-level scrollIntoView here — it scrolled the whole page and
+  // pushed the orb/controls off-screen. StudioTranscript scrolls its own box.
 
   const releaseStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -447,10 +448,10 @@ function SpeakingPartnerContent() {
 
     const isLongTurn = modeRef.current === "exam" && examPartRef.current === 2;
     recordLimitRef.current = isLongTurn ? 120 : 89;
-    // End-of-turn detection has to be fast for the conversation to feel live:
-    // ~0.9s of silence closes a normal answer, the Part 2 long turn keeps more
-    // room for thinking pauses.
-    silenceMsRef.current = isLongTurn ? 1800 : 900;
+    // End-of-turn detection: enough room for a mid-answer thinking pause —
+    // 0.9s was cutting learners off mid-sentence. The "Javobni tugatdim"
+    // button keeps turn-taking fast for users who finish early.
+    silenceMsRef.current = isLongTurn ? 2600 : 1400;
     setEmotion("neutral");
 
     try {

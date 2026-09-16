@@ -1,6 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -125,16 +125,25 @@ export function VoiceOrb({
   micLevel = 0,
   partnerName,
   mode,
+  compact = false,
 }: {
   phase: StudioPhase;
   emotion: StudioEmotion;
   micLevel?: number;
   partnerName: string;
   mode: StudioMode;
+  compact?: boolean;
 }) {
+  const ringBase = compact ? 168 : 280;
+  const ringStep = compact ? 24 : 36;
 
   return (
-    <div className="relative flex h-80 w-80 items-center justify-center">
+    <div
+      className={cn(
+        "relative flex items-center justify-center transition-all duration-300",
+        compact ? "h-48 w-48" : "h-80 w-80"
+      )}
+    >
       {/* Outer orbit rings */}
       {[1, 2, 3].map((ring) => (
         <motion.div
@@ -143,7 +152,7 @@ export function VoiceOrb({
             "absolute rounded-full border border-white/10",
             phase === "speaking" && "border-white/20"
           )}
-          style={{ width: 280 + ring * 36, height: 280 + ring * 36 }}
+          style={{ width: ringBase + ring * ringStep, height: ringBase + ring * ringStep }}
           animate={{
             rotate: phase === "thinking" ? 360 : 0,
             opacity: phase === "idle" ? 0.3 : 0.6,
@@ -159,12 +168,12 @@ export function VoiceOrb({
       {phase === "speaking" && (
         <>
           <motion.div
-            className="absolute h-64 w-64 rounded-full bg-white/5"
+            className={cn("absolute rounded-full bg-white/5", compact ? "h-36 w-36" : "h-64 w-64")}
             animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
             transition={{ duration: 1.8, repeat: Infinity }}
           />
           <motion.div
-            className="absolute h-72 w-72 rounded-full border border-white/15"
+            className={cn("absolute rounded-full border border-white/15", compact ? "h-40 w-40" : "h-72 w-72")}
             animate={{ scale: [1, 1.08, 1] }}
             transition={{ duration: 2.4, repeat: Infinity }}
           />
@@ -172,7 +181,7 @@ export function VoiceOrb({
       )}
 
       {/* Core: animated face */}
-      <ExaminerFace phase={phase} emotion={emotion} micLevel={micLevel} size={224} />
+      <ExaminerFace phase={phase} emotion={emotion} micLevel={micLevel} size={compact ? 136 : 224} />
 
       <span className="absolute -bottom-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80 backdrop-blur">
         {partnerName} · {mode === "exam" ? "Examiner" : "Mentor"}
@@ -316,8 +325,16 @@ export function StudioTranscript({
   // Only the examiner's lines are shown — the candidate's own speech is never
   // written out, so the screen stays a clean list of Adam's questions.
   const partnerTurns = turns.filter((t) => t.role === "partner");
+
+  // Auto-scroll inside this box only — never the page — so new lines slide
+  // into view by themselves while the controls stay put.
+  useEffect(() => {
+    const box = chatEndRef.current?.parentElement;
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+  }, [partnerTurns.length, phase, chatEndRef]);
+
   return (
-    <div className="max-h-[38vh] space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl sm:p-5">
+    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl sm:p-5">
       <AnimatePresence initial={false}>
         {partnerTurns.map((t, i) => (
           <motion.div
@@ -412,10 +429,14 @@ export function StudioSession({
   const liveCorrection = lastUser?.correction ?? null;
   const lastPartner = [...turns].reverse().find((t) => t.role === "partner");
 
+  const hasTurns = turns.length > 0;
+
   return (
-    <div className="relative min-h-[85vh]">
+    // Fixed-height app layout: everything stays on screen, only the
+    // transcript scrolls. 7rem = dashboard header (4rem) + main padding (3rem).
+    <div className="relative flex h-[calc(100dvh-7rem)] flex-col">
       <AuroraBackground />
-      <div className="relative mx-auto flex max-w-3xl flex-col gap-5 px-4 py-4">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-3 px-4 py-3">
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -462,8 +483,14 @@ export function StudioSession({
           </div>
         )}
 
-        {/* Orb */}
-        <div className="flex flex-col items-center gap-4 py-4">
+        {/* Orb — shrinks once the conversation starts so the transcript and
+            controls fit on screen together */}
+        <div
+          className={cn(
+            "flex flex-col items-center",
+            hasTurns ? "shrink-0 gap-2 py-1" : "flex-1 justify-center gap-4 py-4"
+          )}
+        >
           <button
             onClick={phase === "idle" ? onResume : onInterrupt}
             className={cn((phase === "speaking" || phase === "idle") && "cursor-pointer")}
@@ -475,6 +502,7 @@ export function StudioSession({
               micLevel={micLevel}
               partnerName={partnerName}
               mode={mode}
+              compact={hasTurns}
             />
           </button>
           <div className="flex h-6 items-center gap-2 text-sm font-medium text-content-secondary">
@@ -551,7 +579,7 @@ export function StudioSession({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/10 to-transparent p-5 backdrop-blur-xl"
+            className="max-h-[32vh] shrink-0 overflow-y-auto rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/10 to-transparent p-5 backdrop-blur-xl"
           >
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className="font-semibold">{cueCard.topic}</p>
@@ -577,22 +605,22 @@ export function StudioSession({
           </motion.div>
         )}
 
-        {/* Full transcript */}
-        {turns.length > 0 && (
+        {/* Full transcript — takes the leftover space and scrolls internally */}
+        {hasTurns && (
           <StudioTranscript turns={turns} phase={phase} chatEndRef={chatEndRef} />
         )}
 
-        {error && <p className="text-center text-sm text-accent-red">{error}</p>}
+        {error && <p className="shrink-0 text-center text-sm text-accent-red">{error}</p>}
 
-        {/* Footer: only the essentials */}
-        <div className="flex flex-col items-center justify-center gap-2 pb-6">
+        {/* Footer: pinned to the bottom, always reachable */}
+        <div className="flex shrink-0 flex-col items-center justify-center gap-2 pb-2">
           {phase === "listening" && (
             <>
               <Button variant="gradient" size="lg" onClick={onDone} className="px-8">
                 <Check className="mr-2 h-5 w-5" /> Javobni tugatdim
               </Button>
               <p className="text-xs text-content-secondary">
-                yoki jim turing — {mode === "exam" && examPart === 2 ? "~2s" : "~1s"} da o&apos;zi yuboradi
+                yoki jim turing — {mode === "exam" && examPart === 2 ? "~2.5s" : "~1.5s"} da o&apos;zi yuboradi
               </p>
             </>
           )}

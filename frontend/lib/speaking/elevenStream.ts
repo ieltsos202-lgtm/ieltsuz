@@ -57,12 +57,15 @@ function wsUrl(modelId: string): string {
   const params = new URLSearchParams({
     model_id: modelId,
     output_format: ELEVENLABS_OUTPUT_FORMAT,
-    // Generate as soon as a chunk arrives — we already send whole sentences,
-    // so ElevenLabs must not wait to fill its own buffer.
-    auto_mode: "true",
     inactivity_timeout: "20",
   });
-  if (!isV3(modelId)) params.set("optimize_streaming_latency", String(ELEVENLABS_LATENCY_MODE));
+  // Latency trimming costs quality — only worth it on turbo/flash.
+  if (!isV3(modelId)) {
+    params.set(
+      "optimize_streaming_latency",
+      String(/turbo|flash/.test(modelId) ? ELEVENLABS_LATENCY_MODE : 0)
+    );
+  }
   return `wss://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}/stream-input?${params.toString()}`;
 }
 
@@ -194,8 +197,15 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
               await new Promise<void>((r) => (notify = r));
               continue;
             }
-            if (seg.uzbek) {
-              const res = await synthesize(ELEVENLABS_UZBEK_MODEL_ID, seg.text, opts);
+            if (seg.uzbek || wsNoFinal) {
+              // Uzbek always goes through the multilingual REST model. If the
+              // socket never answers flush with isFinal, English falls back to
+              // REST too — ordering stays intact and no audio is dropped.
+              const res = await synthesize(
+                seg.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId,
+                seg.text,
+                opts
+              );
               if (res?.body) {
                 const reader = res.body.getReader();
                 for (;;) {
@@ -218,14 +228,12 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
               } catch {
                 /* socket gone */
               }
-              if (!wsNoFinal) {
-                const timedOut = await Promise.race([
-                  new Promise<false>((r) => (segmentDone = () => r(false))),
-                  new Promise<true>((r) => setTimeout(() => r(true), wsFinalSeen ? 15000 : 8000)),
-                ]);
-                if (timedOut && !wsFinalSeen) wsNoFinal = true;
-                segmentDone = null;
-              }
+              const timedOut = await Promise.race([
+                new Promise<false>((r) => (segmentDone = () => r(false))),
+                new Promise<true>((r) => setTimeout(() => r(true), wsFinalSeen ? 15000 : 8000)),
+              ]);
+              if (timedOut && !wsFinalSeen) wsNoFinal = true;
+              segmentDone = null;
               acceptingWsAudio = false;
             }
           }
@@ -265,6 +273,9 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
       text: " ",
       voice_settings: voiceSettingsFor(opts.mode, opts.emotion, modelId),
       xi_api_key: API_KEY,
+      // Never auto-generate: audio is produced only when we send flush, so
+      // isFinal marks exactly one of our segments — no mid-sentence cutoffs.
+      generation_config: { chunk_length_schedule: [9999, 9999, 9999, 9999] },
     })
   );
 
