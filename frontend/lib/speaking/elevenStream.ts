@@ -3,7 +3,9 @@ import {
   ELEVENLABS_LATENCY_MODE,
   ELEVENLABS_MODEL_ID,
   ELEVENLABS_OUTPUT_FORMAT,
+  ELEVENLABS_UZBEK_MODEL_ID,
   ELEVENLABS_VOICE_ID,
+  isProbablyUzbek,
   isV3,
   normalizeUzbekForTTS,
   voiceSettingsFor,
@@ -116,10 +118,39 @@ export async function openTtsStream(opts: TtsOptions): Promise<TtsStream> {
   }
 }
 
+interface Seg {
+  text: string;
+  uzbek: boolean;
+}
+
+/**
+ * English sentences stream through the turbo WebSocket; Uzbek sentences are
+ * synthesised per-sentence over REST with the multilingual model, which
+ * actually pronounces Uzbek correctly. Segments are consumed strictly in
+ * order — an English segment ends when ElevenLabs answers our `flush` with
+ * `isFinal`, so REST audio can never overtake earlier WS audio.
+ */
 async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsStream> {
   const ws = await connect(wsUrl(modelId));
   let firstByte = false;
   let closed = false;
+  let cancelled = false;
+  let finished = false;
+  let notify: (() => void) | null = null;
+  // Set only while an English segment is being generated — stray WS audio
+  // outside that window is dropped rather than played out of order.
+  let acceptingWsAudio = false;
+  let segmentDone: (() => void) | null = null;
+  // If the first flush never yields isFinal we stop waiting on it and revert
+  // to fire-and-forget for English (the pre-routing behaviour).
+  let wsFinalSeen = false;
+  let wsNoFinal = false;
+
+  const queue: Seg[] = [];
+  const wake = () => {
+    notify?.();
+    notify = null;
+  };
 
   const audio = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -127,7 +158,7 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
         try {
           const data = typeof ev.data === "string" ? JSON.parse(ev.data) : null;
           if (!data) return;
-          if (data.audio) {
+          if (data.audio && acceptingWsAudio) {
             if (!firstByte) {
               firstByte = true;
               opts.onFirstByte?.();
@@ -135,15 +166,9 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
             controller.enqueue(base64ToBytes(data.audio));
           }
           if (data.isFinal) {
-            if (!closed) {
-              closed = true;
-              controller.close();
-            }
-            try {
-              ws.close();
-            } catch {
-              /* already closing */
-            }
+            wsFinalSeen = true;
+            segmentDone?.();
+            segmentDone = null;
           }
           if (data.error) console.error("ElevenLabs WS error:", data.error);
         } catch {
@@ -151,19 +176,81 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
         }
       });
       ws.addEventListener("close", () => {
-        if (!closed) {
-          closed = true;
-          controller.close();
-        }
+        segmentDone?.();
+        wake();
       });
       ws.addEventListener("error", () => {
-        if (!closed) {
-          closed = true;
-          controller.close();
-        }
+        segmentDone?.();
+        wake();
       });
+
+      (async () => {
+        try {
+          for (;;) {
+            if (cancelled) break;
+            const seg = queue.shift();
+            if (!seg) {
+              if (finished) break;
+              await new Promise<void>((r) => (notify = r));
+              continue;
+            }
+            if (seg.uzbek) {
+              const res = await synthesize(ELEVENLABS_UZBEK_MODEL_ID, seg.text, opts);
+              if (res?.body) {
+                const reader = res.body.getReader();
+                for (;;) {
+                  const { value, done } = await reader.read();
+                  if (done || cancelled) break;
+                  if (value) {
+                    if (!firstByte) {
+                      firstByte = true;
+                      opts.onFirstByte?.();
+                    }
+                    controller.enqueue(value);
+                  }
+                }
+                reader.releaseLock();
+              }
+            } else {
+              acceptingWsAudio = true;
+              try {
+                ws.send(JSON.stringify({ text: `${seg.text} `, flush: true }));
+              } catch {
+                /* socket gone */
+              }
+              if (!wsNoFinal) {
+                const timedOut = await Promise.race([
+                  new Promise<false>((r) => (segmentDone = () => r(false))),
+                  new Promise<true>((r) => setTimeout(() => r(true), wsFinalSeen ? 15000 : 8000)),
+                ]);
+                if (timedOut && !wsFinalSeen) wsNoFinal = true;
+                segmentDone = null;
+              }
+              acceptingWsAudio = false;
+            }
+          }
+        } catch (e) {
+          console.error("TTS ws pipeline failed:", (e as Error)?.message);
+        } finally {
+          try {
+            ws.send(JSON.stringify({ text: "" }));
+          } catch {
+            /* noop */
+          }
+          try {
+            ws.close();
+          } catch {
+            /* noop */
+          }
+          if (!closed) {
+            closed = true;
+            controller.close();
+          }
+        }
+      })();
     },
     cancel() {
+      cancelled = true;
       closed = true;
       try {
         ws.close();
@@ -184,24 +271,19 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
   return {
     transport: "websocket",
     push(text: string) {
-      if (closed) return;
-      const spoken = normalizeUzbekForTTS(text).trim();
+      if (closed || cancelled) return;
+      const uzbek = isProbablyUzbek(text);
+      const spoken = normalizeUzbekForTTS(text, uzbek).trim();
       if (!spoken) return;
-      try {
-        ws.send(JSON.stringify({ text: `${spoken} ` }));
-      } catch (e) {
-        console.error("TTS ws send failed:", (e as Error)?.message);
-      }
+      queue.push({ text: spoken, uzbek });
+      wake();
     },
     end() {
-      if (closed) return;
-      try {
-        ws.send(JSON.stringify({ text: "" }));
-      } catch {
-        /* socket already gone; the reader will just see the close */
-      }
+      finished = true;
+      wake();
     },
     cancel() {
+      cancelled = true;
       closed = true;
       try {
         ws.close();
@@ -215,7 +297,7 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
 
 /** One REST request per sentence, played back in order. */
 function restStream(modelId: string, opts: TtsOptions): TtsStream {
-  const queue: string[] = [];
+  const queue: Seg[] = [];
   let finished = false;
   let cancelled = false;
   let firstByte = false;
@@ -237,7 +319,7 @@ function restStream(modelId: string, opts: TtsOptions): TtsStream {
             await new Promise<void>((r) => (notify = r));
             continue;
           }
-          const res = await synthesize(modelId, next, opts);
+          const res = await synthesize(next.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId, next.text, opts);
           if (!res?.body) continue;
           const reader = res.body.getReader();
           for (;;) {
@@ -272,9 +354,10 @@ function restStream(modelId: string, opts: TtsOptions): TtsStream {
   return {
     transport: "rest",
     push(text: string) {
-      const spoken = normalizeUzbekForTTS(text).trim();
+      const uzbek = isProbablyUzbek(text);
+      const spoken = normalizeUzbekForTTS(text, uzbek).trim();
       if (!spoken || cancelled) return;
-      queue.push(spoken);
+      queue.push({ text: spoken, uzbek });
       wake();
     },
     end() {

@@ -16,6 +16,10 @@ export const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd
 export const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_turbo_v2_5";
 export const ELEVENLABS_FALLBACK_MODEL_ID =
   process.env.ELEVENLABS_FALLBACK_MODEL_ID || "eleven_flash_v2_5";
+// Uzbek sentences go to the multilingual model — turbo/flash are tuned for
+// English and mangle Uzbek vowels. Slower first byte (~1s) but correct speech.
+export const ELEVENLABS_UZBEK_MODEL_ID =
+  process.env.ELEVENLABS_UZBEK_MODEL_ID || "eleven_multilingual_v2";
 export const ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_128";
 // 0 = best quality, 4 = lowest latency. 3 trims ~120ms with no audible cost on
 // a conversational voice.
@@ -76,12 +80,31 @@ export function voiceSettingsFor(
 }
 
 /**
- * Uzbek Latin uses apostrophes (o', g') that TTS engines read as glottal stops
- * or pauses. Normalising them (and x → h) gives a much more natural reading.
+ * Uzbek Latin uses apostrophes (o', g') that English-tuned TTS engines read as
+ * glottal stops or pauses. Normalising them (and x → h) gives a much more
+ * natural reading. The multilingual model handles native orthography better,
+ * so for it we keep the apostrophes (o' ≠ o) and only soften x → h.
  */
-export function normalizeUzbekForTTS(text: string): string {
-  return text
-    .replace(/([oOgG])[\u2018\u2019\u02BB\u02BC'`\u00B4]/g, "$1")
+export function normalizeUzbekForTTS(text: string, keepApostrophes = false): string {
+  let t = text;
+  if (!keepApostrophes) {
+    t = t.replace(/([oOgG])[‘’ʻʼ'`´]/g, "$1");
+  }
+  return t
     .replace(/(^|[^a-zA-Z])x([a-z])/g, "$1h$2")
     .replace(/(^|[^a-zA-Z])X([a-z])/g, "$1H$2");
+}
+
+// Distinctive Uzbek words that never appear in English sentences. Deliberately
+// excludes lookalikes (men, ham, bir, bu, sen) that collide with English.
+const UZBEK_MARKERS =
+  /\b(emas|kerak|uchun|bilan|chunki|lekin|endi|juda|qani|yo'?q|to'?g'?ri|bunday|shunaqa|xato\w*|gapir\w*|eshit\w*|tushun\w*|talaffuz|inglizcha|o'?zbekcha|bo'?ladi|bo'?l\w*|qil\w*|deyap\w*|deb|davom|eting|kuting|qarang?|esingda|qolsin|shaxsda|qo'?shil\w*|so'?z\w*|hozir|keyin|yana|yoki|faqat|hatto|oson|qiyin|yaxshi|yomon|nega|qanday|qachon|qayer\w*|keling|marhamat|iltimos|rahmat|salom|xayr|siz|sizni|bizning|ularning|qaytaring|takrorlang|ayting|eslab|esing|qoling|qoldi\w*|tugat\w*|boshla\w*|to'?xta\w*|kut\w*|qoyil|baraka|zo'?r|ajoyib|almassh|aralash)\b/i;
+
+const UZBEK_APOS = /[oOgG]['‘’ʻʼ`]/;
+
+/** Heuristic: is this sentence Uzbek? Adam's replies are single-language
+ *  sentences, so one strong marker is enough. */
+export function isProbablyUzbek(text: string): boolean {
+  if (UZBEK_APOS.test(text)) return true;
+  return UZBEK_MARKERS.test(text);
 }

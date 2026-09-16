@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
+import { ELEVENLABS_UZBEK_MODEL_ID, isProbablyUzbek } from "@/lib/speaking/voice";
 
 const TTS_PROVIDER = (process.env.TTS_PROVIDER || "elevenlabs").toLowerCase();
 const TTS_MODEL = process.env.TTS_MODEL || "gemini-2.5-flash-preview-tts";
@@ -32,12 +33,16 @@ const V3_TAGS: Record<string, string> = {
 };
 
 /**
- * Uzbek Latin uses apostrophes (o', g') that TTS engines read as glottal stops
- * or pauses. Normalising them (and x → h) gives a much more natural reading.
+ * Uzbek Latin uses apostrophes (o', g') that English-tuned TTS engines read as
+ * glottal stops or pauses. Normalising them (and x → h) gives a much more
+ * natural reading. For the multilingual model we keep the apostrophes.
  */
-function normalizeUzbekForTTS(text: string): string {
-  return text
-    .replace(/([oOgG])[\u2018\u2019\u02BB\u02BC'`\u00B4]/g, "$1")
+function normalizeUzbekForTTS(text: string, keepApostrophes = false): string {
+  let t = text;
+  if (!keepApostrophes) {
+    t = t.replace(/([oOgG])[‘’ʻʼ'`´]/g, "$1");
+  }
+  return t
     .replace(/(^|[^a-zA-Z])x([a-z])/g, "$1h$2")
     .replace(/(^|[^a-zA-Z])X([a-z])/g, "$1H$2");
 }
@@ -177,21 +182,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "ElevenLabs API key not configured" }, { status: 500 });
       }
 
-      const spoken = normalizeUzbekForTTS(text);
+      // Uzbek text needs the multilingual model — turbo/flash mangle it.
+      const uzbek = isProbablyUzbek(text);
+      const spoken = normalizeUzbekForTTS(text, uzbek);
       const tag = mode === "chat" ? V3_TAGS[emotion] ?? "" : "";
+      const primaryModel = uzbek ? ELEVENLABS_UZBEK_MODEL_ID : ELEVENLABS_MODEL_ID;
 
       let elevenRes: Response | null = null;
-      if (Date.now() >= primaryDisabledUntil) {
+      if (uzbek || Date.now() >= primaryDisabledUntil) {
         elevenRes = await elevenRequest(
-          ELEVENLABS_MODEL_ID,
-          isV3(ELEVENLABS_MODEL_ID) && tag ? `${tag} ${spoken}` : spoken,
+          primaryModel,
+          isV3(primaryModel) && tag ? `${tag} ${spoken}` : spoken,
           settings
         );
-        if (!elevenRes.ok && ELEVENLABS_FALLBACK_MODEL_ID !== ELEVENLABS_MODEL_ID) {
+        if (!elevenRes.ok && ELEVENLABS_FALLBACK_MODEL_ID !== primaryModel) {
           const errText = await elevenRes.text().catch(() => "");
           console.error("ElevenLabs primary model failed:", elevenRes.status, errText.slice(0, 200));
           // 4xx = model/plan problem, not transient → skip primary for a while
-          if (elevenRes.status >= 400 && elevenRes.status < 500) {
+          if (!uzbek && elevenRes.status >= 400 && elevenRes.status < 500) {
             primaryDisabledUntil = Date.now() + 10 * 60 * 1000;
           }
           elevenRes = null;
