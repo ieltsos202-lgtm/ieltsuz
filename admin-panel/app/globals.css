@@ -1,0 +1,38 @@
+:root {
+  --bg-primary: #0b0e14;
+  --bg-secondary: #12161f;
+  --bg-tertiary: #1a1f2b;
+  --border: #232936;
+  --text-primary: #f2f4f8;
+  --text-secondary: #8b93a3;
+  --accent: #4f7cff;
+  --accent-green: #22c55e;
+  --accent-yellow: #eab308;
+  --accent-red: #ef4444;
+  --accent-purple: #a855f7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+input {
+  font-family: inherit;
+}
+
+table {
+  border-collapse: collapse;
+}

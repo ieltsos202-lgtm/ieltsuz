@@ -166,6 +166,10 @@ export async function POST(req: NextRequest) {
           },
           onEmotion: (e) => {
             emotion = normalizeEmotion(e);
+            // Pre-warm: the emotion header always precedes the reply, so the
+            // socket handshake overlaps with generation instead of adding to
+            // the first sentence's latency.
+            void startTts();
           },
           onCueCard: (c) => {
             cueCard = c;
