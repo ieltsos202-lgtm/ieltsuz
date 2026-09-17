@@ -69,29 +69,41 @@ export async function generateWithFallback(
   let exhausted = false;
   let lastErr: any = null;
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   for (const modelName of models) {
     for (const key of keys) {
-      try {
-        const model = clientFor(key).getGenerativeModel({
-          model: modelName,
-          generationConfig: {
-            ...(options?.jsonMode === false ? {} : JSON_CONFIG),
-            ...(options?.config || {}),
-          } as GenerationConfig,
-        });
-        const res = await model.generateContent(parts as Part[]);
-        const text = res.response.text();
-        if (text && text.trim()) return text;
-      } catch (err) {
-        lastErr = err;
-        if (isExhausted(err)) {
-          exhausted = true;
-          continue;
+      // One retry per pair: free-tier 429s are per-minute windows, so a short
+      // wait often turns a hard failure into a success.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const model = clientFor(key).getGenerativeModel({
+            model: modelName,
+            generationConfig: {
+              ...(options?.jsonMode === false ? {} : JSON_CONFIG),
+              ...(options?.config || {}),
+            } as GenerationConfig,
+          });
+          const res = await model.generateContent(parts as Part[]);
+          const text = res.response.text();
+          if (text && text.trim()) return text;
+          break; // empty response — next key/model
+        } catch (err) {
+          lastErr = err;
+          if (isExhausted(err)) {
+            exhausted = true;
+            if (attempt === 0) {
+              await sleep(4000); // ride out the RPM window
+              continue;
+            }
+            break; // still limited — next key, then next model
+          }
+          // A non-quota error (bad request, safety block) won't be fixed by
+          // another key — try the next model instead.
+          break;
         }
-        // A non-quota error (bad request, safety block) won't be fixed by
-        // another key — try the next model instead.
-        break;
       }
+      if (!exhausted) break;
     }
   }
   if (exhausted) throw new QuotaError(String(lastErr?.message || "All models rate-limited"));

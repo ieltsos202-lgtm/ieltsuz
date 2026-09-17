@@ -39,36 +39,48 @@ export async function* streamGeminiText(
   let exhausted = false;
   let lastError: unknown = null;
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   for (const model of models) {
     for (const key of keys) {
-      let res: Response;
-      try {
-        res = await fetch(`${ENDPOINT}/${model}:streamGenerateContent?alt=sse&key=${key}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: options.signal,
-          body: JSON.stringify({
-            contents: [{ role: "user", parts }],
-            generationConfig: {
-              temperature: options.temperature ?? 0.8,
-              maxOutputTokens: options.maxOutputTokens ?? 300,
-              thinkingConfig: { thinkingBudget: options.thinkingBudget ?? 0 },
-            },
-          }),
-        });
-      } catch (e) {
-        lastError = e;
-        continue;
-      }
-
-      if (!res.ok || !res.body) {
+      // One retry per pair: free-tier 429s are per-minute windows, so a short
+      // wait often turns a hard failure into a success.
+      let res: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          res = await fetch(`${ENDPOINT}/${model}:streamGenerateContent?alt=sse&key=${key}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: options.signal,
+            body: JSON.stringify({
+              contents: [{ role: "user", parts }],
+              generationConfig: {
+                temperature: options.temperature ?? 0.8,
+                maxOutputTokens: options.maxOutputTokens ?? 300,
+                thinkingConfig: { thinkingBudget: options.thinkingBudget ?? 0 },
+              },
+            }),
+          });
+        } catch (e) {
+          lastError = e;
+          res = null;
+          break;
+        }
+        if (res.ok && res.body) break;
         const body = await res.text().catch(() => "");
         lastError = new Error(`Gemini ${res.status}: ${body.slice(0, 200)}`);
         if (res.status === 429 || res.status >= 500) {
           exhausted = true;
-          continue; // next key, then next model
+          res = null;
+          if (attempt === 0) await sleep(4000); // ride out the RPM window
+          continue;
         }
+        res = null;
         break; // 4xx that another key won't fix — try the next model
+      }
+      if (!res || !res.ok || !res.body) {
+        if (!exhausted) break; // non-retryable — next model
+        continue; // next key, then next model
       }
 
       let emitted = false;
