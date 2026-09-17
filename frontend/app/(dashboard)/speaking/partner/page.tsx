@@ -129,6 +129,7 @@ function SpeakingPartnerContent() {
   const stopAudio = useCallback(() => {
     ttsAbortRef.current?.abort();
     ttsAbortRef.current = null;
+    window.speechSynthesis.cancel();
     // Barge-in: kill the live turn's event stream and silence its element.
     liveAbortRef.current?.abort();
     liveAbortRef.current = null;
@@ -321,6 +322,21 @@ function SpeakingPartnerContent() {
       } catch (err) {
         if (!aliveRef.current || (err as Error)?.name === "AbortError") return;
         audioRef.current = null;
+        // ElevenLabs quota/billing down → keep the session alive with the
+        // browser's built-in voice instead of killing the turn.
+        if ("speechSynthesis" in window) {
+          const utter = new SpeechSynthesisUtterance(text);
+          // Uzbek Latin text reads best through a Turkish voice; everything
+          // else stays English.
+          utter.lang = /[ʻʼ]/.test(text) ? "tr-TR" : "en-US";
+          const finish = () => {
+            if (aliveRef.current && !abort.signal.aborted) handlePartnerDone();
+          };
+          utter.onend = finish;
+          utter.onerror = finish;
+          window.speechSynthesis.speak(utter);
+          return;
+        }
         setError("Ovoz xizmatida xatolik. Qayta urinib ko'ring.");
         setPhase("idle");
       }
