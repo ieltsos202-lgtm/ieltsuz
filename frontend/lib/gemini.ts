@@ -6,12 +6,10 @@ const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Free-tier quota is counted per API key AND per model, so when one pair is
 // exhausted another usually still works. All configured keys are tried in
-// order; add spares as GEMINI_API_KEY_2 / _3 / _4.
+// order; add spares as GEMINI_API_KEY_2, _3, ... (up to _10).
 const API_KEYS = [
   API_KEY,
-  process.env.GEMINI_API_KEY_2,
-  process.env.GEMINI_API_KEY_3,
-  process.env.GEMINI_API_KEY_4,
+  ...Array.from({ length: 9 }, (_, i) => process.env[`GEMINI_API_KEY_${i + 2}`]),
 ].filter((k): k is string => !!k && k.trim().length > 0);
 
 const clients = new Map<string, GoogleGenerativeAI>();
