@@ -65,9 +65,18 @@ export async function POST(req: NextRequest) {
       // Text record of both sides for the transcript + post-session report.
       inputAudioTranscription: {},
       outputAudioTranscription: {},
-      // Automatic VAD stays on — that is what makes barge-in work.
+      // Automatic VAD stays on — that is what makes barge-in work — but the
+      // defaults are too twitchy: speaker echo / room noise was tripping
+      // "start of speech" mid-reply and truncating the examiner's audio, and
+      // a short silence window made the model jump in whenever the candidate
+      // paused mid-answer (then get interrupted when they resumed).
       realtimeInputConfig: {
-        automaticActivityDetection: { disabled: false },
+        automaticActivityDetection: {
+          disabled: false,
+          startOfSpeechSensitivity: "START_SENSITIVITY_LOW",
+          endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
+          silenceDurationMs: 900,
+        },
       },
     };
 
