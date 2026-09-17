@@ -286,6 +286,12 @@ export interface GameMasterSentence {
   source: string | null;
 }
 
+export interface PerGameStats {
+  plays?: number;
+  best_score?: number;
+  best_streak?: number;
+}
+
 export interface GameStats {
   xp: number;
   games_played: number;
@@ -294,11 +300,14 @@ export interface GameStats {
   xp_into_level: number;
   xp_needed: number;
   percent: number;
+  game_stats?: Record<string, PerGameStats>;
 }
 
 export interface GameFinishResult {
   xp_gained: number;
   leveled_up: boolean;
+  /** Level before this session's XP was added — for tier-transition detection. */
+  prev_level?: number;
   stats: GameStats;
 }
 

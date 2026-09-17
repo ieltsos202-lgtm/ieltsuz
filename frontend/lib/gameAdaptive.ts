@@ -11,23 +11,11 @@
 //      progressively more C1/C2 content.
 
 import type { GameMasterItem } from "./types";
+import { vocabWeightsForLevel } from "./leveling";
 
-export type DifficultyTier = "beginner" | "intermediate" | "advanced";
-
-export function tierForLevel(level: number): DifficultyTier {
-  if (level <= 2) return "beginner";
-  if (level <= 5) return "intermediate";
-  return "advanced";
-}
-
-const DIFFICULTY_WEIGHTS: Record<DifficultyTier, Record<string, number>> = {
-  beginner: { B2: 5, C1: 2, C2: 1 },
-  intermediate: { B2: 3, C1: 3, C2: 2 },
-  advanced: { B2: 1, C1: 3, C2: 4 },
-};
-
-function weightFor(difficulty: string, tier: DifficultyTier): number {
-  return DIFFICULTY_WEIGHTS[tier][difficulty] ?? 2;
+function weightFor(difficulty: string, level: number): number {
+  const w = vocabWeightsForLevel(level);
+  return w[difficulty as keyof typeof w] ?? 2;
 }
 
 // Efficient weighted sampling without replacement (A-ES / "exponential jump"
@@ -64,7 +52,6 @@ interface PickOptions {
 
 export function pickAdaptiveItems(allItems: GameMasterItem[], opts: PickOptions): GameMasterItem[] {
   const { level, knownWords, limit, reviewRatio = 0.25 } = opts;
-  const tier = tierForLevel(level);
 
   const unseen: GameMasterItem[] = [];
   const seen: GameMasterItem[] = [];
@@ -80,7 +67,7 @@ export function pickAdaptiveItems(allItems: GameMasterItem[], opts: PickOptions)
   let picked: GameMasterItem[] = [];
 
   if (unseen.length > 0) {
-    picked = picked.concat(weightedSample(unseen, (i) => weightFor(i.difficulty, tier), newCount));
+    picked = picked.concat(weightedSample(unseen, (i) => weightFor(i.difficulty, level), newCount));
   }
   // If there weren't enough unseen items to fill the "new" quota, top up from seen.
   const shortfall = newCount - picked.length;
@@ -93,7 +80,7 @@ export function pickAdaptiveItems(allItems: GameMasterItem[], opts: PickOptions)
   if (picked.length < limit) {
     const usedIds = new Set(picked.map((p) => p.id));
     const leftovers = allItems.filter((i) => !usedIds.has(i.id));
-    picked = picked.concat(weightedSample(leftovers, (i) => weightFor(i.difficulty, tier), limit - picked.length));
+    picked = picked.concat(weightedSample(leftovers, (i) => weightFor(i.difficulty, level), limit - picked.length));
   }
 
   return plainShuffle(picked).slice(0, limit);

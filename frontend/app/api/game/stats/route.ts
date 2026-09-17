@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
     const { data } = await supabase
       .from("user_game_stats")
-      .select("xp, games_played, best_combo")
+      .select("xp, games_played, best_combo, game_stats")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       percent: progress.percent,
       games_played: data?.games_played ?? 0,
       best_combo: data?.best_combo ?? 0,
+      game_stats: data?.game_stats && typeof data.game_stats === "object" ? data.game_stats : {},
     });
   } catch (error: any) {
     return NextResponse.json({ error: "Failed to load stats" }, { status: 500 });

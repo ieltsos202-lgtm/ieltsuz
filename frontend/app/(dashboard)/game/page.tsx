@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Zap, LayoutGrid, Rocket, Sparkles } from "lucide-react";
+import { Zap, LayoutGrid, Rocket, Sparkles, Trophy, Flame } from "lucide-react";
 
 import { apiGet } from "@/lib/api";
 import { Card } from "@/components/ui/card";
+import { tierForLevel } from "@/lib/leveling";
 import type { GameStats } from "@/lib/types";
 
 interface GameCardDef {
   href: string;
+  id: string;
   title: string;
   tagline: string;
   icon: any;
@@ -21,6 +23,7 @@ interface GameCardDef {
 const GAMES: GameCardDef[] = [
   {
     href: "/game/speed-match",
+    id: "speed-match",
     title: "Speed Match",
     tagline: "Race the clock to match words & idioms with their meaning. Build combos, beat the timer.",
     icon: Zap,
@@ -29,6 +32,7 @@ const GAMES: GameCardDef[] = [
   },
   {
     href: "/game/word-guess",
+    id: "memory-match",
     title: "Memory Match",
     tagline: "Flip cards and pair up words with their meanings before the board timer runs out.",
     icon: LayoutGrid,
@@ -37,6 +41,7 @@ const GAMES: GameCardDef[] = [
   },
   {
     href: "/game/sentence-builder",
+    id: "word-drop",
     title: "Word Drop",
     tagline: "Catch falling words with the right meaning before they hit the ground — speed ramps up fast!",
     icon: Rocket,
@@ -52,6 +57,8 @@ export default function GameHubPage() {
     apiGet<GameStats>("/api/game/stats").then(setStats).catch(() => {});
   }, []);
 
+  const tier = stats ? tierForLevel(stats.level) : null;
+
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <div className="text-center">
@@ -63,15 +70,24 @@ export default function GameHubPage() {
         </p>
       </div>
 
-      {stats && (
+      {stats && tier && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="flex flex-col items-center gap-3 bg-gradient-to-r from-accent/10 via-transparent to-accent-purple/10 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-purple text-lg font-bold text-white">
+              <motion.div
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${tier.gradient} text-lg font-bold text-white shadow-lg`}
+              >
                 {stats.level}
-              </div>
+              </motion.div>
               <div>
-                <p className="text-sm font-semibold">Level {stats.level}</p>
+                <p className="text-sm font-semibold">
+                  Level {stats.level}
+                  <span className={`ml-2 rounded-full bg-gradient-to-r ${tier.gradient} bg-clip-text text-xs font-extrabold text-transparent`}>
+                    {tier.name} · {tier.cefr}
+                  </span>
+                </p>
                 <p className="text-xs text-content-secondary">
                   {stats.games_played} games played · best streak x{stats.best_combo}
                 </p>
@@ -83,9 +99,11 @@ export default function GameHubPage() {
                 <span>{stats.xp_needed} XP</span>
               </div>
               <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-bg-tertiary">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-accent to-accent-purple transition-all"
-                  style={{ width: `${stats.percent}%` }}
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${stats.percent}%` }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                  className={`h-full rounded-full bg-gradient-to-r ${tier.gradient}`}
                 />
               </div>
             </div>
@@ -96,6 +114,7 @@ export default function GameHubPage() {
       <div className="grid gap-5 sm:grid-cols-3">
         {GAMES.map((g, i) => {
           const Icon = g.icon;
+          const gs = stats?.game_stats?.[g.id];
           return (
             <motion.div
               key={g.href}
@@ -113,6 +132,17 @@ export default function GameHubPage() {
                   </div>
                   <h3 className="relative text-lg font-bold">{g.title}</h3>
                   <p className="relative mt-2 text-sm text-content-secondary">{g.tagline}</p>
+                  {gs && (gs.plays ?? 0) > 0 && (
+                    <div className="relative mt-3 flex items-center gap-3 text-[11px] font-semibold text-content-secondary">
+                      <span className="flex items-center gap-1">
+                        <Trophy className="h-3 w-3 text-accent-yellow" /> {gs.best_score ?? 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Flame className="h-3 w-3 text-accent-red" /> x{gs.best_streak ?? 0}
+                      </span>
+                      <span>{gs.plays} plays</span>
+                    </div>
+                  )}
                   <div className="relative mt-4 flex items-center gap-1 text-sm font-semibold text-accent">
                     Play now <span aria-hidden>→</span>
                   </div>

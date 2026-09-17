@@ -1,34 +1,14 @@
 // Pure helpers shared by the client game UI and the server finish/stats
 // routes so XP <-> level math is always consistent everywhere.
+// The curve itself lives in lib/leveling.ts (100-level engine, tiers,
+// per-game difficulty) — re-exported here for existing imports.
 
-export function levelFromXp(xp: number): number {
-  return Math.floor(Math.sqrt(Math.max(0, xp) / 50)) + 1;
-}
-
-export function xpForLevel(level: number): number {
-  return 50 * (level - 1) ** 2;
-}
-
-export interface LevelProgress {
-  level: number;
-  xpIntoLevel: number;
-  xpNeeded: number;
-  percent: number;
-}
-
-export function levelProgress(xp: number): LevelProgress {
-  const level = levelFromXp(xp);
-  const floor = xpForLevel(level);
-  const nextFloor = xpForLevel(level + 1);
-  const xpIntoLevel = Math.max(0, xp - floor);
-  const xpNeeded = Math.max(1, nextFloor - floor);
-  return {
-    level,
-    xpIntoLevel,
-    xpNeeded,
-    percent: Math.min(100, Math.round((xpIntoLevel / xpNeeded) * 100)),
-  };
-}
+export {
+  levelFromXp,
+  xpForLevel,
+  levelProgress,
+  type LevelProgress,
+} from "./leveling";
 
 // XP awarded for one correct answer: base + combo bonus + speed bonus.
 export function calcAnswerXp(combo: number, timeLeftRatio: number): number {

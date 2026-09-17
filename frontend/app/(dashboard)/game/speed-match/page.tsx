@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Zap, Check, X } from "lucide-react";
@@ -8,19 +8,27 @@ import { ArrowLeft, Zap, Check, X } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { GameHud } from "@/components/game/GameHud";
 import { GameSummary } from "@/components/game/GameSummary";
 import { ConfettiBurst } from "@/components/game/ConfettiBurst";
-import { calcAnswerXp, difficultyColor } from "@/lib/gameEngine";
-import type { GameMasterItem, GameFinishResult } from "@/lib/types";
+import {
+  GameBackground,
+  ComboBurst,
+  XPCounter,
+  HeartsDisplay,
+  TimerBar,
+  LevelBadge,
+  OptionButton,
+  CelebrationOverlay,
+} from "@/components/game/juice";
+import { calcAnswerXp } from "@/lib/gameEngine";
+import { speedMatchDifficulty, crossedTier, tierForLevel } from "@/lib/leveling";
+import type { GameMasterItem, GameFinishResult, GameStats } from "@/lib/types";
 
 interface Question {
   item: GameMasterItem;
   options: string[];
   answer: string;
 }
-
-const TIME_LIMIT = 8;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -31,17 +39,20 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildQuestions(items: GameMasterItem[]): Question[] {
+function buildQuestions(items: GameMasterItem[], count: number, tricky: boolean): Question[] {
   const pool = items.filter((i) => i.translation);
   const qs: Question[] = [];
   for (const item of pool) {
-    const distractors = shuffle(pool.filter((i) => i.id !== item.id))
-      .slice(0, 3)
-      .map((i) => i.translation!) as string[];
+    // Tricky mode: prefer distractors from the same CEFR tier so wrong
+    // options look plausible instead of random.
+    const sameTier = pool.filter((i) => i.id !== item.id && i.difficulty === item.difficulty);
+    const others = pool.filter((i) => i.id !== item.id && i.difficulty !== item.difficulty);
+    const distractorPool = tricky && sameTier.length >= 3 ? sameTier : [...sameTier, ...others];
+    const distractors = shuffle(distractorPool).slice(0, 3).map((i) => i.translation!) as string[];
     if (distractors.length < 3) continue;
     qs.push({ item, answer: item.translation!, options: shuffle([item.translation!, ...distractors]) });
   }
-  return shuffle(qs).slice(0, 15);
+  return shuffle(qs).slice(0, count);
 }
 
 export default function SpeedMatchPage() {
@@ -50,19 +61,24 @@ export default function SpeedMatchPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [gameKey, setGameKey] = useState(0);
 
+  const [level, setLevel] = useState(1);
   const [index, setIndex] = useState(0);
   const [lives, setLives] = useState(3);
   const [combo, setCombo] = useState(0);
   const [bestCombo, setBestCombo] = useState(0);
   const [xp, setXp] = useState(0);
   const [correct, setCorrect] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [timeLeft, setTimeLeft] = useState(8);
   const [locked, setLocked] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [result, setResult] = useState<GameFinishResult | null>(null);
   const [burst, setBurst] = useState(0);
   const [shakeKey, setShakeKey] = useState(0);
+  const [celebrate, setCelebrate] = useState<null | { title: string; tier?: string }>(null);
   const timerRef = useRef<number | null>(null);
+
+  const diff = speedMatchDifficulty(level);
+  const timeLimit = diff.timerSeconds;
 
   useEffect(() => {
     setPhase("loading");
@@ -72,9 +88,15 @@ export default function SpeedMatchPage() {
     setBestCombo(0);
     setXp(0);
     setCorrect(0);
-    apiGet<{ items: GameMasterItem[] }>("/api/game/pool?items=40")
-      .then((res) => {
-        const qs = buildQuestions(res.items);
+    Promise.all([
+      apiGet<{ items: GameMasterItem[] }>("/api/game/pool?items=50"),
+      apiGet<GameStats>("/api/game/stats").catch(() => null),
+    ])
+      .then(([res, stats]) => {
+        const lvl = stats?.level ?? 1;
+        setLevel(lvl);
+        const d = speedMatchDifficulty(lvl);
+        const qs = buildQuestions(res.items, d.questions, d.trickyDistractors);
         if (qs.length === 0) throw new Error("Not enough vocabulary in the pool yet.");
         setQuestions(qs);
         setPhase("playing");
@@ -90,7 +112,7 @@ export default function SpeedMatchPage() {
 
   useEffect(() => {
     if (!q || phase !== "playing") return;
-    setTimeLeft(TIME_LIMIT);
+    setTimeLeft(timeLimit);
     setLocked(false);
     setChosen(null);
     if (timerRef.current) window.clearInterval(timerRef.current);
@@ -117,9 +139,18 @@ export default function SpeedMatchPage() {
       const res = await apiPost<GameFinishResult>("/api/game/finish", {
         xpGained: xp,
         bestCombo,
+        score: correct,
+        game: "speed-match",
         learnedWords: questions.map((qq) => qq.item),
       });
       setResult(res);
+      if (res.leveled_up) {
+        const isTier = res.prev_level != null && crossedTier(res.prev_level, res.stats.level);
+        setCelebrate({
+          title: `Level ${res.stats.level}!`,
+          tier: isTier ? `${tierForLevel(res.stats.level).name} tier unlocked` : undefined,
+        });
+      }
     } catch {
       setResult(null);
     }
@@ -135,7 +166,7 @@ export default function SpeedMatchPage() {
     const isCorrect = choice != null && choice === q.answer;
     let newLives = lives;
     if (isCorrect) {
-      const gained = calcAnswerXp(combo, timeLeft / TIME_LIMIT);
+      const gained = calcAnswerXp(combo, timeLeft / timeLimit);
       setXp((x) => x + gained);
       setCombo((c) => {
         const next = c + 1;
@@ -186,27 +217,43 @@ export default function SpeedMatchPage() {
 
   if (phase === "summary") {
     return (
-      <GameSummary
-        correct={correct}
-        total={questions.length}
-        xpGained={xp}
-        result={result}
-        accent="from-accent-yellow to-accent-red"
-        onReplay={() => {
-          setResult(null);
-          setGameKey((k) => k + 1);
-        }}
-      />
+      <>
+        <CelebrationOverlay
+          show={!!celebrate}
+          title={celebrate?.title || ""}
+          tierName={celebrate?.tier}
+          subtitle={celebrate?.tier ? "Harder words, faster rounds — you're moving up." : undefined}
+          onDone={() => setCelebrate(null)}
+          durationMs={celebrate?.tier ? 3000 : 2000}
+        />
+        <GameSummary
+          correct={correct}
+          total={questions.length}
+          xpGained={xp}
+          result={result}
+          accent="from-accent-yellow to-accent-red"
+          onReplay={() => {
+            setResult(null);
+            setCelebrate(null);
+            setGameKey((k) => k + 1);
+          }}
+        />
+      </>
     );
   }
 
-  const timePct = Math.max(0, Math.min(100, (timeLeft / TIME_LIMIT) * 100));
+  const comboIntensity = Math.min(1, combo / 8);
 
   return (
     <div className="mx-auto max-w-lg space-y-5">
+      <GameBackground palette="orange" intensity={comboIntensity} />
+
       <div className="flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-xl font-bold">
           <Zap className="h-5 w-5 text-accent-yellow" /> Speed Match
+          <span className="rounded-full bg-accent-yellow/15 px-2 py-0.5 text-[10px] font-bold text-accent-yellow">
+            Lv {level}
+          </span>
         </h1>
         <Link href="/game">
           <Button variant="ghost" size="sm">
@@ -215,77 +262,92 @@ export default function SpeedMatchPage() {
         </Link>
       </div>
 
-      <GameHud
-        lives={lives}
-        maxLives={3}
-        combo={combo}
-        xp={xp}
-        progress={((index + 1) / questions.length) * 100}
-        accentText="text-accent-yellow"
-      />
+      <div className="flex items-center justify-between">
+        <HeartsDisplay lives={lives} maxLives={3} />
+        <div className="flex items-center gap-3 text-sm font-semibold">
+          {combo > 1 && (
+            <motion.span
+              key={combo}
+              initial={{ scale: 1.5 }}
+              animate={{ scale: 1 }}
+              className="flex items-center gap-1 text-accent-yellow"
+            >
+              <Zap className="h-4 w-4 fill-accent-yellow" /> x{combo}
+            </motion.span>
+          )}
+          <XPCounter xp={xp} className="text-accent-yellow" />
+        </div>
+      </div>
 
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-tertiary">
         <div
-          className={`h-full rounded-full transition-all ${timePct < 30 ? "bg-accent-red" : "bg-accent-green"}`}
-          style={{ width: `${timePct}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-accent-yellow to-accent-red transition-all"
+          style={{ width: `${((index + 1) / questions.length) * 100}%` }}
         />
       </div>
 
+      <TimerBar ratio={timeLeft / timeLimit} />
+
       <motion.div
         key={shakeKey}
-        animate={shakeKey > 0 ? { x: [0, -6, 6, -6, 6, 0] } : {}}
+        animate={shakeKey > 0 ? { x: [0, -8, 8, -6, 6, 0] } : {}}
         transition={{ duration: 0.4 }}
         className="relative"
       >
         <ConfettiBurst triggerKey={burst} originClassName="left-1/2 top-1/4" />
+        <ComboBurst combo={combo} />
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
-            initial={{ opacity: 0, x: 30, rotate: -2 }}
-            animate={{ opacity: 1, x: 0, rotate: 0 }}
-            exit={{ opacity: 0, x: -30, rotate: 2 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-5 rounded-[var(--radius-lg)] border border-accent-yellow/30 bg-gradient-to-br from-accent-yellow/10 via-bg-secondary to-accent-red/10 p-8 text-center shadow-lg"
+            initial={{ opacity: 0, x: 40, rotate: -3, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, rotate: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -40, rotate: 3, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            className="space-y-5 rounded-[var(--radius-lg)] border border-accent-yellow/30 bg-gradient-to-br from-accent-yellow/15 via-bg-secondary/90 to-accent-red/15 p-8 text-center shadow-xl shadow-accent-yellow/10 backdrop-blur-sm"
           >
             <div className="flex items-center justify-center gap-2">
               <span className="inline-block rounded-full bg-accent-yellow/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-accent-yellow">
                 {q.item.type === "idiom" ? "Idiom" : "Word"}
               </span>
-              <span className={`inline-block rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${difficultyColor(q.item.difficulty)}`}>
-                {q.item.difficulty}
-              </span>
+              <LevelBadge label={q.item.difficulty} />
             </div>
-            <h2 className="text-3xl font-extrabold">{q.item.word}</h2>
+            <motion.h2
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 14 }}
+              className="text-3xl font-extrabold"
+            >
+              {q.item.word}
+            </motion.h2>
             {q.item.phonetic && <p className="text-sm text-content-secondary">{q.item.phonetic}</p>}
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {q.options.map((opt, i) => {
-              const isAnswer = opt === q.answer;
-              const isChosen = opt === chosen;
-              const show = locked && (isAnswer || isChosen);
-              return (
-                <motion.button
-                  key={i}
-                  whileTap={{ scale: 0.96 }}
-                  disabled={locked}
-                  onClick={() => handleAnswer(opt)}
-                  className={`rounded-[var(--radius)] border px-4 py-3 text-left text-sm font-medium transition-colors ${
-                    show && isAnswer
-                      ? "border-accent-green bg-accent-green/15 text-accent-green"
-                      : show && isChosen
-                      ? "border-accent-red bg-accent-red/15 text-accent-red"
-                      : "border-border bg-bg-primary hover:border-accent-yellow/50 hover:bg-accent-yellow/5"
-                  }`}
-                >
-                  <span className="flex items-center justify-between">
-                    {opt}
-                    {show && isAnswer && <Check className="h-4 w-4" />}
-                    {show && isChosen && !isAnswer && <X className="h-4 w-4" />}
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {q.options.map((opt, i) => {
+                const isAnswer = opt === q.answer;
+                const isChosen = opt === chosen;
+                const state = !locked ? "idle" : isAnswer ? "correct" : isChosen ? "wrong" : "idle";
+                return (
+                  <OptionButton
+                    key={i}
+                    index={i}
+                    text={opt}
+                    state={state}
+                    disabled={locked}
+                    onClick={() => handleAnswer(opt)}
+                  />
+                );
+              })}
+            </div>
+            {locked && chosen && chosen !== q.answer && (
+              <p className="flex items-center justify-center gap-1 text-xs font-semibold text-accent-red">
+                <X className="h-3.5 w-3.5" /> Correct: {q.answer}
+              </p>
+            )}
+            {locked && chosen === q.answer && (
+              <p className="flex items-center justify-center gap-1 text-xs font-semibold text-accent-green">
+                <Check className="h-3.5 w-3.5" /> Nice!
+              </p>
+            )}
           </motion.div>
         </AnimatePresence>
       </motion.div>
