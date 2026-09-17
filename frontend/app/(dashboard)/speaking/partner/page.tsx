@@ -6,8 +6,9 @@ import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
-import { apiPost, apiPostForm, apiPostFormStream, apiPostStream } from "@/lib/api";
+import { apiPost, apiPostForm, apiPostFormStream, apiPostStream, apiDelete } from "@/lib/api";
 import { playLiveTurn } from "@/lib/speaking/livePlayer";
+import { GeminiLiveSession, PcmPlayer, resampleTo16k } from "@/lib/speaking/liveClient";
 import {
   StudioIntro,
   StudioSession,
@@ -119,6 +120,26 @@ function SpeakingPartnerContent() {
   const aliveRef = useRef(true);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const audioCleanupRef = useRef<(() => void) | null>(null);
+  // --- Gemini Live API session state ---
+  const liveSessionRef = useRef<GeminiLiveSession | null>(null);
+  const livePlayerRef = useRef<PcmPlayer | null>(null);
+  const liveMicRef = useRef<{
+    ctx: AudioContext;
+    node: AudioWorkletNode;
+    source: MediaStreamAudioSourceNode;
+  } | null>(null);
+  const [isLive, setIsLive] = useState(false);
+  const isLiveRef = useRef(false);
+  const liveFailedRef = useRef(false);
+  const liveChargedRef = useRef(false);
+  const liveFinishRef = useRef(false);
+  const prepActiveRef = useRef(false);
+  const pendingUserRef = useRef("");
+  const pendingPartnerRef = useRef("");
+  const userTurnOpenRef = useRef(false);
+  const partnerTurnOpenRef = useRef(false);
+  const userSpeakStartRef = useRef(0);
+  const micLevelAtRef = useRef(0);
   // One element for every streamed turn: reusing it keeps the autoplay
   // permission granted by the user's first tap.
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -187,11 +208,222 @@ function SpeakingPartnerContent() {
     return stream;
   }, [releaseStream]);
 
+  /** Tear down the Live API session: socket, mic worklet, PCM player. */
+  const stopLive = useCallback(() => {
+    liveSessionRef.current?.close();
+    liveSessionRef.current = null;
+    const mic = liveMicRef.current;
+    liveMicRef.current = null;
+    if (mic) {
+      try {
+        mic.node.port.onmessage = null;
+        mic.node.disconnect();
+        mic.source.disconnect();
+      } catch {
+        /* noop */
+      }
+      void mic.ctx.close().catch(() => {});
+    }
+    livePlayerRef.current?.dispose();
+    livePlayerRef.current = null;
+    prepActiveRef.current = false;
+  }, []);
+
+  /**
+   * Gemini Live path: mint an ephemeral token, open the socket, stream mic
+   * PCM both ways. Throws on any failure — the caller falls back to the
+   * legacy record → Gemini → ElevenLabs pipeline.
+   */
+  const startLiveSession = async (m: StudioMode, startPart: ExamPart) => {
+    const player = new PcmPlayer();
+    livePlayerRef.current = player;
+
+    const tok = await apiPost<{
+      token: string;
+      model: string;
+      sessionConfig: Record<string, unknown>;
+    }>("/api/speaking/live-token", {
+      mode: m,
+      part: startPart,
+      partner_name: partnerName,
+      user_name: profile?.full_name || "",
+      first_turn: firstTurnRef.current,
+    });
+    if (firstTurnRef.current) liveChargedRef.current = true;
+    if (!aliveRef.current) throw new Error("aborted");
+
+    const maybeCueCard = (acc: string) => {
+      if (modeRef.current !== "exam" || cueCardRef.current) return;
+      if (!/cue card/i.test(acc)) return;
+      const mTopic = acc.match(/describe [^.!?\n]+/i);
+      const raw = mTopic ? mTopic[0].trim().replace(/[.,;:!?]+$/, "") : "Describe your topic";
+      const cc: StudioCueCard = {
+        topic: raw.charAt(0).toUpperCase() + raw.slice(1),
+        bullets: [],
+      };
+      cueCardRef.current = cc;
+      setCueCard(cc);
+      examPartRef.current = 2;
+      setExamPart(2);
+      // Visual prep countdown — the model itself waits for the candidate.
+      prepActiveRef.current = true;
+      setPhase("prep");
+      setPrepSeconds(60);
+      if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+      prepTimerRef.current = setInterval(() => {
+        setPrepSeconds((s) => {
+          if (s <= 1) {
+            if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+            prepTimerRef.current = null;
+            prepActiveRef.current = false;
+            if (aliveRef.current) setPhase("listening");
+            return 0;
+          }
+          return s - 1;
+        });
+      }, 1000);
+    };
+
+    const session = await GeminiLiveSession.connect(tok.token, tok.model, tok.sessionConfig, {
+      onAudio: (pcm) => {
+        player.push(pcm);
+        if (aliveRef.current && !prepActiveRef.current) setPhase("speaking");
+      },
+      onInputTranscript: (t) => {
+        if (!aliveRef.current) return;
+        if (!userTurnOpenRef.current) userSpeakStartRef.current = Date.now();
+        pendingUserRef.current += t;
+        const text = pendingUserRef.current;
+        setTurns((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (userTurnOpenRef.current && last?.role === "user") {
+            next[next.length - 1] = { ...last, text };
+          } else {
+            userTurnOpenRef.current = true;
+            next.push({ role: "user", text });
+          }
+          return next;
+        });
+      },
+      onOutputTranscript: (t) => {
+        if (!aliveRef.current) return;
+        if (userTurnOpenRef.current) {
+          // The candidate's turn just ended — measure its speaking time.
+          turnDurationsRef.current.push(
+            Math.max(1, Math.round((Date.now() - userSpeakStartRef.current) / 1000))
+          );
+        }
+        userTurnOpenRef.current = false;
+        pendingUserRef.current = "";
+        pendingPartnerRef.current += t;
+        const text = pendingPartnerRef.current;
+        setTurns((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (partnerTurnOpenRef.current && last?.role === "partner") {
+            next[next.length - 1] = { ...last, text };
+          } else {
+            partnerTurnOpenRef.current = true;
+            next.push({ role: "partner", text, emotion: "neutral" });
+          }
+          return next;
+        });
+        maybeCueCard(text);
+        if (
+          /end of the speaking test/i.test(text) ||
+          (onlyPartRef.current !== null && /end of part/i.test(text))
+        ) {
+          liveFinishRef.current = true;
+        }
+      },
+      onTurnComplete: () => {
+        partnerTurnOpenRef.current = false;
+        pendingPartnerRef.current = "";
+        if (!aliveRef.current) return;
+        if (liveFinishRef.current) {
+          liveFinishRef.current = false;
+          void generateReportRef.current();
+          return;
+        }
+        if (!prepActiveRef.current) setPhase("listening");
+      },
+      onInterrupted: () => {
+        // Barge-in: flush queued audio, keep whatever transcript arrived.
+        player.reset();
+        partnerTurnOpenRef.current = false;
+        pendingPartnerRef.current = "";
+        if (aliveRef.current) setPhase("listening");
+      },
+      onClose: (graceful) => {
+        if (!aliveRef.current || graceful) return;
+        stopLive();
+        isLiveRef.current = false;
+        setIsLive(false);
+        if (turnsRef.current.length === 0) {
+          // Never got going — transparent fallback to the legacy pipeline.
+          liveFailedRef.current = true;
+          if (liveChargedRef.current) {
+            liveChargedRef.current = false;
+            void apiDelete("/api/speaking/live-token").catch(() => {});
+          }
+          void startSessionRef.current(modeRef.current, onlyPartRef.current);
+        } else {
+          // Mid-conversation drop: turns are preserved, the next answer just
+          // goes through the legacy pipeline.
+          setError("Jonli rejim uzildi — oddiy rejimda davom etadi.");
+          setPhase("idle");
+        }
+      },
+    });
+    if (!aliveRef.current) {
+      session.close();
+      throw new Error("aborted");
+    }
+    liveSessionRef.current = session;
+
+    // Mic → PCM16 @16kHz → socket. The worklet context asks for 16kHz; where
+    // the browser ignores it we resample on the main thread.
+    const stream = await ensureStream();
+    const AudioCtor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtor({ sampleRate: 16000 });
+    await ctx.audioWorklet.addModule("/audio/pcm-worklet.js");
+    const source = ctx.createMediaStreamSource(stream);
+    const node = new AudioWorkletNode(ctx, "pcm-capture");
+    const sink = ctx.createGain();
+    sink.gain.value = 0; // keep the graph pulling without audible feedback
+    source.connect(node);
+    node.connect(sink);
+    sink.connect(ctx.destination);
+    node.port.onmessage = (e: MessageEvent) => {
+      const data = e.data as { pcm: Int16Array; rms: number };
+      const now = performance.now();
+      if (now - micLevelAtRef.current > 120) {
+        micLevelAtRef.current = now;
+        setMicLevel(Math.min(1, data.rms * 5));
+      }
+      session.sendAudio(resampleTo16k(data.pcm, ctx.sampleRate));
+    };
+    liveMicRef.current = { ctx, node, source };
+
+    firstTurnRef.current = false;
+    isLiveRef.current = true;
+    setIsLive(true);
+    setPhase("thinking");
+    setSeconds(0);
+    timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    // Kick off the greeting — the model speaks first.
+    session.sendText("(The candidate has just joined the room. Greet them and begin.)");
+  };
+
   useEffect(() => {
     aliveRef.current = true;
     return () => {
       aliveRef.current = false;
       window.speechSynthesis.cancel();
+      stopLive();
       stopAudio();
       const rec = mediaRecorderRef.current;
       if (rec && rec.state !== "inactive") {
@@ -205,7 +437,7 @@ function SpeakingPartnerContent() {
       if (prepTimerRef.current) clearInterval(prepTimerRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
-  }, [stopAudio]);
+  }, [stopAudio, stopLive]);
 
   const handlePartnerDone = useCallback(() => {
     if (!aliveRef.current) return;
@@ -346,6 +578,13 @@ function SpeakingPartnerContent() {
 
   const resume = useCallback(() => {
     setError(null);
+    if (isLiveRef.current) {
+      // Live sessions are always listening; a dead socket means we already
+      // fell back to the legacy pipeline.
+      if (liveSessionRef.current?.connected) return;
+      isLiveRef.current = false;
+      setIsLive(false);
+    }
     const pending = pendingAudioRef.current;
     if (pending) {
       pendingAudioRef.current = null;
@@ -399,6 +638,30 @@ function SpeakingPartnerContent() {
       liveAudioRef.current = el;
     }
     void apiPost("/api/speaking/warmup", {}).catch(() => {});
+
+    // Gemini Live API first: one socket, native audio in/out, real barge-in.
+    // Any failure falls through to the legacy record → Gemini → TTS pipeline.
+    if (!liveFailedRef.current) {
+      try {
+        await startLiveSession(m, startPart);
+        return;
+      } catch (e) {
+        liveFailedRef.current = true;
+        isLiveRef.current = false;
+        setIsLive(false);
+        stopLive();
+        const msg = (e as Error)?.message || "";
+        if (msg.includes("Trial limit") || msg.includes("402")) {
+          setUpgradeNeeded(true);
+          return;
+        }
+        if (liveChargedRef.current) {
+          liveChargedRef.current = false;
+          void apiDelete("/api/speaking/live-token").catch(() => {});
+        }
+        if (!aliveRef.current) return;
+      }
+    }
 
     const firstName = profile?.full_name ? profile.full_name.split(" ")[0] : "";
     let greeting =
@@ -694,6 +957,9 @@ function SpeakingPartnerContent() {
 
   const generateReport = useCallback(async () => {
     window.speechSynthesis.cancel();
+    stopLive();
+    isLiveRef.current = false;
+    setIsLive(false);
     stopAudio();
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
     releaseStream();
@@ -715,15 +981,16 @@ function SpeakingPartnerContent() {
       setError((e as Error)?.message || "Hisobot tayyorlashda xatolik.");
       setPhase("idle");
     }
-  }, [partnerName, syncMemory, releaseStream, stopAudio]);
+  }, [partnerName, syncMemory, releaseStream, stopAudio, stopLive]);
   generateReportRef.current = generateReport;
 
   const exitSession = useCallback(() => {
     syncMemory();
+    stopLive();
     stopAudio();
     releaseStream();
     router.push("/speaking");
-  }, [router, syncMemory, releaseStream, stopAudio]);
+  }, [router, syncMemory, releaseStream, stopAudio, stopLive]);
 
   const buildExamInstruction = () => {
     const part = examPartRef.current;
@@ -932,6 +1199,7 @@ function SpeakingPartnerContent() {
   // "Javobni tugatdim" — manual end-of-turn. Stopping the recorder runs the
   // normal onstop path, which sends whatever was captured to the examiner.
   const finishAnswer = useCallback(() => {
+    if (isLiveRef.current) return; // Live API VAD owns turn-taking
     const rec = mediaRecorderRef.current;
     if (rec && rec.state === "recording") {
       discardRef.current = false;
@@ -984,8 +1252,13 @@ function SpeakingPartnerContent() {
       seconds={seconds}
       error={error}
       chatEndRef={chatEndRef}
+      live={isLive}
       onInterrupt={() => {
         if (phase !== "speaking") return;
+        if (isLiveRef.current) {
+          livePlayerRef.current?.reset();
+          return;
+        }
         stopAudio();
         void startRecording();
       }}
@@ -994,6 +1267,11 @@ function SpeakingPartnerContent() {
       onSkipPrep={() => {
         if (prepTimerRef.current) clearInterval(prepTimerRef.current);
         prepTimerRef.current = null;
+        prepActiveRef.current = false;
+        if (isLiveRef.current) {
+          setPhase("listening");
+          return;
+        }
         void startRecording();
       }}
       onGenerateReport={() => void generateReport()}

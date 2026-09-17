@@ -388,9 +388,11 @@ export function StudioSession({
   onDone,
   userAnswerCount,
   fmt,
+  live = false,
 }: {
   partnerName: string;
   mode: StudioMode;
+  live?: boolean;
   phase: StudioPhase;
   emotion: StudioEmotion;
   micLevel: number;
@@ -440,6 +442,12 @@ export function StudioSession({
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
+            {live && (
+              <span className="flex items-center gap-1.5 rounded-full bg-accent-red/20 px-3 py-1 text-xs font-semibold text-accent-red">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-red" />
+                LIVE
+              </span>
+            )}
             <span
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-semibold",
@@ -614,16 +622,21 @@ export function StudioSession({
 
         {/* Footer: pinned to the bottom, always reachable */}
         <div className="flex shrink-0 flex-col items-center justify-center gap-2 pb-2">
-          {phase === "listening" && (
-            <>
-              <Button variant="gradient" size="lg" onClick={onDone} className="px-8">
-                <Check className="mr-2 h-5 w-5" /> Javobni tugatdim
-              </Button>
+          {phase === "listening" &&
+            (live ? (
               <p className="text-xs text-content-secondary">
-                yoki jim turing — {mode === "exam" && examPart === 2 ? "~2.5s" : "~1.5s"} da o&apos;zi yuboradi
+                Gapiring — Adam o&apos;zi eshitadi va javob beradi
               </p>
-            </>
-          )}
+            ) : (
+              <>
+                <Button variant="gradient" size="lg" onClick={onDone} className="px-8">
+                  <Check className="mr-2 h-5 w-5" /> Javobni tugatdim
+                </Button>
+                <p className="text-xs text-content-secondary">
+                  yoki jim turing — {mode === "exam" && examPart === 2 ? "~2.5s" : "~1.5s"} da o&apos;zi yuboradi
+                </p>
+              </>
+            ))}
           <div className="flex items-center justify-center gap-3">
           {phase === "idle" && (
             <Button variant="gradient" size="sm" onClick={onResume}>
