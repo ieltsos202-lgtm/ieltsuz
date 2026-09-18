@@ -6,7 +6,7 @@ import { streamGeminiText } from "@/lib/speaking/geminiStream";
 import { LineProtocolParser } from "@/lib/speaking/lineProtocol";
 import { SentenceBuffer } from "@/lib/speaking/sentences";
 import { openTtsStream, type TtsStream } from "@/lib/speaking/elevenStream";
-import { transcribeAudio, analyzeTurn, evalTurn } from "@/lib/speaking/agents";
+import { analyzeTurn, evalTurn } from "@/lib/speaking/agents";
 import {
   buildChatPrompt,
   buildExamPrompt,
@@ -17,23 +17,20 @@ import {
 /**
  * The live turn — multi-agent pipeline.
  *
- *   audio ──► Agent 2 EAR (transcribeAudio)      ──► transcript event
- *     │            │
+ *   audio ──► Agent 1 EXAMINER (one streaming call) ──► T: → transcript event
+ *     │            │                                  E: → emotion → TTS warm
+ *     │            │                                  R: → sentences → mp3
  *     │            ▼
- *     │      Agent 1 EXAMINER (text-only prompt) ──► E:/C:/R: stream
- *     │            │                                    │
- *     │            ▼                                    ▼
- *     │      Agent 3 ANALYST (audio+transcript)    sentences → ElevenLabs → mp3
- *     │      Agent 4 SCORER  (transcript)          ──► analysis / eval events
+ *     │      Agent 3 ANALYST (audio+transcript)  ──► analysis event
+ *     │      Agent 4 SCORER  (transcript)        ──► eval event
  *
- * The old design made one Gemini call transcribe + judge + reply: the reply
- * could not start until the model had done its own ASR on a 2.5k-token
- * prompt. Splitting the Ear out means the transcript reaches the client in
- * ~1s and the examiner's first token arrives right after — while the Analyst
- * and Scorer work in parallel and never delay the voice.
+ * Critical path = ONE Gemini call that transcribes (T: line) and replies in
+ * the same pass — a separate STT round-trip only added dead air. The T: line
+ * lands in the first tokens, so the transcript event still reaches the client
+ * early, and the Analyst/Scorer launch off-path the moment it arrives.
  *
  * Events (newline-delimited JSON):
- *   {"t":"transcript","v":"what the candidate said"}   — as soon as the Ear finishes
+ *   {"t":"transcript","v":"what the candidate said"}   — from the T: line
  *   {"t":"meta","transcript":"...","emotion":"happy","cue_card":null}
  *   {"t":"text","v":"first sentence"}
  *   {"t":"audio","v":"<base64 mp3>"}
@@ -162,65 +159,70 @@ export async function POST(req: NextRequest) {
         };
 
         try {
-          /* ---------- Agent 2 — EAR: audio -> transcript (critical path) --- */
-          transcript = await transcribeAudio(audioBase64, mimeType, lastQuestion, draftTranscript);
-          timing.transcript_ms = Date.now() - t0;
-          send({ t: "transcript", v: transcript });
-
           /* ----- Agents 3 + 4 — ANALYST & SCORER: parallel, off-path ------- */
-          // They share the already-uploaded audio/transcript and report back
-          // through the same stream whenever they finish — the examiner's
-          // voice never waits for them.
+          // They launch the moment the examiner's T: line lands (or at stream
+          // end as a fallback) and report through the same stream whenever
+          // they finish — the examiner's voice never waits for them.
           const offPath: Promise<void>[] = [];
+          let agentsLaunched = false;
+          const launchOffPath = () => {
+            if (agentsLaunched) return;
+            agentsLaunched = true;
+            // The SpeechRecognition draft is the fallback when the model
+            // skipped its T: line — better than nothing for the Analyst.
+            const heard = transcript || draftTranscript;
 
-          offPath.push(
-            analyzeTurn(audioBase64, mimeType, transcript, lastQuestion, mode)
-              .then(async (a) => {
-                if (!a) return;
-                send({
-                  t: "analysis",
-                  v: {
-                    correction: a.correction,
-                    vocab_tip: a.vocab_tip,
-                    pronunciation: a.pronunciation
-                      ? {
-                          issue: a.pronunciation.issue,
-                          how_to_say: a.pronunciation.how_to_say,
-                          band: a.pronunciation.band,
-                        }
-                      : null,
-                  },
-                });
-                const rem = a.remember;
-                const weak = [...rem.weak_points];
-                if (a.correction) weak.push(`${a.correction.you_said} -> ${a.correction.better}`.slice(0, 120));
-                if (a.pronunciation?.issue) weak.push(`pronunciation: ${a.pronunciation.issue}`.slice(0, 120));
-                if (rem.facts.length || weak.length || rem.topics.length) {
-                  const mem = await loadSpeakingMemory(supabase, user.id);
-                  await appendSpeakingMemory(supabase, user.id, mem, {
-                    facts: rem.facts,
-                    weak_points: weak,
-                    topics: rem.topics,
-                  }).catch(() => {});
-                }
-              })
-              .catch(() => {})
-          );
-
-          // Agent 4 — SCORER: grade this turn while the examiner speaks.
-          // Skipped on empty transcripts — grading silence wastes a call.
-          if (transcript) {
             offPath.push(
-              evalTurn(transcript, lastQuestion, examPart, turnDuration)
-                .then((ev) => {
-                  if (ev) send({ t: "eval", v: ev });
+              analyzeTurn(audioBase64, mimeType, heard, lastQuestion, mode)
+                .then(async (a) => {
+                  if (!a) return;
+                  send({
+                    t: "analysis",
+                    v: {
+                      correction: a.correction,
+                      vocab_tip: a.vocab_tip,
+                      pronunciation: a.pronunciation
+                        ? {
+                            issue: a.pronunciation.issue,
+                            how_to_say: a.pronunciation.how_to_say,
+                            band: a.pronunciation.band,
+                          }
+                        : null,
+                    },
+                  });
+                  const rem = a.remember;
+                  const weak = [...rem.weak_points];
+                  if (a.correction) weak.push(`${a.correction.you_said} -> ${a.correction.better}`.slice(0, 120));
+                  if (a.pronunciation?.issue) weak.push(`pronunciation: ${a.pronunciation.issue}`.slice(0, 120));
+                  if (rem.facts.length || weak.length || rem.topics.length) {
+                    const mem = await loadSpeakingMemory(supabase, user.id);
+                    await appendSpeakingMemory(supabase, user.id, mem, {
+                      facts: rem.facts,
+                      weak_points: weak,
+                      topics: rem.topics,
+                    }).catch(() => {});
+                  }
                 })
                 .catch(() => {})
             );
-          }
 
-          /* ------- Agent 1 — EXAMINER: transcript -> spoken reply --------- */
-          const spoken = { transcript, pronunciationNotes: pronunciationNotes || undefined };
+            // Agent 4 — SCORER: grade this turn while the examiner speaks.
+            // Skipped on empty transcripts — grading silence wastes a call.
+            if (heard) {
+              offPath.push(
+                evalTurn(heard, lastQuestion, examPart, turnDuration)
+                  .then((ev) => {
+                    if (ev) send({ t: "eval", v: ev });
+                  })
+                  .catch(() => {})
+              );
+            }
+          };
+
+          /* ------- Agent 1 — EXAMINER: audio -> spoken reply --------------- */
+          // Audio-mode prompt (no `spoken`): the model transcribes into the
+          // T: line itself, so the transcript arrives with the first tokens
+          // and the reply starts as soon as R: appears — one round-trip.
           const prompt =
             mode === "exam"
               ? buildExamPrompt(
@@ -236,12 +238,17 @@ export async function POST(req: NextRequest) {
                     wantsCueCard,
                   },
                   memory,
-                  "lines",
-                  spoken
+                  "lines"
                 )
-              : buildChatPrompt(partnerName, userName, history, memory, lastQuestion, "lines", spoken);
+              : buildChatPrompt(partnerName, userName, history, memory, lastQuestion, "lines");
 
           const parser = new LineProtocolParser({
+            onTranscript: (t) => {
+              transcript = t;
+              timing.transcript_ms = Date.now() - t0;
+              send({ t: "transcript", v: t });
+              launchOffPath();
+            },
             onEmotion: (e) => {
               emotion = normalizeEmotion(e);
               // Pre-warm: the emotion header always precedes the reply, so the
@@ -263,16 +270,22 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          for await (const delta of streamGeminiText([{ text: prompt }], {
-            temperature: mode === "exam" ? 0.7 : 0.85,
-            maxOutputTokens: mode === "exam" ? 360 : 260,
-          })) {
+          for await (const delta of streamGeminiText(
+            [{ text: prompt }, { inlineData: { mimeType, data: audioBase64 } }],
+            {
+              temperature: mode === "exam" ? 0.7 : 0.85,
+              maxOutputTokens: mode === "exam" ? 360 : 260,
+            }
+          )) {
             if (timing.first_gemini_chunk_ms === undefined) {
               timing.first_gemini_chunk_ms = Date.now() - t0;
             }
             parser.push(delta);
           }
           parser.finish();
+          // If the model skipped its T: line, still run the off-path agents —
+          // the Analyst hears the audio itself and the draft may suffice.
+          launchOffPath();
 
           const tail = sentences.flush();
           if (tail) speak(tail);
