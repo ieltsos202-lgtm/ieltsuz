@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { QuotaError } from "@/lib/gemini";
 import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
-import { loadSpeakingMemory } from "@/lib/speakingMemory";
+import { loadSpeakingMemory, appendSpeakingMemory } from "@/lib/speakingMemory";
 import { streamGeminiText } from "@/lib/speaking/geminiStream";
 import { LineProtocolParser } from "@/lib/speaking/lineProtocol";
 import { SentenceBuffer } from "@/lib/speaking/sentences";
 import { openTtsStream, type TtsStream } from "@/lib/speaking/elevenStream";
+import { transcribeAudio, analyzeTurn, evalTurn } from "@/lib/speaking/agents";
 import {
   buildChatPrompt,
   buildExamPrompt,
@@ -14,18 +15,30 @@ import {
 } from "@/lib/speaking/prompts";
 
 /**
- * The live turn: one request, one streamed response.
+ * The live turn — multi-agent pipeline.
  *
- * audio -> Gemini (streaming) -> sentence boundary -> ElevenLabs (streaming)
- *       -> mp3 chunks -> client MediaSource
+ *   audio ──► Agent 2 EAR (transcribeAudio)      ──► transcript event
+ *     │            │
+ *     │            ▼
+ *     │      Agent 1 EXAMINER (text-only prompt) ──► E:/C:/R: stream
+ *     │            │                                    │
+ *     │            ▼                                    ▼
+ *     │      Agent 3 ANALYST (audio+transcript)    sentences → ElevenLabs → mp3
+ *     │      Agent 4 SCORER  (transcript)          ──► analysis / eval events
  *
- * The examiner starts speaking sentence 1 while the model is still writing
- * sentence 2, so perceived latency is "time to first sentence", not "time to
- * full answer". Everything is emitted as newline-delimited JSON events:
+ * The old design made one Gemini call transcribe + judge + reply: the reply
+ * could not start until the model had done its own ASR on a 2.5k-token
+ * prompt. Splitting the Ear out means the transcript reaches the client in
+ * ~1s and the examiner's first token arrives right after — while the Analyst
+ * and Scorer work in parallel and never delay the voice.
  *
+ * Events (newline-delimited JSON):
+ *   {"t":"transcript","v":"what the candidate said"}   — as soon as the Ear finishes
  *   {"t":"meta","transcript":"...","emotion":"happy","cue_card":null}
  *   {"t":"text","v":"first sentence"}
  *   {"t":"audio","v":"<base64 mp3>"}
+ *   {"t":"analysis","v":{correction,vocab_tip,pronunciation}}
+ *   {"t":"eval","v":{fluency,lexical,grammar,pronunciation,note}}
  *   {"t":"timing","v":{...}}
  *   {"t":"error","v":"message"} | {"t":"done"}
  */
@@ -55,6 +68,13 @@ export async function POST(req: NextRequest) {
     const examCue = ((form.get("exam_cue") as string) || "").slice(0, 500);
     const wantsCueCard = form.get("wants_cue_card") === "1";
     const lastQuestion = ((form.get("last_question") as string) || "").slice(0, 400);
+    // Draft transcript from the browser's SpeechRecognition — a hint for the
+    // Ear, never trusted blindly.
+    const draftTranscript = ((form.get("draft_transcript") as string) || "").slice(0, 1500);
+    // The Analyst's pronunciation note about the PREVIOUS turn — lets the
+    // examiner voice that correction without hearing the audio itself.
+    const pronunciationNotes = ((form.get("pronunciation_notes") as string) || "").slice(0, 400);
+    const turnDuration = Math.max(0, parseInt((form.get("turn_duration") as string) || "0") || 0);
 
     let history: HistoryTurn[] = [];
     try {
@@ -81,25 +101,6 @@ export async function POST(req: NextRequest) {
     ]);
     const audioBase64 = Buffer.from(audioBytes).toString("base64");
     const mimeType = (audioFile.type || "audio/webm").split(";")[0];
-
-    const prompt =
-      mode === "exam"
-        ? buildExamPrompt(
-            partnerName,
-            userName,
-            history,
-            {
-              instruction: examInstruction || "Continue the test naturally.",
-              part: examPart,
-              elapsed: examElapsed,
-              cueCard: examCue,
-              lastQuestion,
-              wantsCueCard,
-            },
-            memory,
-            "lines"
-          )
-        : buildChatPrompt(partnerName, userName, history, memory, lastQuestion, "lines");
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -160,39 +161,112 @@ export async function POST(req: NextRequest) {
           return chain;
         };
 
-        const parser = new LineProtocolParser({
-          onTranscript: (t) => {
-            transcript = t;
-          },
-          onEmotion: (e) => {
-            emotion = normalizeEmotion(e);
-            // Pre-warm: the emotion header always precedes the reply, so the
-            // socket handshake overlaps with generation instead of adding to
-            // the first sentence's latency.
-            void startTts();
-          },
-          onCueCard: (c) => {
-            cueCard = c;
-          },
-          onReply: (delta) => {
-            fullReply += delta;
-            if (!metaSent) {
-              metaSent = true;
-              timing.first_token_ms = timing.first_token_ms ?? Date.now() - t0;
-              send({ t: "meta", transcript, emotion, cue_card: cueCard });
-            }
-            for (const s of sentences.push(delta)) void speak(s);
-          },
-        });
-
         try {
-          for await (const delta of streamGeminiText(
-            [{ text: prompt }, { inlineData: { mimeType, data: audioBase64 } }],
-            {
-              temperature: mode === "exam" ? 0.7 : 0.85,
-              maxOutputTokens: mode === "exam" ? 360 : 260,
-            }
-          )) {
+          /* ---------- Agent 2 — EAR: audio -> transcript (critical path) --- */
+          transcript = await transcribeAudio(audioBase64, mimeType, lastQuestion, draftTranscript);
+          timing.transcript_ms = Date.now() - t0;
+          send({ t: "transcript", v: transcript });
+
+          /* ----- Agents 3 + 4 — ANALYST & SCORER: parallel, off-path ------- */
+          // They share the already-uploaded audio/transcript and report back
+          // through the same stream whenever they finish — the examiner's
+          // voice never waits for them.
+          const offPath: Promise<void>[] = [];
+
+          offPath.push(
+            analyzeTurn(audioBase64, mimeType, transcript, lastQuestion, mode)
+              .then(async (a) => {
+                if (!a) return;
+                send({
+                  t: "analysis",
+                  v: {
+                    correction: a.correction,
+                    vocab_tip: a.vocab_tip,
+                    pronunciation: a.pronunciation
+                      ? {
+                          issue: a.pronunciation.issue,
+                          how_to_say: a.pronunciation.how_to_say,
+                          band: a.pronunciation.band,
+                        }
+                      : null,
+                  },
+                });
+                const rem = a.remember;
+                const weak = [...rem.weak_points];
+                if (a.correction) weak.push(`${a.correction.you_said} -> ${a.correction.better}`.slice(0, 120));
+                if (a.pronunciation?.issue) weak.push(`pronunciation: ${a.pronunciation.issue}`.slice(0, 120));
+                if (rem.facts.length || weak.length || rem.topics.length) {
+                  const mem = await loadSpeakingMemory(supabase, user.id);
+                  await appendSpeakingMemory(supabase, user.id, mem, {
+                    facts: rem.facts,
+                    weak_points: weak,
+                    topics: rem.topics,
+                  }).catch(() => {});
+                }
+              })
+              .catch(() => {})
+          );
+
+          // Agent 4 — SCORER: grade this turn while the examiner speaks.
+          // Skipped on empty transcripts — grading silence wastes a call.
+          if (transcript) {
+            offPath.push(
+              evalTurn(transcript, lastQuestion, examPart, turnDuration)
+                .then((ev) => {
+                  if (ev) send({ t: "eval", v: ev });
+                })
+                .catch(() => {})
+            );
+          }
+
+          /* ------- Agent 1 — EXAMINER: transcript -> spoken reply --------- */
+          const spoken = { transcript, pronunciationNotes: pronunciationNotes || undefined };
+          const prompt =
+            mode === "exam"
+              ? buildExamPrompt(
+                  partnerName,
+                  userName,
+                  history,
+                  {
+                    instruction: examInstruction || "Continue the test naturally.",
+                    part: examPart,
+                    elapsed: examElapsed,
+                    cueCard: examCue,
+                    lastQuestion,
+                    wantsCueCard,
+                  },
+                  memory,
+                  "lines",
+                  spoken
+                )
+              : buildChatPrompt(partnerName, userName, history, memory, lastQuestion, "lines", spoken);
+
+          const parser = new LineProtocolParser({
+            onEmotion: (e) => {
+              emotion = normalizeEmotion(e);
+              // Pre-warm: the emotion header always precedes the reply, so the
+              // socket handshake overlaps with generation instead of adding to
+              // the first sentence's latency.
+              void startTts();
+            },
+            onCueCard: (c) => {
+              cueCard = c;
+            },
+            onReply: (delta) => {
+              fullReply += delta;
+              if (!metaSent) {
+                metaSent = true;
+                timing.first_token_ms = timing.first_token_ms ?? Date.now() - t0;
+                send({ t: "meta", transcript, emotion, cue_card: cueCard });
+              }
+              for (const s of sentences.push(delta)) void speak(s);
+            },
+          });
+
+          for await (const delta of streamGeminiText([{ text: prompt }], {
+            temperature: mode === "exam" ? 0.7 : 0.85,
+            maxOutputTokens: mode === "exam" ? 360 : 260,
+          })) {
             if (timing.first_gemini_chunk_ms === undefined) {
               timing.first_gemini_chunk_ms = Date.now() - t0;
             }
@@ -212,6 +286,13 @@ export async function POST(req: NextRequest) {
 
           session.tts?.end();
           if (session.pump) await session.pump;
+
+          // Give the off-path agents a moment to land their events — they are
+          // usually done long before the last audio chunk is sent.
+          await Promise.race([
+            Promise.allSettled(offPath),
+            new Promise((r) => setTimeout(r, 8000)),
+          ]);
 
           timing.total_ms = Date.now() - t0;
           send({ t: "timing", v: timing });

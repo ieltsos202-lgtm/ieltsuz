@@ -24,9 +24,31 @@ export interface LiveTurnMeta {
   cue_card: LiveCueCard | null;
 }
 
+/** Agent 3 (Analyst) output — arrives off-path, after the reply has started. */
+export interface LiveTurnAnalysis {
+  correction: { you_said: string; better: string; note: string } | null;
+  vocab_tip: { instead_of: string; try: string; example: string } | null;
+  pronunciation: { issue: string; how_to_say: string } | null;
+}
+
+/** Agent 4 (Scorer) output — per-turn band estimates for the running report. */
+export interface LiveTurnEval {
+  fluency: number | null;
+  lexical: number | null;
+  grammar: number | null;
+  pronunciation: number | null;
+  note: string;
+}
+
 export interface LiveTurnHandlers {
+  /** The Ear's transcript — arrives BEFORE the examiner starts replying. */
+  onTranscript?: (transcript: string) => void;
   /** Transcript + emotion, available before the first audio byte. */
   onMeta?: (meta: LiveTurnMeta) => void;
+  /** Analyst's findings for this turn (correction / vocab / pronunciation). */
+  onAnalysis?: (analysis: LiveTurnAnalysis) => void;
+  /** Scorer's per-turn band estimates. */
+  onEval?: (eval_: LiveTurnEval) => void;
   /** Each completed sentence of the reply, as it is synthesised. */
   onSentence?: (sentence: string) => void;
   /** Audio actually started coming out of the speaker. */
@@ -196,6 +218,18 @@ export async function playLiveTurn(
         }
 
         switch (ev.t) {
+          case "transcript":
+            if (typeof ev.v === "string") handlers.onTranscript?.(ev.v);
+            break;
+
+          case "analysis":
+            if (ev.v && typeof ev.v === "object") handlers.onAnalysis?.(ev.v as LiveTurnAnalysis);
+            break;
+
+          case "eval":
+            if (ev.v && typeof ev.v === "object") handlers.onEval?.(ev.v as LiveTurnEval);
+            break;
+
           case "meta":
             clientTiming.meta_ms = Math.round(performance.now() - t0);
             handlers.onMeta?.({

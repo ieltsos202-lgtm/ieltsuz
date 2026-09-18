@@ -27,6 +27,33 @@ export interface ExamContext {
   wantsCueCard?: boolean;
 }
 
+/**
+ * Transcript mode: the Ear agent already turned the audio into text, so the
+ * examiner reads instead of listening. `pronunciationNotes` carries the
+ * Analyst's findings about the PREVIOUS turn — the examiner can voice that
+ * correction naturally without audio on the critical path.
+ */
+export interface SpokenInput {
+  transcript: string;
+  pronunciationNotes?: string;
+}
+
+// When the Ear supplies the transcript, the examiner's job is to judge the
+// text — with a guard for transcripts that came back garbled.
+function transcriptBlock(spoken: SpokenInput): string {
+  const t = spoken.transcript.trim();
+  return `CANDIDATE'S TRANSCRIPT (verbatim, produced by a dedicated listener — may contain [unclear] gaps):
+"${t || "(empty — silence or unintelligible audio)"}"
+- If it is empty or mostly [unclear]: ask them to repeat, mentioning anything you did catch. Never answer a guessed transcript.
+- If it looks garbled or unrelated to your question: the transcription may have failed — politely ask them to say it again, slower.
+- Otherwise treat it as exactly what they said, mistakes and all.${
+    spoken.pronunciationNotes
+      ? `
+- PRONUNCIATION NOTE from the analyst about their previous answer: ${spoken.pronunciationNotes} — if it still matters, work a quick correction into your reply (English stop → one clean Uzbek sentence → "Say it again.").`
+      : ""
+  }`;
+}
+
 // The #1 cause of "it doesn't understand me" is a model that guesses. Force
 // careful transcription with context first.
 function listeningBlock(lastQuestion: string, who: string): string {
@@ -53,11 +80,12 @@ function historyBlock(history: HistoryTurn[], userLabel: string, partnerLabel: s
     .join("\n");
 }
 
-function outputSpec(format: OutputFormat, kind: "exam" | "chat", wantsCueCard: boolean): string {
+function outputSpec(format: OutputFormat, kind: "exam" | "chat", wantsCueCard: boolean, hasTranscript = false): string {
   if (format === "lines") {
     return `OUTPUT FORMAT — follow it EXACTLY, no markdown, no extra commentary.
-Write these lines in this order:
-T: <exact transcription of the audio, or empty if silent/unintelligible>
+Write these lines in this order:${
+      hasTranscript ? "" : `\nT: <exact transcription of the audio, or empty if silent/unintelligible>`
+    }
 E: <one of: neutral, happy, laughing, excited, thinking, surprised, sad, annoyed, encouraging>${
       wantsCueCard
         ? `\nC: {"topic": "Describe ...", "bullets": ["...", "...", "...", "and explain ..."]}`
@@ -85,7 +113,8 @@ export function buildExamPrompt(
   history: HistoryTurn[],
   ctx: ExamContext,
   memory: SpeakingMemory,
-  format: OutputFormat = "lines"
+  format: OutputFormat = "lines",
+  spoken?: SpokenInput
 ): string {
   return `You are ${examinerName}, a real British IELTS Speaking examiner — not a robot. You have been doing this for years and it shows: you're warm, a bit sarcastic, and you sound like an actual person. The candidate${userName ? " " + userName : ""} is from Uzbekistan. You conduct the test in clean English; the ONLY time you use Uzbek is a separate, complete, grammatically perfect Uzbek sentence to explain a grammar/pronunciation mistake or to scold laziness ("Bunday emas — bunday bo'ladi: ..."), then you go straight back to English. Never mix Uzbek words inside English sentences.
 
@@ -129,11 +158,13 @@ ${ctx.cueCard ? `- Cue card: ${ctx.cueCard}\n` : ""}- STAGE INSTRUCTION (follow 
 RECENT TURNS:
 ${historyBlock(history, "Candidate", "Examiner", 12)}
 
-${listeningBlock(ctx.lastQuestion, "the candidate")}
+${
+  spoken
+    ? transcriptBlock(spoken)
+    : `${listeningBlock(ctx.lastQuestion, "the candidate")}\n\nNow LISTEN to the attached audio — the candidate's latest spoken response.`
+}
 
-Now LISTEN to the attached audio — the candidate's latest spoken response.
-
-${outputSpec(format, "exam", !!ctx.wantsCueCard)}`;
+${outputSpec(format, "exam", !!ctx.wantsCueCard, !!spoken)}`;
 }
 
 /** PROMPT B — mentor/friend practice mode. */
@@ -143,7 +174,8 @@ export function buildChatPrompt(
   history: HistoryTurn[],
   memory: SpeakingMemory,
   lastQuestion: string,
-  format: OutputFormat = "lines"
+  format: OutputFormat = "lines",
+  spoken?: SpokenInput
 ): string {
   return `You are ${partnerName} — ${userName || "this learner"}'s personal English mentor and close friend. You're a real human: a sharp, sarcastic, big-hearted British guy who has lived in Tashkent for years and speaks fluent Uzbek. You are talking LIVE by voice. NOT an AI. NEVER say "as an AI". Never robotic.
 
@@ -180,12 +212,13 @@ ${describeMemory(memory, userName)}
 CONVERSATION SO FAR:
 ${historyBlock(history, userName || "User", partnerName, 6)}
 
-${listeningBlock(lastQuestion, userName || "the learner")}
+${
+  spoken
+    ? `${transcriptBlock(spoken)}\n- If the transcript is empty: scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".`
+    : `${listeningBlock(lastQuestion, userName || "the learner")}\n\nLISTEN to the attached audio — ${userName || "the learner"}'s latest turn.\n- If completely silent: leave the transcript empty, scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".`
+}
 
-LISTEN to the attached audio — ${userName || "the learner"}'s latest turn.
-- If completely silent: leave the transcript empty, scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".
-
-${outputSpec(format, "chat", false)}`;
+${outputSpec(format, "chat", false, !!spoken)}`;
 }
 
 /**

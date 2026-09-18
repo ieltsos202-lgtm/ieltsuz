@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
 import { apiPost, apiPostForm, apiPostFormStream, apiPostStream, apiDelete } from "@/lib/api";
-import { playLiveTurn } from "@/lib/speaking/livePlayer";
+import { playLiveTurn, type LiveTurnEval } from "@/lib/speaking/livePlayer";
 import { GeminiLiveSession, PcmPlayer, resampleTo16k } from "@/lib/speaking/liveClient";
 import {
   StudioIntro,
@@ -144,6 +144,21 @@ function SpeakingPartnerContent() {
   // permission granted by the user's first tap.
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
   const liveAbortRef = useRef<AbortController | null>(null);
+  // --- Multi-agent client state ---
+  // Browser SpeechRecognition drafts the transcript WHILE the user speaks —
+  // the Ear agent on the server verifies it against the real audio.
+  const speechRecRef = useRef<{ stop: () => void } | null>(null);
+  const draftTranscriptRef = useRef("");
+  const [liveDraft, setLiveDraft] = useState("");
+  // Agent 4's per-turn scores accumulate here so the final report is a merge,
+  // not a cold re-analysis of the whole session.
+  const evalsRef = useRef<LiveTurnEval[]>([]);
+  // Agent 3's pronunciation note about the LAST turn — forwarded into the next
+  // examiner prompt so the correction is voiced without audio on the path.
+  const lastPronRef = useRef("");
+  // Index of the newest eval entry — the Analyst's pronunciation band may
+  // arrive AFTER the Scorer's eval, so we merge it into the same slot.
+  const pendingEvalIdxRef = useRef(-1);
 
   // Hard stop for whatever the examiner is saying: pauses, detaches the source
   // so a MediaSource pump can't keep feeding it, and cancels the TTS download.
@@ -611,6 +626,11 @@ function SpeakingPartnerContent() {
     afterSpeakRef.current = "auto";
     userBlobsRef.current = [];
     turnDurationsRef.current = [];
+    evalsRef.current = [];
+    pendingEvalIdxRef.current = -1;
+    lastPronRef.current = "";
+    draftTranscriptRef.current = "";
+    setLiveDraft("");
     firstTurnRef.current = true;
     silenceStrikesRef.current = 0;
     memorySyncedRef.current = false;
@@ -639,9 +659,12 @@ function SpeakingPartnerContent() {
     }
     void apiPost("/api/speaking/warmup", {}).catch(() => {});
 
-    // Gemini Live API first: one socket, native audio in/out, real barge-in.
-    // Any failure falls through to the legacy record → Gemini → TTS pipeline.
-    if (!liveFailedRef.current) {
+    // Gemini Live API is bypassed: it is a single black-box model — the
+    // multi-agent pipeline below (Ear → Examiner → Analyst → Scorer) is
+    // faster per turn, speaks proper Uzbek through ElevenLabs, and lets each
+    // agent specialise. Set USE_GEMINI_LIVE to re-enable it.
+    const USE_GEMINI_LIVE = false;
+    if (USE_GEMINI_LIVE && !liveFailedRef.current) {
       try {
         await startLiveSession(m, startPart);
         return;
@@ -878,6 +901,13 @@ function SpeakingPartnerContent() {
       };
       recorder.onstop = () => {
         if (!aliveRef.current) return;
+        try {
+          speechRecRef.current?.stop();
+        } catch {
+          /* noop */
+        }
+        speechRecRef.current = null;
+        setLiveDraft("");
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         if (timerRef.current) clearInterval(timerRef.current);
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -908,6 +938,38 @@ function SpeakingPartnerContent() {
       };
       mediaRecorderRef.current = recorder;
       recorder.start();
+
+      // Agent 2's client half: the browser's SpeechRecognition drafts a
+      // transcript WHILE the user speaks — the candidate watches their words
+      // appear live, and the draft is sent as a hint for the server's Ear.
+      draftTranscriptRef.current = "";
+      setLiveDraft("");
+      try {
+        const Rec =
+          (window as unknown as { SpeechRecognition?: new () => any }).SpeechRecognition ||
+          (window as unknown as { webkitSpeechRecognition?: new () => any }).webkitSpeechRecognition;
+        if (Rec) {
+          const rec = new Rec();
+          rec.lang = "en-US";
+          rec.interimResults = true;
+          rec.continuous = true;
+          rec.onresult = (e: any) => {
+            let draft = "";
+            for (let i = 0; i < e.results.length; i++) {
+              draft += (e.results[i][0]?.transcript || "") + " ";
+            }
+            draft = draft.trim();
+            draftTranscriptRef.current = draft;
+            setLiveDraft(draft);
+          };
+          rec.onerror = () => {};
+          rec.start();
+          speechRecRef.current = rec;
+        }
+      } catch {
+        /* SpeechRecognition unavailable — the Ear still transcribes server-side */
+      }
+
       // No-speech timeout starts only once the mic is actually live — the
       // permission prompt must not eat into it.
       listenStartRef.current = Date.now();
@@ -970,7 +1032,16 @@ function SpeakingPartnerContent() {
       form.append("mode", modeRef.current);
       form.append("partner_name", partnerName);
       form.append("turns", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
-      userBlobsRef.current.forEach((b, i) => form.append("audio", b, `turn-${i}.webm`));
+      // Agent 4's running scores: the report merges them instead of
+      // re-analysing the session from scratch — and when they cover most
+      // turns, the audio blobs (which the Analyst already heard) don't need
+      // re-uploading at all, so the report is near-instant.
+      const evals = evalsRef.current;
+      form.append("evals", JSON.stringify(evals));
+      const userTurnCount = turnsRef.current.filter((t) => t.role === "user").length;
+      if (evals.length < userTurnCount * 0.8) {
+        userBlobsRef.current.forEach((b, i) => form.append("audio", b, `turn-${i}.webm`));
+      }
       form.append("durations", JSON.stringify(turnDurationsRef.current));
       const res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
       if (!aliveRef.current) return;
@@ -1063,6 +1134,17 @@ function SpeakingPartnerContent() {
       }
     }
     form.append("history", JSON.stringify(turnsRef.current.map((t) => ({ role: t.role, text: t.text }))));
+    // Multi-agent fields: the SpeechRecognition draft (Ear hint), the
+    // Analyst's pronunciation note about the previous turn (voiced by the
+    // examiner), and this turn's speaking time (Scorer input).
+    if (draftTranscriptRef.current) {
+      form.append("draft_transcript", draftTranscriptRef.current.slice(0, 1500));
+    }
+    if (lastPronRef.current) {
+      form.append("pronunciation_notes", lastPronRef.current.slice(0, 400));
+      lastPronRef.current = "";
+    }
+    form.append("turn_duration", String(turnDurationsRef.current.at(-1) || 0));
 
     const audio = liveAudioRef.current || new Audio();
     liveAudioRef.current = audio;
@@ -1090,9 +1172,26 @@ function SpeakingPartnerContent() {
         res,
         audio,
         {
+          // The Ear's transcript lands first — show the candidate's words
+          // immediately instead of waiting for the examiner's reply.
+          onTranscript: (t) => {
+            if (!aliveRef.current) return;
+            userTranscript = t;
+            setLiveDraft("");
+            setTurns((prev) => {
+              const next = [...prev];
+              if (userIndex >= 0 && next[userIndex]?.role === "user") {
+                next[userIndex] = { ...next[userIndex], text: t };
+              } else if (t) {
+                userIndex = next.length;
+                next.push({ role: "user" as const, text: t });
+              }
+              return next;
+            });
+          },
           onMeta: (meta) => {
             if (!aliveRef.current) return;
-            userTranscript = meta.transcript || "";
+            if (!userTranscript) userTranscript = meta.transcript || "";
             const emo = (meta.emotion || "neutral") as StudioEmotion;
             setEmotion(emo);
 
@@ -1121,7 +1220,7 @@ function SpeakingPartnerContent() {
 
             setTurns((prev) => {
               const next = [...prev];
-              if (userTranscript) {
+              if (userTranscript && userIndex < 0) {
                 userIndex = next.length;
                 next.push({ role: "user" as const, text: userTranscript });
               }
@@ -1129,6 +1228,34 @@ function SpeakingPartnerContent() {
               next.push({ role: "partner" as const, text: "", emotion: emo });
               return next;
             });
+          },
+          // Agent 3 — Analyst: correction / vocab / pronunciation for THIS
+          // turn, arriving while the examiner is still talking.
+          onAnalysis: (a) => {
+            if (!aliveRef.current || !a) return;
+            if (a.pronunciation?.issue) {
+              lastPronRef.current = `${a.pronunciation.issue} — ${a.pronunciation.how_to_say || ""}`.slice(0, 400);
+            }
+            const pronBand = (a.pronunciation as { band?: number | null } | undefined)?.band ?? null;
+            if (pronBand != null && pendingEvalIdxRef.current >= 0) {
+              const ev = evalsRef.current[pendingEvalIdxRef.current];
+              if (ev && ev.pronunciation == null) ev.pronunciation = pronBand;
+            }
+            const idx = userIndex;
+            if (idx < 0 || (!a.correction && !a.vocab_tip)) return;
+            setTurns((prev) =>
+              prev.map((t, i) =>
+                i === idx && t.role === "user"
+                  ? { ...t, correction: a.correction ?? null, vocab_tip: a.vocab_tip ?? null }
+                  : t
+              )
+            );
+          },
+          // Agent 4 — Scorer: fold this turn's bands into the running report.
+          onEval: (ev) => {
+            if (!aliveRef.current || !ev) return;
+            evalsRef.current.push({ ...ev });
+            pendingEvalIdxRef.current = evalsRef.current.length - 1;
           },
           onSentence: (sentence) => {
             if (!aliveRef.current) return;
@@ -1163,27 +1290,6 @@ function SpeakingPartnerContent() {
         setError(streamError);
         setPhase("idle");
         return;
-      }
-
-      // Correction / vocab tip run on a small text model while the examiner is
-      // already talking; the bubble fills in when it arrives.
-      if (userTranscript && userIndex >= 0) {
-        const idx = userIndex;
-        void apiPost<{ correction: StudioTurn["correction"]; vocab_tip: StudioTurn["vocab_tip"] }>(
-          "/api/speaking/partner/analyze",
-          { transcript: userTranscript, question: lastQuestion, mode: modeRef.current }
-        )
-          .then((a) => {
-            if (!aliveRef.current || (!a?.correction && !a?.vocab_tip)) return;
-            setTurns((prev) =>
-              prev.map((t, i) =>
-                i === idx && t.role === "user"
-                  ? { ...t, correction: a.correction ?? null, vocab_tip: a.vocab_tip ?? null }
-                  : t
-              )
-            );
-          })
-          .catch(() => {});
       }
 
       handlePartnerDone();
@@ -1253,6 +1359,7 @@ function SpeakingPartnerContent() {
       error={error}
       chatEndRef={chatEndRef}
       live={isLive}
+      liveDraft={liveDraft}
       onInterrupt={() => {
         if (phase !== "speaking") return;
         if (isLiveRef.current) {

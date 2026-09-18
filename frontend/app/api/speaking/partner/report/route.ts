@@ -66,6 +66,27 @@ export async function POST(req: NextRequest) {
     }
     const metrics = computeSessionMetrics(userTurns.map((t) => t.text), speakingSeconds);
 
+    // Agent 4's running scores — one entry per candidate answer, produced
+    // during the session (the Analyst's audio-based pronunciation band is
+    // folded in). When present, they are the report's primary evidence and
+    // the model synthesises rather than re-discovers.
+    let evals: { fluency: number | null; lexical: number | null; grammar: number | null; pronunciation: number | null; note: string }[] = [];
+    try {
+      const parsedEvals = JSON.parse((formData.get("evals") as string) || "[]");
+      if (Array.isArray(parsedEvals)) evals = parsedEvals;
+    } catch {
+      evals = [];
+    }
+    const evalsBlock =
+      evals.length > 0
+        ? `\nPER-TURN EXAMINER NOTES (the Scorer graded each answer as it happened; pronunciation bands came from the Analyst who heard the actual audio — treat these as expert observations, not guesses):\n${evals
+            .map(
+              (e, i) =>
+                `Answer ${i + 1}: fluency ${e.fluency ?? "?"}, lexical ${e.lexical ?? "?"}, grammar ${e.grammar ?? "?"}, pronunciation ${e.pronunciation ?? "?"} — ${e.note || ""}`
+            )
+            .join("\n")}\n`
+        : "";
+
     const transcriptBlock = turns
       .map((t) => `${t.role === "user" ? "Candidate" : examinerName}: ${t.text}`)
       .join("\n");
@@ -84,7 +105,7 @@ ${transcriptBlock}
 
 MEASURED SESSION METRICS (counted from the transcript and the recordings — treat these as facts, do not contradict them):
 ${describeMetrics(metrics)}
-
+${evalsBlock}
 Assess the candidate across the four official IELTS Speaking criteria, weighted equally:
 
 1. FLUENCY & COHERENCE — Can they speak at length with minimal hesitation? Do ideas connect logically with a range of linking words (not just "and", "but")? Is there natural self-correction versus repeated stumbling? Excessive filler words, long pauses, or heavy reliance on repetition should pull the score down.
@@ -93,7 +114,7 @@ Assess the candidate across the four official IELTS Speaking criteria, weighted 
 
 3. GRAMMATICAL RANGE & ACCURACY — Variety of sentence structures (simple vs. complex, conditionals, relative clauses, passive voice) and how error-free they are. Frequent basic errors (articles, subject-verb agreement, tense) cap the score lower even if vocabulary is strong.
 
-4. PRONUNCIATION — Based on the attached audio (word stress, intonation, connected speech, intelligibility) — NOT accent. Note specific words or sound patterns that reduced clarity. If no audio is attached, state this limitation clearly in that section instead of guessing a precise score.
+4. PRONUNCIATION — Based on the attached audio (word stress, intonation, connected speech, intelligibility) — NOT accent. Note specific words or sound patterns that reduced clarity. If no audio is attached but per-turn examiner notes include pronunciation bands, base this section on those. If neither is available, state this limitation clearly instead of guessing a precise score.
 
 For each criterion: give a band (use halves, e.g. 6.5) and 2-3 specific pieces of evidence quoted or closely paraphrased from what the candidate actually said — never generic feedback. Then give an overall band (typically the rounded average, adjusted for markedly weak areas that would realistically cap a real examiner's overall impression).
 

@@ -389,10 +389,13 @@ export function StudioSession({
   userAnswerCount,
   fmt,
   live = false,
+  liveDraft = "",
 }: {
   partnerName: string;
   mode: StudioMode;
   live?: boolean;
+  /** Interim SpeechRecognition transcript shown while the candidate speaks. */
+  liveDraft?: string;
   phase: StudioPhase;
   emotion: StudioEmotion;
   micLevel: number;
@@ -543,6 +546,23 @@ export function StudioSession({
             <p className="max-w-md rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-200">
               {micHint}
             </p>
+          )}
+
+          {/* Agent 2's draft: the candidate's own words appearing as they
+              speak — visible proof the Ear is already listening. */}
+          {phase === "listening" && liveDraft && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-xl rounded-2xl border border-accent/25 bg-accent/10 px-5 py-2.5 text-center backdrop-blur-xl"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
+                Siz
+              </p>
+              <p className="mt-0.5 text-sm font-medium leading-relaxed text-content-secondary sm:text-base">
+                {liveDraft}
+              </p>
+            </motion.div>
           )}
 
           {/* Live caption: what the examiner is saying / asked */}
