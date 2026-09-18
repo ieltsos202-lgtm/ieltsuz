@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 import { loadSpeakingMemory } from "@/lib/speakingMemory";
 import { buildLiveSystemInstruction } from "@/lib/speaking/prompts";
+import { geminiKeys } from "@/lib/gemini";
 
 /**
  * Mints a short-lived ephemeral token so the BROWSER can open a direct
@@ -16,7 +17,6 @@ import { buildLiveSystemInstruction } from "@/lib/speaking/prompts";
  * client echoes the same config in its setup message either way.
  */
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 // Native-audio Live model: audio in, audio out, built-in VAD + barge-in.
 const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-09-2025";
 const AUTH_TOKENS_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
   try {
     const { supabase, user } = await getAuth(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (!GEMINI_KEY) {
+    const keys = geminiKeys();
+    if (!keys.length) {
       return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
     }
 
@@ -80,12 +81,12 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    const mint = async (withConstraints: boolean) =>
+    const mint = async (key: string, withConstraints: boolean) =>
       fetch(AUTH_TOKENS_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_KEY,
+          "x-goog-api-key": key,
         },
         body: JSON.stringify(
           withConstraints
@@ -110,13 +111,18 @@ export async function POST(req: NextRequest) {
       });
 
     // Constraints lock the session to our model+config; if the API build
-    // doesn't know the field yet, mint a plain token instead.
-    let res = await mint(true);
-    if (!res.ok) res = await mint(false);
+    // doesn't know the field yet, mint a plain token instead. A rate-limited
+    // key rolls over to the next configured key.
+    let res: Response | null = null;
+    for (const key of keys) {
+      res = await mint(key, true);
+      if (!res.ok) res = await mint(key, false);
+      if (res.ok) break;
+    }
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      console.error("Ephemeral token mint failed:", res.status, errText.slice(0, 300));
+    if (!res || !res.ok) {
+      const errText = res ? await res.text().catch(() => "") : "no keys";
+      console.error("Ephemeral token mint failed:", res?.status, errText.slice(0, 300));
       if (charged?.ok) await refundTrial(supabase, charged);
       return NextResponse.json({ error: "Live session unavailable" }, { status: 503 });
     }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
+import { geminiKeys } from "@/lib/gemini";
 import { ELEVENLABS_UZBEK_MODEL_ID, isProbablyUzbek } from "@/lib/speaking/voice";
 
 const TTS_PROVIDER = (process.env.TTS_PROVIDER || "elevenlabs").toLowerCase();
@@ -230,25 +231,29 @@ export async function POST(req: NextRequest) {
     const clean = text.replace(/\|\s*O'zbekcha:.*$/i, "").trim();
     const prompt = `Say naturally, ${style}: ${clean}`;
 
-    const apiKey = process.env.GEMINI_API_KEY || "";
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } },
+    // Try every configured key — a rate-limited primary rolls over to spares.
+    let res: Response | null = null;
+    for (const apiKey of geminiKeys()) {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } },
+              },
             },
-          },
-        }),
-      }
-    );
+          }),
+        }
+      );
+      if (res.ok || (res.status !== 429 && res.status < 500)) break;
+    }
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       return NextResponse.json({ error: "TTS unavailable" }, { status: 503 });
     }
 
