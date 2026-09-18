@@ -22,11 +22,14 @@ function clientFor(key: string) {
   return c;
 }
 
-/** Models that share the audio-capable Flash family, cheapest-latency first. */
+/** Models that share the audio-capable Flash family, cheapest-latency first.
+ * NOTE: gemini-2.5/2.0 flash are blocked (404) for projects created after
+ * deprecation — the 3.x family works on old AND new keys alike. */
 export const LIVE_MODEL_CHAIN = [
-  process.env.PARTNER_MODEL || "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
+  process.env.PARTNER_MODEL || "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
 ];
 
 /** Every configured key, primary first. */
@@ -118,7 +121,7 @@ const JSON_CONFIG: GenerationConfig = {
 };
 
 export function getModel(
-  modelName = "gemini-2.5-flash",
+  modelName = "gemini-3.6-flash",
   jsonMode = false,
   overrideConfig?: Record<string, unknown>
 ) {
@@ -178,7 +181,7 @@ export async function generateText(
   prompt: string,
   options?: { primary?: string; fallback?: string; maxRetries?: number; jsonMode?: boolean }
 ): Promise<string> {
-  const { primary = "gemini-2.5-flash", fallback = "gemini-2.0-flash", maxRetries = 2, jsonMode = false } = options || {};
+  const { primary = "gemini-3.6-flash", fallback = "gemini-3.5-flash", maxRetries = 2, jsonMode = false } = options || {};
   const models = [primary, fallback].filter(Boolean);
 
   for (const modelName of models) {
@@ -211,9 +214,9 @@ export async function generateText(
  */
 export async function generateJSON(
   prompt: string,
-  modelName = "gemini-2.5-flash",
+  modelName = "gemini-3.6-flash",
   retries = 2
 ): Promise<any> {
-  const text = await generateText(prompt, { primary: modelName, fallback: "gemini-2.0-flash", maxRetries: retries, jsonMode: true });
+  const text = await generateText(prompt, { primary: modelName, fallback: "gemini-3.5-flash", maxRetries: retries, jsonMode: true });
   return parseJSONFromText(text);
 }

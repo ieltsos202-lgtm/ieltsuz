@@ -3,7 +3,7 @@ import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth, updateSpeakingProgress } from "@/lib/supabaseServer";
 import { computeSessionMetrics, describeMetrics } from "@/lib/speaking/metrics";
 
-const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
+const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
 
 function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;

@@ -8,9 +8,9 @@ import { appendSpeakingMemory, loadSpeakingMemory } from "@/lib/speakingMemory";
 // conversation. Produces the on-screen correction / vocab tip and updates the
 // long-term memory (facts, weak points, topics).
 const ANALYZE_MODELS = [
-  process.env.PARTNER_ANALYZE_MODEL || "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
-  "gemini-2.5-flash",
+  process.env.PARTNER_ANALYZE_MODEL || "gemini-3.1-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.6-flash",
 ];
 
 const strList = (v: unknown, max = 3) =>

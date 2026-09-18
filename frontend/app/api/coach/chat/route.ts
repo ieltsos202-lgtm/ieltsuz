@@ -121,7 +121,7 @@ Reply as the coach:`;
 
     let reply = "";
     try {
-      reply = await generateText(prompt, { primary: "gemini-2.5-flash", fallback: "gemini-2.0-flash", maxRetries: 3 });
+      reply = await generateText(prompt, { primary: "gemini-3.6-flash", fallback: "gemini-3.5-flash", maxRetries: 3 });
     } catch (e: any) {
       console.error("Coach chat Gemini error:", e?.message || e);
       const msg = e?.message || "";

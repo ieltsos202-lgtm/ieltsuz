@@ -18,7 +18,7 @@ import { geminiKeys } from "@/lib/gemini";
  */
 
 // Native-audio Live model: audio in, audio out, built-in VAD + barge-in.
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-09-2025";
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-latest";
 const AUTH_TOKENS_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 
 export async function POST(req: NextRequest) {

@@ -3,7 +3,7 @@ import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth } from "@/lib/supabaseServer";
 import { loadSpeakingMemory, saveSpeakingMemory } from "@/lib/speakingMemory";
 
-const MODEL = process.env.PARTNER_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.PARTNER_MODEL || "gemini-3.6-flash";
 
 interface Turn {
   role: "user" | "partner";

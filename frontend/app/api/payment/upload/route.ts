@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Gemini verification
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
     const base64Image = buffer.toString("base64");
 
     const prompt = `Analyze this payment screenshot and extract:

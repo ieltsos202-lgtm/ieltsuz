@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
 
-const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
+const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
 
 // Round to the nearest valid IELTS half-band (0.0, 0.5, 1.0, ... 9.0).
 function roundHalf(n: number): number {

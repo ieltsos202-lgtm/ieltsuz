@@ -4,7 +4,7 @@ import { geminiKeys } from "@/lib/gemini";
 import { ELEVENLABS_UZBEK_MODEL_ID, isProbablyUzbek } from "@/lib/speaking/voice";
 
 const TTS_PROVIDER = (process.env.TTS_PROVIDER || "elevenlabs").toLowerCase();
-const TTS_MODEL = process.env.TTS_MODEL || "gemini-2.5-flash-preview-tts";
+const TTS_MODEL = process.env.TTS_MODEL || "gemini-3.1-flash-tts-preview";
 const TTS_VOICE = process.env.TTS_VOICE || "Aoede";
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";

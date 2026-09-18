@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth, checkAndDecrementTrial, refundTrial, updateSpeakingProgress } from "@/lib/supabaseServer";
 
-const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-2.5-flash";
+const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
 
 function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;
