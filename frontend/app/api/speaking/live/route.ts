@@ -127,25 +127,33 @@ export async function POST(req: NextRequest) {
 
         // TTS can only start once we know the emotion (it selects the voice
         // settings), which the model emits before the reply by design.
-        const startTts = async () => {
-          if (session.tts) return;
-          const tts = await openTtsStream({
-            mode,
-            emotion,
-            onFirstByte: () => {
-              timing.first_audio_byte_ms = Date.now() - t0;
-            },
-          });
-          session.tts = tts;
-          timing.tts_websocket = tts.transport === "websocket" ? 1 : 0;
-          const reader = tts.audio.getReader();
-          session.pump = (async () => {
-            for (;;) {
-              const { value, done } = await reader.read();
-              if (done) break;
-              if (value?.length) send({ t: "audio", v: bytesToBase64(value) });
-            }
-          })();
+        // The in-flight promise is cached: the emotion pre-warm and the first
+        // sentence can race, and two overlapping opens would create two
+        // sockets whose audio chunks interleave into an unplayable stream.
+        let ttsOpening: Promise<TtsStream> | null = null;
+        const startTts = () => {
+          if (!ttsOpening) {
+            ttsOpening = openTtsStream({
+              mode,
+              emotion,
+              onFirstByte: () => {
+                timing.first_audio_byte_ms = Date.now() - t0;
+              },
+            }).then((tts) => {
+              session.tts = tts;
+              timing.tts_websocket = tts.transport === "websocket" ? 1 : 0;
+              const reader = tts.audio.getReader();
+              session.pump = (async () => {
+                for (;;) {
+                  const { value, done } = await reader.read();
+                  if (done) break;
+                  if (value?.length) send({ t: "audio", v: bytesToBase64(value) });
+                }
+              })();
+              return tts;
+            });
+          }
+          return ttsOpening;
         };
 
         const speak = (sentence: string) => {

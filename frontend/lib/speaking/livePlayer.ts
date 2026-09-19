@@ -49,6 +49,10 @@ export interface LiveTurnHandlers {
   onAnalysis?: (analysis: LiveTurnAnalysis) => void;
   /** Scorer's per-turn band estimates. */
   onEval?: (eval_: LiveTurnEval) => void;
+  /** The stream finished without a single audio chunk (TTS outage) — the
+   *  client can speak the reply with a fallback voice instead of going
+   *  silent. When set, it replaces onPlaybackEnd for this case. */
+  onNoAudio?: () => void;
   /** Each completed sentence of the reply, as it is synthesised. */
   onSentence?: (sentence: string) => void;
   /** Audio actually started coming out of the speaker. */
@@ -152,15 +156,16 @@ export async function playLiveTurn(
   const sink: { queue: BufferQueue | null } = { queue: null };
   let sourceReady: Promise<void> = Promise.resolve();
 
+  let finishPlayback: () => void = () => {};
   const playbackDone = new Promise<void>((resolve) => {
-    const finish = () => {
-      audio.removeEventListener("ended", finish);
-      audio.removeEventListener("error", finish);
+    finishPlayback = () => {
+      audio.removeEventListener("ended", finishPlayback);
+      audio.removeEventListener("error", finishPlayback);
       resolve();
     };
-    audio.addEventListener("ended", finish);
-    audio.addEventListener("error", finish);
-    signal?.addEventListener("abort", finish, { once: true });
+    audio.addEventListener("ended", finishPlayback);
+    audio.addEventListener("error", finishPlayback);
+    signal?.addEventListener("abort", finishPlayback, { once: true });
   });
 
   if (useMse) {
@@ -189,7 +194,9 @@ export async function playLiveTurn(
     clientTiming.playback_start_ms = Math.round(performance.now() - t0);
     handlers.onPlaybackStart?.();
     void audio.play().catch(() => {
-      /* autoplay blocked — the UI offers a resume button */
+      // Autoplay blocked or element failed — resolve instead of hanging the
+      // turn on an "ended" event that will never come.
+      finishPlayback();
     });
   };
 
@@ -297,7 +304,10 @@ export async function playLiveTurn(
   handlers.onTiming?.({ ...serverTiming, ...clientTiming });
 
   if (!sawAudio) {
-    handlers.onPlaybackEnd?.();
+    // TTS produced nothing (quota/outage) — let the client speak the reply
+    // with a fallback voice; without a handler we just end the turn.
+    if (handlers.onNoAudio) handlers.onNoAudio();
+    else handlers.onPlaybackEnd?.();
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     return;
   }

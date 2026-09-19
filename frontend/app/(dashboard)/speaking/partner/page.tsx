@@ -1157,6 +1157,9 @@ function SpeakingPartnerContent() {
     let userTranscript = "";
     let replyText = "";
     let streamError: string | null = null;
+    // Set when the browser voice is speaking the reply (TTS outage) — it owns
+    // the handoff to the next turn via utter.onend instead of handlePartnerDone.
+    let ttsFallback = false;
 
     try {
       // One streamed request: the examiner starts speaking sentence 1 while the
@@ -1268,6 +1271,21 @@ function SpeakingPartnerContent() {
           onPlaybackStart: () => {
             if (aliveRef.current) setPhase("speaking");
           },
+          // ElevenLabs produced no audio at all (quota/outage) — keep the
+          // turn alive with the browser's built-in voice, same as playPartner.
+          onNoAudio: () => {
+            if (!aliveRef.current || !replyText || !("speechSynthesis" in window)) return;
+            ttsFallback = true;
+            setPhase("speaking");
+            const utter = new SpeechSynthesisUtterance(replyText);
+            utter.lang = /[ʻʼ]/.test(replyText) ? "tr-TR" : "en-US";
+            const done = () => {
+              if (aliveRef.current) handlePartnerDone();
+            };
+            utter.onend = done;
+            utter.onerror = done;
+            window.speechSynthesis.speak(utter);
+          },
           onError: (msg) => {
             streamError = msg;
           },
@@ -1292,6 +1310,8 @@ function SpeakingPartnerContent() {
         return;
       }
 
+      // The browser voice is mid-reply — its onend calls handlePartnerDone.
+      if (ttsFallback) return;
       handlePartnerDone();
     } catch (e: unknown) {
       if (!aliveRef.current || (e as Error)?.name === "AbortError") return;

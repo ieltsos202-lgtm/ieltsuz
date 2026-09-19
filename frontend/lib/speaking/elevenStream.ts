@@ -91,6 +91,17 @@ async function connect(url: string): Promise<WebSocket> {
   if (typeof WebSocket === "undefined") throw new Error("No WebSocket support");
   const ws = new WebSocket(url);
   await new Promise<void>((resolve, reject) => {
+    // A socket that neither opens nor errors would hang the turn forever —
+    // time out and let the caller degrade to REST.
+    const timer = setTimeout(() => {
+      cleanup();
+      try {
+        ws.close();
+      } catch {
+        /* noop */
+      }
+      reject(new Error("WebSocket open timeout"));
+    }, 8000);
     const onOpen = () => {
       cleanup();
       resolve();
@@ -100,6 +111,7 @@ async function connect(url: string): Promise<WebSocket> {
       reject(new Error("WebSocket failed to open"));
     };
     const cleanup = () => {
+      clearTimeout(timer);
       ws.removeEventListener("open", onOpen);
       ws.removeEventListener("error", onError);
     };
