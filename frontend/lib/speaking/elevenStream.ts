@@ -94,6 +94,8 @@ async function geminiTts(text: string): Promise<Uint8Array | null> {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // A hung TTS request must not freeze the whole turn.
+        signal: AbortSignal.timeout(20000),
         body: JSON.stringify({
           contents: [{ parts: [{ text: `Say naturally: ${text}` }] }],
           generationConfig: {
@@ -520,16 +522,21 @@ async function synthesize(
         "xi-api-key": API_KEY,
         Accept: "audio/mpeg",
       },
+      // A hung request must not freeze the turn — fall through to the next
+      // provider instead.
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({ ...body, model_id: id }),
-    });
+    }).catch(() => null);
 
   let res = await call(modelId);
-  if (!res.ok && ELEVENLABS_FALLBACK_MODEL_ID !== modelId) {
+  if (res && !res.ok && ELEVENLABS_FALLBACK_MODEL_ID !== modelId) {
     console.error("ElevenLabs REST primary failed:", res.status);
     res = await call(ELEVENLABS_FALLBACK_MODEL_ID);
+  } else if (!res) {
+    res = await call(ELEVENLABS_FALLBACK_MODEL_ID);
   }
-  if (!res.ok) {
-    console.error("ElevenLabs REST failed:", res.status, (await res.text().catch(() => "")).slice(0, 200));
+  if (!res || !res.ok) {
+    console.error("ElevenLabs REST failed:", res?.status, res ? (await res.text().catch(() => "")).slice(0, 200) : "no response");
     return null;
   }
   return res;
