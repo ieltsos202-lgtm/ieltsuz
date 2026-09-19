@@ -156,17 +156,47 @@ export async function playLiveTurn(
   const sink: { queue: BufferQueue | null } = { queue: null };
   let sourceReady: Promise<void> = Promise.resolve();
 
+  // WAV fallback mode: when ElevenLabs is down the server sends one complete
+  // WAV file per sentence (Gemini TTS) instead of mp3 fragments. They are
+  // queued and played back-to-back on the same element — no MediaSource.
+  let wavMode = false;
+  let wavStreamDone = false;
+  let wavBusy = false;
+  const wavQueue: Uint8Array[] = [];
+  let wavUrl: string | null = null;
+
   let finishPlayback: () => void = () => {};
   const playbackDone = new Promise<void>((resolve) => {
     finishPlayback = () => {
-      audio.removeEventListener("ended", finishPlayback);
+      audio.removeEventListener("ended", onAudioEnded);
       audio.removeEventListener("error", finishPlayback);
       resolve();
     };
-    audio.addEventListener("ended", finishPlayback);
+    const onAudioEnded = () => {
+      if (wavMode) {
+        playWavNext(); // chain the next sentence's WAV
+        return;
+      }
+      finishPlayback();
+    };
+    audio.addEventListener("ended", onAudioEnded);
     audio.addEventListener("error", finishPlayback);
     signal?.addEventListener("abort", finishPlayback, { once: true });
   });
+
+  const playWavNext = () => {
+    const next = wavQueue.shift();
+    if (!next) {
+      wavBusy = false;
+      if (wavStreamDone) finishPlayback();
+      return;
+    }
+    wavBusy = true;
+    if (wavUrl) URL.revokeObjectURL(wavUrl);
+    wavUrl = URL.createObjectURL(new Blob([next as BlobPart], { type: "audio/wav" }));
+    audio.src = wavUrl;
+    void audio.play().catch(() => playWavNext());
+  };
 
   if (useMse) {
     const ms = new MediaSource();
@@ -253,11 +283,33 @@ export async function playLiveTurn(
           case "audio": {
             if (typeof ev.v !== "string") break;
             const bytes = base64ToBytes(ev.v);
+            const isWav =
+              bytes.length > 4 &&
+              bytes[0] === 0x52 && // R
+              bytes[1] === 0x49 && // I
+              bytes[2] === 0x46 && // F
+              bytes[3] === 0x46; //   F
             if (!sawAudio) {
               sawAudio = true;
               clientTiming.first_audio_ms = Math.round(performance.now() - t0);
+              wavMode = isWav;
+              if (wavMode && objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                objectUrl = null;
+              }
             }
-            if (useMse) {
+            if (wavMode) {
+              if (!isWav) break; // stray mp3 fragment — drop, keep order
+              wavQueue.push(bytes);
+              if (!startedPlaying) {
+                startedPlaying = true;
+                clientTiming.playback_start_ms = Math.round(performance.now() - t0);
+                handlers.onPlaybackStart?.();
+              }
+              if (!wavBusy) playWavNext();
+            } else if (isWav) {
+              break; // WAV mid-mp3-stream would corrupt the buffer
+            } else if (useMse) {
               await sourceReady;
               sink.queue?.push(bytes);
               startPlayback();
@@ -289,18 +341,20 @@ export async function playLiveTurn(
 
   if (signal?.aborted) {
     if (objectUrl) URL.revokeObjectURL(objectUrl);
+    if (wavUrl) URL.revokeObjectURL(wavUrl);
     return;
   }
 
-  if (useMse) {
+  if (useMse && !wavMode) {
     sink.queue?.end();
-  } else if (fallbackChunks.length) {
+  } else if (!useMse && !wavMode && fallbackChunks.length) {
     const blob = new Blob(fallbackChunks as BlobPart[], { type: MIME });
     objectUrl = URL.createObjectURL(blob);
     audio.src = objectUrl;
     startPlayback();
   }
 
+  wavStreamDone = true;
   handlers.onTiming?.({ ...serverTiming, ...clientTiming });
 
   if (!sawAudio) {
@@ -312,7 +366,10 @@ export async function playLiveTurn(
     return;
   }
 
+  if (wavMode && !wavBusy) finishPlayback(); // queue already drained
+
   await playbackDone;
   if (objectUrl) URL.revokeObjectURL(objectUrl);
+  if (wavUrl) URL.revokeObjectURL(wavUrl);
   handlers.onPlaybackEnd?.();
 }

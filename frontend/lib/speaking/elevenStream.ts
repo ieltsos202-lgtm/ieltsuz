@@ -1,3 +1,4 @@
+import { geminiKeys } from "@/lib/gemini";
 import {
   ELEVENLABS_FALLBACK_MODEL_ID,
   ELEVENLABS_LATENCY_MODE,
@@ -51,6 +52,75 @@ function base64ToBytes(b64: string): Uint8Array {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+/** Wrap raw PCM16 samples in a WAV header so the browser can play them. */
+function pcmToWav(pcm: Uint8Array, sampleRate: number): Uint8Array {
+  const out = new Uint8Array(44 + pcm.length);
+  const view = new DataView(out.buffer);
+  const writeStr = (offset: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + pcm.length, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, pcm.length, true);
+  out.set(pcm, 44);
+  return out;
+}
+
+const GEMINI_TTS_MODEL = process.env.TTS_MODEL || "gemini-3.1-flash-tts-preview";
+const GEMINI_TTS_VOICE = process.env.TTS_VOICE || "Aoede";
+
+/**
+ * Last-resort voice: the Gemini TTS model runs on the same keys as the
+ * examiner, so it keeps working when the ElevenLabs key is dead or the
+ * account is out of quota. Returns one complete WAV file per call — the
+ * client detects the RIFF header and plays these back-to-back.
+ */
+async function geminiTts(text: string): Promise<Uint8Array | null> {
+  for (const apiKey of geminiKeys()) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Say naturally: ${text}` }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_TTS_VOICE } },
+            },
+          },
+        }),
+      }
+    ).catch(() => null);
+    if (!res) continue;
+    if (!res.ok) {
+      // 429/5xx — try the next key; other 4xx won't be fixed by another key.
+      if (res.status !== 429 && res.status < 500) break;
+      continue;
+    }
+    const data = await res.json().catch(() => null);
+    const part = data?.candidates?.[0]?.content?.parts?.find(
+      (p: { inlineData?: { data?: string; mimeType?: string } }) => p.inlineData?.data
+    );
+    if (!part) return null;
+    const mime: string = part.inlineData.mimeType || "";
+    const sampleRate = parseInt(mime.match(/rate=(\d+)/)?.[1] || "24000");
+    return pcmToWav(base64ToBytes(part.inlineData.data), sampleRate);
+  }
+  return null;
 }
 
 function wsUrl(modelId: string): string {
@@ -160,6 +230,9 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
   // to fire-and-forget for English (the pre-routing behaviour).
   let wsFinalSeen = false;
   let wsNoFinal = false;
+  // Once a sentence falls back to Gemini TTS (WAV) the whole turn stays on
+  // it — mp3 and wav bytes must never mix in one audio stream.
+  let wavMode = false;
 
   const queue: Seg[] = [];
   const wake = () => {
@@ -209,15 +282,17 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
               await new Promise<void>((r) => (notify = r));
               continue;
             }
-            if (seg.uzbek || wsNoFinal) {
-              // Uzbek always goes through the multilingual REST model. If the
-              // socket never answers flush with isFinal, English falls back to
-              // REST too — ordering stays intact and no audio is dropped.
-              const res = await synthesize(
-                seg.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId,
-                seg.text,
-                opts
-              );
+            if (seg.uzbek || wsNoFinal || wavMode || ws.readyState !== 1) {
+              // Uzbek always goes through the multilingual REST model. A dead
+              // socket (auth failure) or a spent ElevenLabs key lands here
+              // too — and if REST also fails, Gemini TTS keeps the voice alive.
+              const res = wavMode
+                ? null
+                : await synthesize(
+                    seg.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId,
+                    seg.text,
+                    opts
+                  );
               if (res?.body) {
                 const reader = res.body.getReader();
                 for (;;) {
@@ -232,6 +307,16 @@ async function websocketStream(modelId: string, opts: TtsOptions): Promise<TtsSt
                   }
                 }
                 reader.releaseLock();
+              } else {
+                const wav = await geminiTts(seg.text);
+                if (wav) {
+                  wavMode = true;
+                  if (!firstByte) {
+                    firstByte = true;
+                    opts.onFirstByte?.();
+                  }
+                  controller.enqueue(wav);
+                }
               }
             } else {
               acceptingWsAudio = true;
@@ -324,6 +409,7 @@ function restStream(modelId: string, opts: TtsOptions): TtsStream {
   let finished = false;
   let cancelled = false;
   let firstByte = false;
+  let wavMode = false;
   let notify: (() => void) | null = null;
 
   const wake = () => {
@@ -342,8 +428,22 @@ function restStream(modelId: string, opts: TtsOptions): TtsStream {
             await new Promise<void>((r) => (notify = r));
             continue;
           }
-          const res = await synthesize(next.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId, next.text, opts);
-          if (!res?.body) continue;
+          const res = wavMode
+            ? null
+            : await synthesize(next.uzbek ? ELEVENLABS_UZBEK_MODEL_ID : modelId, next.text, opts);
+          if (!res?.body) {
+            // ElevenLabs failed (dead key / quota) — Gemini TTS fallback.
+            const wav = await geminiTts(next.text);
+            if (wav) {
+              wavMode = true;
+              if (!firstByte) {
+                firstByte = true;
+                opts.onFirstByte?.();
+              }
+              controller.enqueue(wav);
+            }
+            continue;
+          }
           const reader = res.body.getReader();
           for (;;) {
             const { value, done } = await reader.read();
