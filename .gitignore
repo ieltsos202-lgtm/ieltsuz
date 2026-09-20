@@ -1,3 +1,6 @@
+# Local reference project (contains its own .env + venv) — never commit
+Jarvis 50/
+
 # Node / Next.js
 frontend/node_modules/
 frontend/.next/

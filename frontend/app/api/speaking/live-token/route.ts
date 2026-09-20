@@ -20,7 +20,13 @@ import { maxSessionMs } from "@/lib/speaking/session";
  */
 
 // Native-audio Live model: audio in, audio out, built-in VAD + barge-in.
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-latest";
+const LIVE_MODEL =
+  process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025";
+// End-of-speech silence window. Short = the examiner answers almost instantly;
+// too short and it cuts in while the candidate is still thinking. Part 2's long
+// turn gets a wider window because pausing mid-answer is normal there.
+const SILENCE_MS = Math.max(150, Number(process.env.LIVE_SILENCE_MS) || 450);
+const SILENCE_MS_LONG_TURN = SILENCE_MS * 3;
 const AUTH_TOKENS_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 
 export async function POST(req: NextRequest) {
@@ -40,6 +46,7 @@ export async function POST(req: NextRequest) {
     const startPart = Math.min(3, Math.max(1, Number(body?.part) || 1));
     const partnerName = String(body?.partner_name || "Adam").slice(0, 40);
     const userName = String(body?.user_name || "").slice(0, 60);
+    const harsh = body?.harsh === true || body?.harsh === "1";
     const firstTurn = body?.first_turn === true || body?.first_turn === "1";
 
     let charged: Awaited<ReturnType<typeof checkAndDecrementTrial>> | null = null;
@@ -59,7 +66,8 @@ export async function POST(req: NextRequest) {
       partnerName,
       userName,
       memory,
-      startPart
+      startPart,
+      harsh
     );
 
     const sessionConfig = {
@@ -71,19 +79,24 @@ export async function POST(req: NextRequest) {
       // Text record of both sides for the transcript + post-session report.
       inputAudioTranscription: {},
       outputAudioTranscription: {},
-      // Automatic VAD stays on — that is what makes barge-in work — but the
-      // defaults are too twitchy: speaker echo / room noise was tripping
-      // "start of speech" mid-reply and truncating the examiner's audio, and
-      // a short silence window made the model jump in whenever the candidate
-      // paused mid-answer (then get interrupted when they resumed).
+      // Turn detection, tuned the way the Jarvis assistant does it: HIGH
+      // sensitivity on both ends with minimal prefix padding and a short
+      // silence window, so the examiner starts answering the moment the
+      // candidate stops. Safe at this sensitivity because the client stops
+      // sending mic audio while the examiner is speaking — without that gate,
+      // speaker echo trips "start of speech" and truncates the reply.
       realtimeInputConfig: {
         automaticActivityDetection: {
           disabled: false,
-          startOfSpeechSensitivity: "START_SENSITIVITY_LOW",
-          endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
-          silenceDurationMs: 900,
+          startOfSpeechSensitivity: "START_SENSITIVITY_HIGH",
+          endOfSpeechSensitivity: "END_SENSITIVITY_HIGH",
+          prefixPaddingMs: 20,
+          silenceDurationMs: startPart === 2 ? SILENCE_MS_LONG_TURN : SILENCE_MS,
         },
       },
+      // A dropped socket resumes the same conversation instead of restarting
+      // the test from Part 1.
+      sessionResumption: {},
     };
 
     const mint = async (key: string, withConstraints: boolean) =>

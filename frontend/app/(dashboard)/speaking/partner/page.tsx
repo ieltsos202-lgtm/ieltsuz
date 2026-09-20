@@ -31,6 +31,9 @@ const NO_SPEECH_MS = 15000;
 // (it rejects turns past the cap) — this just ends the test cleanly first.
 const MAX_SESSION_MS = 20 * 60 * 1000;
 const HARSH_STORAGE_KEY = "speaking:harsh";
+// How long the mic stays gated after the last examiner audio chunk, so the
+// speaker's tail does not read back as the candidate starting to speak.
+const MIC_GATE_TAIL_MS = 260;
 
 type ExamPart = 1 | 2 | 3;
 
@@ -89,6 +92,8 @@ function SpeakingPartnerContent() {
   // so the 20-minute cap cannot be dodged by lying about the start time.
   const sessionTokenRef = useRef("");
   const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Live mode: mic chunks are dropped until this timestamp (examiner speaking).
+  const micGateUntilRef = useRef(0);
   const [report, setReport] = useState<StudioReport | null>(null);
 
   const firstTurnRef = useRef(true);
@@ -291,6 +296,7 @@ function SpeakingPartnerContent() {
       part: startPart,
       partner_name: partnerName,
       user_name: profile?.full_name || "",
+      harsh: harshRef.current,
       first_turn: firstTurnRef.current,
     });
     if (firstTurnRef.current) liveChargedRef.current = true;
@@ -331,6 +337,10 @@ function SpeakingPartnerContent() {
     const session = await GeminiLiveSession.connect(tok.token, tok.model, tok.sessionConfig, {
       onAudio: (pcm) => {
         player.push(pcm);
+        // Mic gate (same trick as Jarvis): stop forwarding mic audio while the
+        // examiner talks. Speaker echo would otherwise register as "start of
+        // speech" and cut the reply off mid-sentence.
+        micGateUntilRef.current = Date.now() + MIC_GATE_TAIL_MS;
         if (aliveRef.current && !prepActiveRef.current) setPhase("speaking");
       },
       onInputTranscript: (t) => {
@@ -384,6 +394,7 @@ function SpeakingPartnerContent() {
       onTurnComplete: () => {
         partnerTurnOpenRef.current = false;
         pendingPartnerRef.current = "";
+        micGateUntilRef.current = 0; // examiner finished — listen again at once
         if (!aliveRef.current) return;
         if (liveFinishRef.current) {
           liveFinishRef.current = false;
@@ -395,6 +406,7 @@ function SpeakingPartnerContent() {
       onInterrupted: () => {
         // Barge-in: flush queued audio, keep whatever transcript arrived.
         player.reset();
+        micGateUntilRef.current = 0;
         partnerTurnOpenRef.current = false;
         pendingPartnerRef.current = "";
         if (aliveRef.current) setPhase("listening");
@@ -448,6 +460,8 @@ function SpeakingPartnerContent() {
         micLevelAtRef.current = now;
         setMicLevel(Math.min(1, data.rms * 5));
       }
+      // Gated while the examiner speaks or its audio is still draining.
+      if (player.isPlaying || Date.now() < micGateUntilRef.current) return;
       session.sendAudio(resampleTo16k(data.pcm, ctx.sampleRate));
     };
     liveMicRef.current = { ctx, node, source };
@@ -696,11 +710,11 @@ function SpeakingPartnerContent() {
     }
     void apiPost("/api/speaking/warmup", {}).catch(() => {});
 
-    // Gemini Live API is bypassed: it is a single black-box model — the
-    // multi-agent pipeline below (Ear → Examiner → Analyst → Scorer) is
-    // faster per turn, speaks proper Uzbek through ElevenLabs, and lets each
-    // agent specialise. Set USE_GEMINI_LIVE to re-enable it.
-    const USE_GEMINI_LIVE = false;
+    // Gemini Live API (native audio) is the primary path: audio in and audio
+    // out over ONE socket, so the examiner answers in a few hundred ms instead
+    // of the seconds the record → upload → Gemini → ElevenLabs pipeline needs.
+    // The multi-agent pipeline below stays as the automatic fallback.
+    const USE_GEMINI_LIVE = true;
     if (USE_GEMINI_LIVE && !liveFailedRef.current) {
       try {
         await startLiveSession(m, startPart);
