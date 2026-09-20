@@ -55,6 +55,9 @@ export interface LiveTurnHandlers {
   onNoAudio?: () => void;
   /** Each completed sentence of the reply, as it is synthesised. */
   onSentence?: (sentence: string) => void;
+  /** Stream finished cleanly: full reply + the signed session token the
+   *  client must echo on the next turn (20-minute session cap). */
+  onDone?: (info: { reply: string; session: string }) => void;
   /** Audio actually started coming out of the speaker. */
   onPlaybackStart?: () => void;
   /** Playback finished (or nothing was played). */
@@ -328,6 +331,12 @@ export async function playLiveTurn(
             break;
 
           case "done":
+            handlers.onDone?.({
+              reply: typeof ev.reply === "string" ? ev.reply : "",
+              session: typeof ev.session === "string" ? ev.session : "",
+            });
+            break;
+
           default:
             break;
         }

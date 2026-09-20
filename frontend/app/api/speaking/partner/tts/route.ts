@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 import { geminiKeys } from "@/lib/gemini";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { ELEVENLABS_UZBEK_MODEL_ID, isProbablyUzbek } from "@/lib/speaking/voice";
 
 const TTS_PROVIDER = (process.env.TTS_PROVIDER || "elevenlabs").toLowerCase();
@@ -166,6 +167,9 @@ export async function POST(req: NextRequest) {
   try {
     const { user } = await getAuth(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (rateLimit(`tts:${user.id}`, 40, 60_000) || rateLimit(`tts-ip:${clientIp(req)}`, 80, 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov. Bir daqiqadan keyin qayta urinib ko'ring." }, { status: 429 });
+    }
 
     const body = await req.json().catch(() => ({}));
     const text = (body?.text || "").toString().slice(0, 1200);

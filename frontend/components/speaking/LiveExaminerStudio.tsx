@@ -18,6 +18,8 @@ import {
   Volume2,
   Laugh,
   Check,
+  Flame,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -81,7 +83,9 @@ export interface StudioReport {
   priority_fixes: string[];
   l1_interference_notes: string[];
   corrected_examples: { said: string; better: string; why: string }[];
+  drills?: { title: string; instruction: string; example: string }[];
   examiner_summary: string;
+  spoken_summary?: string;
   metrics?: {
     words: number;
     speaking_seconds: number;
@@ -207,12 +211,16 @@ function TypingDots() {
 
 export function StudioIntro({
   partnerName,
+  harsh,
+  onToggleHarsh,
   onStartChat,
   onStartExam,
   onBack,
   error,
 }: {
   partnerName: string;
+  harsh: boolean;
+  onToggleHarsh: (next: boolean) => void;
   onStartChat: () => void;
   onStartExam: () => void;
   onBack: () => void;
@@ -303,6 +311,54 @@ export function StudioIntro({
             </p>
           </motion.button>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className={cn(
+            "w-full max-w-2xl rounded-2xl border p-4 backdrop-blur-xl transition-colors",
+            harsh ? "border-accent-red/40 bg-accent-red/10" : "border-white/10 bg-white/5"
+          )}
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={harsh}
+              onClick={() => onToggleHarsh(!harsh)}
+              className={cn(
+                "relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors",
+                harsh ? "bg-accent-red" : "bg-white/15"
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                  harsh ? "translate-x-5" : "translate-x-0.5"
+                )}
+              />
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <Flame className={cn("h-4 w-4", harsh ? "text-accent-red" : "text-content-secondary")} />
+                HARSH rejim
+                <span className="rounded-full border border-accent-red/40 bg-accent-red/10 px-2 py-0.5 text-[10px] font-bold text-accent-red">
+                  18+
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-content-secondary">
+                Bu rejimda examiner qattiq so&apos;kadi, 18+. Har bir xatoga keskin reaksiya, o&apos;zbekcha
+                haqorat ekranda ko&apos;rinadi. &quot;Stop&quot; desangiz darhol yumshoq rejimga o&apos;tadi.
+              </p>
+              {harsh && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-accent-red">
+                  <ShieldAlert className="h-3.5 w-3.5" /> HARSH yoqilgan — keyingi sessiyaga ta&apos;sir qiladi.
+                </p>
+              )}
+            </div>
+          </label>
+        </motion.div>
 
         <Button variant="ghost" onClick={onBack} className="text-content-secondary">
           <ArrowLeft className="mr-2 h-4 w-4" /> Orqaga
@@ -833,7 +889,7 @@ export function StudioReportView({
 
         {report.corrected_examples.length > 0 && (
           <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-            <p className="font-semibold">Tuzatilgan misollar</p>
+            <p className="font-semibold">Eng ko&apos;p takrorlangan xatolar</p>
             {report.corrected_examples.map((g, i) => (
               <div key={i} className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm">
                 <span className="text-accent-red line-through">{g.said}</span> →{" "}
@@ -841,6 +897,27 @@ export function StudioReportView({
                 <p className="mt-0.5 text-xs text-content-secondary">{g.why}</p>
               </div>
             ))}
+          </div>
+        )}
+
+        {report.drills && report.drills.length > 0 && (
+          <div className="space-y-3 rounded-2xl border border-accent/20 bg-accent/5 p-5 backdrop-blur-xl">
+            <p className="flex items-center gap-2 font-semibold">
+              <Zap className="h-4 w-4 text-accent" /> Mashqlar (3 ta)
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {report.drills.map((d, i) => (
+                <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm">
+                  <p className="font-semibold text-accent">{i + 1}. {d.title}</p>
+                  <p className="mt-1 text-xs text-content-secondary">{d.instruction}</p>
+                  {d.example && (
+                    <p className="mt-2 rounded-lg bg-accent-green/10 px-2 py-1 text-xs italic text-accent-green">
+                      &ldquo;{d.example}&rdquo;
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

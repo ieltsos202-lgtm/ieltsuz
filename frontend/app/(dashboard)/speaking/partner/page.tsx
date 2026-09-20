@@ -27,6 +27,10 @@ const P1_QUESTIONS = 4;
 const P3_QUESTIONS = 5;
 const GREETING_TIMEOUT_MS = 3500;
 const NO_SPEECH_MS = 15000;
+// Mirrors SPEAKING_MAX_SESSION_MIN on the server; the server is authoritative
+// (it rejects turns past the cap) — this just ends the test cleanly first.
+const MAX_SESSION_MS = 20 * 60 * 1000;
+const HARSH_STORAGE_KEY = "speaking:harsh";
 
 type ExamPart = 1 | 2 | 3;
 
@@ -78,6 +82,13 @@ function SpeakingPartnerContent() {
   const [micHint, setMicHint] = useState<string | null>(null);
   const [cueCard, setCueCard] = useState<StudioCueCard | null>(null);
   const [prepSeconds, setPrepSeconds] = useState(60);
+  // HARSH mode is opt-in per browser session (18+ warning in the intro).
+  const [harsh, setHarsh] = useState(false);
+  const harshRef = useRef(false);
+  // Signed session token from the server (first turn) — echoed on every turn
+  // so the 20-minute cap cannot be dodged by lying about the start time.
+  const sessionTokenRef = useRef("");
+  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [report, setReport] = useState<StudioReport | null>(null);
 
   const firstTurnRef = useRef(true);
@@ -186,6 +197,24 @@ function SpeakingPartnerContent() {
   }, []);
 
   useEffect(() => { turnsRef.current = turns; }, [turns]);
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(HARSH_STORAGE_KEY) === "1";
+      harshRef.current = saved;
+      setHarsh(saved);
+    } catch {
+      /* storage unavailable — stay NORMAL */
+    }
+  }, []);
+  const toggleHarsh = useCallback((next: boolean) => {
+    harshRef.current = next;
+    setHarsh(next);
+    try {
+      sessionStorage.setItem(HARSH_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
   // NOTE: no page-level scrollIntoView here — it scrolled the whole page and
   // pushed the orb/controls off-screen. StudioTranscript scrolls its own box.
 
@@ -450,6 +479,7 @@ function SpeakingPartnerContent() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+      if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
   }, [stopAudio, stopLive]);
@@ -634,6 +664,13 @@ function SpeakingPartnerContent() {
     firstTurnRef.current = true;
     silenceStrikesRef.current = 0;
     memorySyncedRef.current = false;
+    sessionTokenRef.current = "";
+    if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
+    sessionTimerRef.current = setTimeout(() => {
+      if (!aliveRef.current) return;
+      setError("Sessiya vaqti tugadi (20 daqiqa). Hisobot tayyorlanmoqda.");
+      void generateReportRef.current();
+    }, MAX_SESSION_MS);
     setCueCard(null);
     setReport(null);
     setError(null);
@@ -1024,6 +1061,7 @@ function SpeakingPartnerContent() {
     setIsLive(false);
     stopAudio();
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
     releaseStream();
     setPhase("report_loading");
     syncMemory();
@@ -1123,6 +1161,8 @@ function SpeakingPartnerContent() {
     form.append("user_name", profile?.full_name || "");
     form.append("first_turn", firstTurnRef.current ? "1" : "0");
     form.append("mode", modeRef.current);
+    form.append("harsh", harshRef.current ? "1" : "0");
+    if (sessionTokenRef.current) form.append("session", sessionTokenRef.current);
     if (exam) {
       form.append("exam_instruction", exam.instruction);
       form.append("exam_part", String(examPartRef.current));
@@ -1289,6 +1329,9 @@ function SpeakingPartnerContent() {
           onError: (msg) => {
             streamError = msg;
           },
+          onDone: ({ session }) => {
+            if (session) sessionTokenRef.current = session;
+          },
           onTiming: (timing) => {
             if (process.env.NODE_ENV !== "production") {
               console.debug(
@@ -1316,8 +1359,16 @@ function SpeakingPartnerContent() {
     } catch (e: unknown) {
       if (!aliveRef.current || (e as Error)?.name === "AbortError") return;
       const msg = (e as Error)?.message || "";
-      if (msg.includes("Trial limit") || msg.includes("402")) setUpgradeNeeded(true);
-      else setError(msg || "Xatolik yuz berdi.");
+      if (msg.includes("Trial limit") || msg.includes("402")) {
+        setUpgradeNeeded(true);
+      } else if (msg.includes("Sessiya vaqti tugadi")) {
+        // Server enforced the session cap — close the test with a report.
+        setError(msg);
+        void generateReportRef.current();
+        return;
+      } else {
+        setError(msg || "Xatolik yuz berdi.");
+      }
       setPhase(turnsRef.current.length > 0 ? "idle" : "intro");
     }
   };
@@ -1341,6 +1392,8 @@ function SpeakingPartnerContent() {
     return (
       <StudioIntro
         partnerName={partnerName}
+        harsh={harsh}
+        onToggleHarsh={toggleHarsh}
         onStartChat={() => void startSession("chat")}
         onStartExam={() => void startSession("exam")}
         onBack={() => router.push("/speaking")}

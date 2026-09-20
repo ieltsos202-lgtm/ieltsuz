@@ -3,6 +3,8 @@ import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServ
 import { loadSpeakingMemory } from "@/lib/speakingMemory";
 import { buildLiveSystemInstruction } from "@/lib/speaking/prompts";
 import { geminiKeys } from "@/lib/gemini";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
+import { maxSessionMs } from "@/lib/speaking/session";
 
 /**
  * Mints a short-lived ephemeral token so the BROWSER can open a direct
@@ -25,6 +27,9 @@ export async function POST(req: NextRequest) {
   try {
     const { supabase, user } = await getAuth(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (rateLimit(`live-token:${user.id}`, 6, 60_000) || rateLimit(`live-token-ip:${clientIp(req)}`, 12, 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov. Bir daqiqadan keyin qayta urinib ko'ring." }, { status: 429 });
+    }
     const keys = geminiKeys();
     if (!keys.length) {
       return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
@@ -93,9 +98,9 @@ export async function POST(req: NextRequest) {
             ? {
                 config: {
                   uses: 1,
-                  // ~30 min covers a full speaking test; the session must be
-                  // opened within 2 minutes of minting.
-                  expireTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                  // The token dies with the session cap (default 20 min); the
+                  // session must be opened within 2 minutes of minting.
+                  expireTime: new Date(Date.now() + maxSessionMs).toISOString(),
                   newSessionExpireTime: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
                   liveConnectConstraints: { model: LIVE_MODEL, config: sessionConfig },
                 },
@@ -103,7 +108,7 @@ export async function POST(req: NextRequest) {
             : {
                 config: {
                   uses: 1,
-                  expireTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                  expireTime: new Date(Date.now() + maxSessionMs).toISOString(),
                   newSessionExpireTime: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
                 },
               }

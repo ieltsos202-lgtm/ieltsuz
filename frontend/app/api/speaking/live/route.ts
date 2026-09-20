@@ -13,6 +13,9 @@ import {
   normalizeEmotion,
   type HistoryTurn,
 } from "@/lib/speaking/prompts";
+import { isProbablyUzbek } from "@/lib/speaking/voice";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
+import { issueSession, verifySession, sessionExpiredMessage } from "@/lib/speaking/session";
 
 /**
  * The live turn — multi-agent pipeline.
@@ -42,6 +45,11 @@ import {
 
 const enc = new TextEncoder();
 
+// ElevenLabs' English models (flash/turbo v2.5, multilingual v2) do not list
+// Uzbek as a supported language — they read it with an English accent. Uzbek
+// lines therefore stay on screen only unless explicitly opted in.
+const SPEAK_UZBEK = process.env.TTS_SPEAK_UZBEK === "1";
+
 function bytesToBase64(bytes: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -59,6 +67,8 @@ export async function POST(req: NextRequest) {
     const userName = ((form.get("user_name") as string) || "").slice(0, 60);
     const firstTurn = form.get("first_turn") === "1";
     const mode = form.get("mode") === "exam" ? "exam" : "chat";
+    const harsh = form.get("harsh") === "1";
+    const sessionToken = ((form.get("session") as string) || "").slice(0, 200);
     const examInstruction = ((form.get("exam_instruction") as string) || "").slice(0, 600);
     const examPart = Math.min(3, Math.max(1, parseInt((form.get("exam_part") as string) || "1") || 1));
     const examElapsed = Math.max(0, parseInt((form.get("exam_elapsed") as string) || "0") || 0);
@@ -84,6 +94,25 @@ export async function POST(req: NextRequest) {
     const { supabase, user } = await getAuth(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (!audioFile) return NextResponse.json({ error: "No audio provided" }, { status: 400 });
+
+    // Budget guard: a turn is at most ~90s of audio, so >30 turns/min from one
+    // account (or one address) is a script, not a candidate.
+    const limited = rateLimit(`live:${user.id}`, 30, 60_000) || rateLimit(`live-ip:${clientIp(req)}`, 60, 60_000);
+    if (limited) {
+      return NextResponse.json({ error: "Juda ko'p so'rov. Bir daqiqadan keyin qayta urinib ko'ring." }, { status: 429 });
+    }
+
+    // Session cap: every turn after the first must carry the HMAC-signed
+    // session start issued on the first turn; an expired one ends the test.
+    let sessionId = sessionToken;
+    if (firstTurn || !sessionId) {
+      sessionId = await issueSession(user.id);
+    } else {
+      const check = await verifySession(sessionId, user.id);
+      if (!check.ok) {
+        return NextResponse.json({ error: sessionExpiredMessage, code: "session_expired" }, { status: 403 });
+      }
+    }
 
     if (firstTurn) {
       charged = await checkAndDecrementTrial(req, "speaking");
@@ -134,7 +163,7 @@ export async function POST(req: NextRequest) {
         const startTts = () => {
           if (!ttsOpening) {
             ttsOpening = openTtsStream({
-              mode,
+              mode: harsh ? "chat" : mode,
               emotion,
               onFirstByte: () => {
                 timing.first_audio_byte_ms = Date.now() - t0;
@@ -159,12 +188,24 @@ export async function POST(req: NextRequest) {
         const speak = (sentence: string) => {
           if (!sentence.trim()) return chain;
           chain = chain.then(async () => {
-            send({ t: "text", v: sentence });
+            if (req.signal.aborted) return;
+            const uzbek = isProbablyUzbek(sentence);
+            send({ t: "text", v: sentence, lang: uzbek ? "uz" : "en" });
+            if (uzbek && !SPEAK_UZBEK) return;
             await startTts();
             session.tts?.push(sentence);
           });
           return chain;
         };
+
+        // Barge-in: the client aborts its fetch the instant the candidate
+        // starts talking. Without this the server would keep paying for the
+        // rest of the Gemini generation and every queued TTS sentence.
+        const onAbort = () => {
+          closed = true;
+          session.tts?.cancel();
+        };
+        req.signal.addEventListener("abort", onAbort, { once: true });
 
         try {
           /* ----- Agents 3 + 4 — ANALYST & SCORER: parallel, off-path ------- */
@@ -244,6 +285,7 @@ export async function POST(req: NextRequest) {
                     cueCard: examCue,
                     lastQuestion,
                     wantsCueCard,
+                    harsh,
                   },
                   memory,
                   "lines"
@@ -283,6 +325,7 @@ export async function POST(req: NextRequest) {
             {
               temperature: mode === "exam" ? 0.7 : 0.85,
               maxOutputTokens: mode === "exam" ? 360 : 260,
+              signal: req.signal,
             }
           )) {
             if (timing.first_gemini_chunk_ms === undefined) {
@@ -317,12 +360,13 @@ export async function POST(req: NextRequest) {
 
           timing.total_ms = Date.now() - t0;
           send({ t: "timing", v: timing });
-          send({ t: "done", reply: fullReply.trim() });
+          send({ t: "done", reply: fullReply.trim(), session: sessionId });
         } catch (e) {
+          session.tts?.cancel();
+          if (req.signal.aborted) return; // barge-in — not an error
           const quota = e instanceof QuotaError;
           if (charged?.ok) await refundTrial(supabase, charged);
           console.error("live turn failed:", (e as Error)?.message);
-          session.tts?.cancel();
           send({
             t: "error",
             v: quota
@@ -330,6 +374,7 @@ export async function POST(req: NextRequest) {
               : "AI javob bera olmadi. Qayta urinib ko'ring.",
           });
         } finally {
+          req.signal.removeEventListener("abort", onAbort);
           closed = true;
           try {
             controller.close();

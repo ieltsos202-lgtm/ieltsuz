@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getModel, parseJSONFromText } from "@/lib/gemini";
 import { getAuth, updateSpeakingProgress } from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { computeSessionMetrics, describeMetrics } from "@/lib/speaking/metrics";
 
 const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
     const { supabase, user } = await getAuth(req);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (rateLimit(`report:${user.id}`, 6, 10 * 60_000) || rateLimit(`report-ip:${clientIp(req)}`, 12, 10 * 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." }, { status: 429 });
     }
 
     // All the candidate's recorded turns (webm blobs), in order — lets Gemini
@@ -142,8 +146,16 @@ OUTPUT — return strict JSON, no markdown, matching this shape:
   "corrected_examples": [
     {"said": "...", "better": "...", "why": "..."}
   ],
-  "examiner_summary": "2-3 sentence natural-language summary in an encouraging but honest tone."
-}`;
+  "drills": [
+    {"title": "short drill name in Uzbek", "instruction": "what to do, 1-2 sentences in Uzbek", "example": "one model sentence in English"}
+  ],
+  "examiner_summary": "2-3 sentence natural-language summary in an encouraging but honest tone.",
+  "spoken_summary": "ONE short English sentence the examiner says aloud at the end (no numbers, no markdown)."
+}
+
+RULES FOR corrected_examples: the TOP 5 RECURRING errors, most frequent first — "said" is the candidate's exact sentence from the transcript, "better" the corrected English sentence, "why" a one-line explanation in Uzbek.
+RULES FOR drills: exactly 3 concrete, doable drills targeting the recurring errors above — instructions in Uzbek, the example sentence in English.
+The pronunciation band is an ESTIMATE from audio/notes — say so in its first evidence line.`;
 
     const model = getModel(REPORT_MODEL, true);
 
@@ -191,6 +203,16 @@ OUTPUT — return strict JSON, no markdown, matching this shape:
           .filter((c: any) => c && c.said && c.better)
           .slice(0, 15)
       : [];
+    const drills = Array.isArray(parsed.drills)
+      ? parsed.drills
+          .filter((d: any) => d && (d.title || d.instruction))
+          .slice(0, 3)
+          .map((d: any) => ({
+            title: String(d.title || ""),
+            instruction: String(d.instruction || ""),
+            example: String(d.example || ""),
+          }))
+      : [];
 
     const report = {
       overall_band: overallBand,
@@ -203,7 +225,9 @@ OUTPUT — return strict JSON, no markdown, matching this shape:
         ? parsed.l1_interference_notes.slice(0, 8).map(String)
         : [],
       corrected_examples: correctedExamples,
+      drills,
       examiner_summary: typeof parsed.examiner_summary === "string" ? parsed.examiner_summary : "",
+      spoken_summary: typeof parsed.spoken_summary === "string" ? parsed.spoken_summary.slice(0, 240) : "",
       metrics,
     };
 
