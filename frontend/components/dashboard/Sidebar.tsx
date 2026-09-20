@@ -13,18 +13,15 @@ import {
   ClipboardCheck,
   Library,
   TrendingUp,
-  Shield,
   Crown,
   GraduationCap,
   ExternalLink,
-  BarChart3,
   Gamepad2,
   ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatExpiry } from "@/lib/pro";
 
@@ -74,7 +71,6 @@ interface SidebarProps {
 
 export function Sidebar({ open = true }: SidebarProps) {
   const pathname = usePathname();
-  const { profile } = useAuth();
   const { active, expiresAt, daysLeft, plan } = useSubscription();
 
   // Groups auto-expand while one of their children is the current route;
@@ -92,9 +88,7 @@ export function Sidebar({ open = true }: SidebarProps) {
     }
   }, [currentGroup]);
 
-  const items: NavItem[] = profile?.is_admin
-    ? [...nav, { label: "Analytics", href: "/analytics", icon: BarChart3 }, { label: "Admin", href: "/admin", icon: Shield }]
-    : nav;
+  const items: NavItem[] = nav;
 
   return (
     <aside
