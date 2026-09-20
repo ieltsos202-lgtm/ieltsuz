@@ -55,9 +55,12 @@ export class GeminiLiveSession {
   ) {}
 
   /**
-   * Open the socket and complete the Live handshake. Ephemeral tokens must use
-   * the Constrained endpoint; if the token was minted without constraints the
-   * regular endpoint accepts it too — we try constrained first, then plain.
+   * Open the socket and complete the Live handshake.
+   *
+   * An ephemeral auth token is ONLY accepted as `access_token` on the
+   * Constrained endpoint. The other combinations fail hard:
+   *   ?key=<token>                     → 1007 "API key not valid"
+   *   BidiGenerateContent + token      → 1008 "unregistered callers"
    */
   static async connect(
     token: string,
@@ -69,17 +72,11 @@ export class GeminiLiveSession {
     const setup = JSON.stringify({
       setup: { model: `models/${model}`, ...sessionConfig },
     });
-
-    let lastErr: Error | null = null;
-    for (const endpoint of ["BidiGenerateContentConstrained", "BidiGenerateContent"]) {
-      try {
-        await session.open(`${WS_BASE}.${endpoint}?key=${encodeURIComponent(token)}`, setup);
-        return session;
-      } catch (e) {
-        lastErr = e as Error;
-      }
-    }
-    throw lastErr || new Error("Live API connection failed");
+    await session.open(
+      `${WS_BASE}.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`,
+      setup
+    );
+    return session;
   }
 
   private open(url: string, setupMessage: string): Promise<void> {

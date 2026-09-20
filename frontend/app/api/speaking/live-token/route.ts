@@ -14,18 +14,26 @@ import { maxSessionMs } from "@/lib/speaking/session";
  * DELETE → refunds the trial charge when the socket never connected.
  *
  * The full session config (system instruction, voice, transcription) is built
- * here so the persona never has to be trusted to the client. It is also sent
- * as liveConnectConstraints on the token where the API supports it — the
- * client echoes the same config in its setup message either way.
+ * here so the persona never has to be trusted to the client; the client passes
+ * it straight through in its WebSocket setup message.
  */
 
-// Native-audio Live model: audio in, audio out, built-in VAD + barge-in.
-const LIVE_MODEL =
-  process.env.GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025";
+// Live model: audio in, audio out, built-in VAD + barge-in.
+//
+// Chosen by measurement, not by name. Streaming a real 5s utterance and timing
+// the gap from the last speech frame to the first audio byte back:
+//   gemini-3.1-flash-live-preview                 1183 / 1475 / 1761 ms
+//   gemini-3.8-live                               1344 / 3385 ms  (erratic)
+//   gemini-2.5-flash-native-audio-latest          3799 ms
+//   gemini-2.5-flash-native-audio-preview-12-2025 3820 ms
+//   gemini-2.5-flash-native-audio-preview-09-2025 10769 ms
+// The winner also speaks correct Tashkent Uzbek on the Charon voice.
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-3.1-flash-live-preview";
 // End-of-speech silence window. Short = the examiner answers almost instantly;
 // too short and it cuts in while the candidate is still thinking. Part 2's long
-// turn gets a wider window because pausing mid-answer is normal there.
-const SILENCE_MS = Math.max(150, Number(process.env.LIVE_SILENCE_MS) || 450);
+// turn gets a wider window because pausing mid-answer is normal there. 250ms is
+// the value the Jarvis assistant uses.
+const SILENCE_MS = Math.max(150, Number(process.env.LIVE_SILENCE_MS) || 250);
 const SILENCE_MS_LONG_TURN = SILENCE_MS * 3;
 const AUTH_TOKENS_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 
@@ -70,12 +78,17 @@ export async function POST(req: NextRequest) {
       harsh
     );
 
+    // NOTE on shape: responseModalities and speechConfig belong INSIDE
+    // generationConfig. At the top level of `setup` the socket rejects them
+    // with close code 1007 ("Unknown name responseModalities at 'setup'").
     const sessionConfig = {
-      responseModalities: ["AUDIO"],
-      systemInstruction: { parts: [{ text: systemInstruction }] },
-      speechConfig: {
-        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } },
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } },
+        },
       },
+      systemInstruction: { parts: [{ text: systemInstruction }] },
       // Text record of both sides for the transcript + post-session report.
       inputAudioTranscription: {},
       outputAudioTranscription: {},
@@ -99,42 +112,30 @@ export async function POST(req: NextRequest) {
       sessionResumption: {},
     };
 
-    const mint = async (key: string, withConstraints: boolean) =>
+    // The AuthToken fields sit at the TOP LEVEL of the body. Wrapping them in
+    // `config` fails with HTTP 400 ("Unknown name config at 'auth_token'"), and
+    // `liveConnectConstraints` is not a field this API build knows either — the
+    // client sends the config in its setup message instead.
+    const mint = async (key: string) =>
       fetch(AUTH_TOKENS_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": key,
         },
-        body: JSON.stringify(
-          withConstraints
-            ? {
-                config: {
-                  uses: 1,
-                  // The token dies with the session cap (default 20 min); the
-                  // session must be opened within 2 minutes of minting.
-                  expireTime: new Date(Date.now() + maxSessionMs).toISOString(),
-                  newSessionExpireTime: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-                  liveConnectConstraints: { model: LIVE_MODEL, config: sessionConfig },
-                },
-              }
-            : {
-                config: {
-                  uses: 1,
-                  expireTime: new Date(Date.now() + maxSessionMs).toISOString(),
-                  newSessionExpireTime: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-                },
-              }
-        ),
+        body: JSON.stringify({
+          uses: 1,
+          // The token dies with the session cap (default 20 min); the session
+          // must be opened within 2 minutes of minting.
+          expireTime: new Date(Date.now() + maxSessionMs).toISOString(),
+          newSessionExpireTime: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        }),
       });
 
-    // Constraints lock the session to our model+config; if the API build
-    // doesn't know the field yet, mint a plain token instead. A rate-limited
-    // key rolls over to the next configured key.
+    // A rate-limited key rolls over to the next configured key.
     let res: Response | null = null;
     for (const key of keys) {
-      res = await mint(key, true);
-      if (!res.ok) res = await mint(key, false);
+      res = await mint(key);
       if (res.ok) break;
     }
 
