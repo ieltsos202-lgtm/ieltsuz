@@ -9,5 +9,11 @@ export function getAdminClient(): SupabaseClient | null {
   if (!url || !key) return null;
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      // Next.js 14 caches fetch GETs by default — a stale cached PostgREST
+      // response was making the panel show a truncated user list. Force
+      // every supabase-js request to bypass the cache.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
   });
 }
