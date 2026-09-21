@@ -1,0 +1,53 @@
+{
+  "id": "hotel_checkin",
+  "chapter": 1,
+  "order": 2,
+  "title_uz": "Mehmonxonaga joylashish",
+  "intro_uz": "Mehmonxonaga yetib keldingiz. Qabulxonadagi Priya sizni kutib olmoqda. Ismingizni va bandingizni aytib, kalitni oling — wifi paroli bilan nonushta vaqtini so'rashni ham unutmang.",
+  "setting": "The reception desk of a small hotel in central London, afternoon. Quiet lobby music, a bowl of mints on the counter.",
+  "image": "hotel",
+  "npc_id": "priya_reception",
+  "max_turns": 14,
+  "objectives": [
+    {
+      "id": "give_name",
+      "title_uz": "Ismingizni va bandingizni aytib bering",
+      "required": true,
+      "requires_keywords_any": ["name", "booking", "booked", "reservation", "reserved", "check in", "checking in", "i am", "i'm", "my name"]
+    },
+    {
+      "id": "ask_wifi",
+      "title_uz": "Wifi parolini so'rang",
+      "required": true,
+      "requires_keywords_any": ["wifi", "wi-fi", "password", "internet", "network"]
+    },
+    {
+      "id": "ask_breakfast",
+      "title_uz": "Nonushta nechada bo'lishini so'rang",
+      "required": true,
+      "requires_keywords_any": ["breakfast", "morning meal", "what time", "when is", "serve", "served"]
+    },
+    {
+      "id": "ask_room_detail",
+      "title_uz": "Xona yoki lift haqida biror narsa so'rang",
+      "required": false,
+      "requires_keywords_any": ["floor", "elevator", "lift", "room number", "key", "stairs", "which floor"]
+    }
+  ],
+  "target_words": [
+    { "word": "reservation", "uz": "band qilish, bron" },
+    { "word": "key", "uz": "kalit" },
+    { "word": "floor", "uz": "qavat" },
+    { "word": "breakfast", "uz": "nonushta" },
+    { "word": "password", "uz": "parol" },
+    { "word": "elevator", "uz": "lift" },
+    { "word": "receipt", "uz": "chek, kvitansiya" }
+  ],
+  "fallback_lines": [
+    "Of course! Could you spell your name for me, please?",
+    "Lovely. Is there anything else you would like to know?",
+    "No problem at all. Your room is ready for you."
+  ],
+  "opening_line": "Hello and welcome! Are you checking in?",
+  "level5_complication": "The hotel has accidentally given away the player's room, so Priya offers a different room on a higher floor and the player must accept or ask for something in return."
+}

@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
-import { apiPost, apiPostForm, apiPostFormStream, apiPostStream, apiDelete } from "@/lib/api";
+import { apiGet, apiPost, apiPostForm, apiPostFormStream, apiPostStream, apiDelete } from "@/lib/api";
 import { playLiveTurn, type LiveTurnEval } from "@/lib/speaking/livePlayer";
 import { GeminiLiveSession, PcmPlayer, resampleTo16k, pcmChunksToWavBlob } from "@/lib/speaking/liveClient";
 import {
@@ -31,6 +31,46 @@ const NO_SPEECH_MS = 15000;
 // (it rejects turns past the cap) — this just ends the test cleanly first.
 const MAX_SESSION_MS = 20 * 60 * 1000;
 const HARSH_STORAGE_KEY = "speaking:harsh";
+// The in-flight report job id, kept OUTSIDE React so it survives this page
+// unmounting (sidebar navigation) and even a full reload. Without this, leaving
+// the page while the examiner was marking threw away a finished test.
+const PENDING_REPORT_KEY = "speaking:pending_report";
+// Past this the job is assumed dead rather than left pending forever.
+const PENDING_REPORT_TTL_MS = 30 * 60 * 1000;
+const REPORT_POLL_MS = 3000;
+const REPORT_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
+function rememberReportJob(id: string) {
+  try {
+    localStorage.setItem(PENDING_REPORT_KEY, JSON.stringify({ id, at: Date.now() }));
+  } catch {
+    /* private mode — polling still works for as long as the page is mounted */
+  }
+}
+
+function forgetReportJob() {
+  try {
+    localStorage.removeItem(PENDING_REPORT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readReportJob(): string | null {
+  try {
+    const raw = localStorage.getItem(PENDING_REPORT_KEY);
+    if (!raw) return null;
+    const { id, at } = JSON.parse(raw) as { id?: string; at?: number };
+    if (typeof id !== "string" || !id) return null;
+    if (typeof at !== "number" || Date.now() - at > PENDING_REPORT_TTL_MS) {
+      forgetReportJob();
+      return null;
+    }
+    return id;
+  } catch {
+    return null;
+  }
+}
 // How long the mic stays energy-gated after the last examiner audio chunk, so
 // the speaker's tail does not read back as the candidate starting to speak.
 const MIC_GATE_TAIL_MS = 260;
@@ -1465,6 +1505,57 @@ function SpeakingPartnerContent() {
   }, []);
   startPrepRef.current = startPrep;
 
+  /**
+   * Watch a server-side report job until it finishes. Safe to call on mount:
+   * the work continues on the server regardless of this page, so this only
+   * collects the result.
+   */
+  const pollReportJob = useCallback(async (id: string) => {
+    const deadline = Date.now() + REPORT_POLL_TIMEOUT_MS;
+
+    while (Date.now() < deadline) {
+      if (!aliveRef.current) return; // a later mount will resume from storage
+      try {
+        const res = await apiGet<{
+          status: string;
+          result?: StudioReport | null;
+          error?: string | null;
+        }>(`/api/evaluations/status?id=${encodeURIComponent(id)}`);
+
+        if (res.status === "completed" && res.result) {
+          forgetReportJob();
+          if (!aliveRef.current) return;
+          setReport(res.result);
+          setPhase("report");
+          return;
+        }
+        if (res.status === "failed") {
+          forgetReportJob();
+          if (!aliveRef.current) return;
+          setError(res.error || "Hisobot tayyorlanmadi. Qayta urinib ko'ring.");
+          setPhase("idle");
+          return;
+        }
+      } catch {
+        // A dropped poll is not a failed report — the job is still running.
+      }
+      await new Promise((r) => setTimeout(r, REPORT_POLL_MS));
+    }
+
+    forgetReportJob();
+    if (!aliveRef.current) return;
+    setError("Hisobot juda uzoq davom etdi. Natijani Progress bo'limida qidirib ko'ring.");
+    setPhase("idle");
+  }, []);
+
+  // Resume a report that was still being marked when this page last unmounted.
+  useEffect(() => {
+    const pending = readReportJob();
+    if (!pending) return;
+    setPhase("report_loading");
+    void pollReportJob(pending);
+  }, [pollReportJob]);
+
   const generateReport = useCallback(async () => {
     window.speechSynthesis.cancel();
     stopLive();
@@ -1506,20 +1597,31 @@ function SpeakingPartnerContent() {
       // failure that loses it is almost always a transient upstream blip —
       // the candidate should never have to discover that the "Hisobot" button
       // is what rescues their session.
-      let res: StudioReport | null = null;
+      type ReportAck = StudioReport | { status: "processing"; id: string };
+      let res: ReportAck | null = null;
       let firstErr: unknown = null;
       for (let attempt = 0; attempt < 2 && aliveRef.current; attempt++) {
         try {
-          res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
+          res = await apiPostForm<ReportAck>("/api/speaking/partner/report", form);
           break;
         } catch (e) {
           firstErr = firstErr ?? e;
           if (attempt === 0) await new Promise((r) => setTimeout(r, 2500));
         }
       }
-      if (!aliveRef.current) return;
       if (!res) throw firstErr ?? new Error("Hisobot tayyorlanmadi.");
-      setReport(res);
+
+      // The normal path: the server is marking in the background. Record the
+      // job id BEFORE checking aliveRef — if the candidate has already left,
+      // the next mount is exactly what needs to find it.
+      if ("status" in res && res.status === "processing" && res.id) {
+        rememberReportJob(res.id);
+        void pollReportJob(res.id);
+        return;
+      }
+
+      if (!aliveRef.current) return;
+      setReport(res as StudioReport);
       setPhase("report");
     } catch (e: unknown) {
       if (!aliveRef.current) return;
@@ -1529,7 +1631,7 @@ function SpeakingPartnerContent() {
       setError(`${msg} Suhbatingiz saqlanib turibdi — "Hisobot" tugmasini qayta bosing.`);
       setPhase("idle");
     }
-  }, [partnerName, syncMemory, releaseStream, stopAudio, stopLive, stopDraftRecognition]);
+  }, [partnerName, syncMemory, releaseStream, stopAudio, stopLive, stopDraftRecognition, pollReportJob]);
   generateReportRef.current = generateReport;
 
   const exitSession = useCallback(() => {

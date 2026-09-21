@@ -1,0 +1,47 @@
+{
+  "id": "corner_shop",
+  "chapter": 1,
+  "order": 4,
+  "title_uz": "Burchakdagi do'kon",
+  "intro_uz": "Mehmonxona yonidagi kichik do'konga kirdingiz. Mrs. Patel — mehribon, gapga usta do'kon egasi — kassada turibdi. Kerakli narsani qayerdan topishni so'rang, narxini bilib oling va to'lab, xalta so'rang.",
+  "setting": "A cramped corner shop near the hotel, shelves up to the ceiling, evening. Mrs. Patel is behind the till with a radio playing quietly.",
+  "image": "shop",
+  "npc_id": "mrs_patel",
+  "max_turns": 14,
+  "objectives": [
+    {
+      "id": "ask_location",
+      "title_uz": "Biror mahsulot qayerda turganini so'rang",
+      "required": true,
+      "requires_keywords_any": ["where", "aisle", "find", "looking for", "do you have", "shelf", "which"]
+    },
+    {
+      "id": "ask_price",
+      "title_uz": "Narxini so'rang",
+      "required": true,
+      "requires_keywords_any": ["how much", "price", "cost", "costs", "expensive", "cheaper", "pounds", "discount"]
+    },
+    {
+      "id": "pay_and_bag",
+      "title_uz": "To'lang va xalta so'rang",
+      "required": true,
+      "requires_keywords_any": ["bag", "card", "cash", "pay", "paying", "receipt", "carrier"]
+    }
+  ],
+  "target_words": [
+    { "word": "aisle", "uz": "javonlar orasidagi yo'lak" },
+    { "word": "cheaper", "uz": "arzonroq" },
+    { "word": "discount", "uz": "chegirma" },
+    { "word": "fresh", "uz": "yangi, toza" },
+    { "word": "cashier", "uz": "kassir" },
+    { "word": "bag", "uz": "xalta" },
+    { "word": "receipt", "uz": "chek" }
+  ],
+  "fallback_lines": [
+    "Oh, that one is just over there, love — second aisle on your left.",
+    "Anything else you need, dear? We have fresh bread in today.",
+    "Sorry, my hearing is not what it was — say that once more?"
+  ],
+  "opening_line": "Evening, love! Let me know if you need help finding anything.",
+  "level5_complication": "The item the player wants is sold out, so Mrs. Patel offers a more expensive alternative and the player must ask for something cheaper."
+}

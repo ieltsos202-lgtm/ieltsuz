@@ -1,0 +1,47 @@
+{
+  "id": "cafe_order",
+  "chapter": 1,
+  "order": 3,
+  "title_uz": "Kafeda",
+  "intro_uz": "Ko'cha burchagidagi kichik kafega kirdingiz. Tom — hazilkash barista — sizni kutib oladi. Kofe buyurtma qiling, o'lchamini aytishni unutmang va hisobni to'lang.",
+  "setting": "A small busy coffee shop in London, mid-morning. Espresso machine hissing, a short queue behind the player, a glass case of pastries on the counter.",
+  "image": "cafe",
+  "npc_id": "tom_barista",
+  "max_turns": 14,
+  "objectives": [
+    {
+      "id": "order_drink",
+      "title_uz": "Ichimlik buyurtma qiling (o'lchami bilan)",
+      "required": true,
+      "requires_keywords_any": ["coffee", "tea", "latte", "cappuccino", "americano", "espresso", "juice", "water", "chocolate"]
+    },
+    {
+      "id": "order_food",
+      "title_uz": "Biror yegulik so'rang",
+      "required": false,
+      "requires_keywords_any": ["pastry", "muffin", "sandwich", "cake", "croissant", "cookie", "brownie", "toast"]
+    },
+    {
+      "id": "pay",
+      "title_uz": "To'lang",
+      "required": true,
+      "requires_keywords_any": ["card", "cash", "pay", "paying", "bill", "how much", "contactless", "change"]
+    }
+  ],
+  "target_words": [
+    { "word": "medium", "uz": "o'rta (o'lcham)" },
+    { "word": "pastry", "uz": "shirin xamir ovqat" },
+    { "word": "takeaway", "uz": "olib ketish uchun" },
+    { "word": "menu", "uz": "menyu" },
+    { "word": "change", "uz": "qaytim pul" },
+    { "word": "receipt", "uz": "chek" },
+    { "word": "sugar", "uz": "shakar" }
+  ],
+  "fallback_lines": [
+    "Right then — small, medium or large?",
+    "Anything else for you today?",
+    "Sorry, the machine is a bit loud — could you say that again?"
+  ],
+  "opening_line": "Morning! What can I get you?",
+  "level5_complication": "The card machine is broken, the player must pay cash or ask for another way."
+}

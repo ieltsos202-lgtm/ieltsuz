@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { getAuth, checkAndDecrementTrial, refundTrial, trialDenied } from "@/lib/supabaseServer";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
+import { runInBackground } from "@/lib/backgroundTask";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
 // Roughly 2x a long Task 2 essay. Beyond this the request is not an essay.
@@ -22,22 +23,6 @@ function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;
   const r = Math.round(n * 2) / 2;
   return Math.max(0, Math.min(9, r));
-}
-
-async function runInBackground(cb: () => Promise<void>) {
-  try {
-    const nextServer = await import("next/server");
-    const fn = (nextServer as any).after || (nextServer as any).unstable_after;
-    if (typeof fn === "function") {
-      fn(cb);
-      return;
-    }
-  } catch {
-    // ignore
-  }
-  // Fallback: detach from request lifecycle via setTimeout so Next.js
-  // doesn't cancel the promise when the HTTP response finishes.
-  setTimeout(() => cb().catch(console.error), 0);
 }
 
 export async function POST(req: NextRequest) {

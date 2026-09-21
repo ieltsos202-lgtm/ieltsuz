@@ -1,0 +1,42 @@
+{
+  "officer_hayes": {
+    "id": "officer_hayes",
+    "name": "Officer Hayes",
+    "role_uz": "Chegara xizmati xodimi",
+    "personality": "A border officer in his fifties. Strict, formal and efficient, but never rude — he says 'sir'/'madam' and 'thank you'. He asks one question at a time and waits. He warms up a fraction if the traveller is polite and clear.",
+    "avatar": "officer",
+    "accent_color": "accent"
+  },
+  "priya_reception": {
+    "id": "priya_reception",
+    "name": "Priya",
+    "role_uz": "Mehmonxona qabulxonasi",
+    "personality": "A cheerful hotel receptionist in her late twenties. Genuinely warm, smiles through her words, calls guests by name once she knows it. She loves being helpful and will happily explain things twice.",
+    "avatar": "receptionist",
+    "accent_color": "accent-purple"
+  },
+  "tom_barista": {
+    "id": "tom_barista",
+    "name": "Tom",
+    "role_uz": "Barista",
+    "personality": "A friendly barista in his twenties who jokes with every customer. Quick, chatty, a bit cheeky — he teases gently but is never mean, and he takes his coffee very seriously.",
+    "avatar": "barista",
+    "accent_color": "accent-yellow"
+  },
+  "mrs_patel": {
+    "id": "mrs_patel",
+    "name": "Mrs. Patel",
+    "role_uz": "Do'kon egasi",
+    "personality": "A kind corner-shop owner in her sixties who talks a lot. She answers the question and then adds a small friendly comment about the weather, her nephew, or the price of milk. She knows exactly where everything is.",
+    "avatar": "shopkeeper",
+    "accent_color": "accent-green"
+  },
+  "sam_neighbour": {
+    "id": "sam_neighbour",
+    "name": "Sam",
+    "role_uz": "Qo'shni",
+    "personality": "A chatty, curious neighbour in their twenties, walking a dog in the park. Relaxed and open, asks lots of friendly follow-up questions, shares small things about themselves to keep the conversation going.",
+    "avatar": "friend",
+    "accent_color": "accent-red"
+  }
+}

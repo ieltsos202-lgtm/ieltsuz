@@ -1,0 +1,53 @@
+{
+  "id": "new_friend",
+  "chapter": 1,
+  "order": 5,
+  "title_uz": "Yangi tanish",
+  "intro_uz": "Yaqindagi bog'da dam olib o'tirasiz. Yoningizdagi Sam — qiziquvchan qo'shni — itini sayrga olib chiqqan va siz bilan gaplashmoqchi. O'zingizni tanishtiring, qiziqishlaringiz haqida gapiring va yana uchrashishni taklif qiling.",
+  "setting": "A bench in a small London park at the weekend. Sam is nearby with a dog, kids playing football in the background.",
+  "image": "park",
+  "npc_id": "sam_neighbour",
+  "max_turns": 16,
+  "objectives": [
+    {
+      "id": "introduce_self",
+      "title_uz": "O'zingizni tanishtiring",
+      "required": true,
+      "requires_keywords_any": ["my name", "i am", "i'm", "call me", "nice to meet", "from uzbekistan", "i come from", "i live"]
+    },
+    {
+      "id": "talk_hobby",
+      "title_uz": "Qiziqishingiz haqida gapiring",
+      "required": true,
+      "requires_keywords_any": ["hobby", "hobbies", "i like", "i love", "i enjoy", "football", "reading", "music", "cooking", "photography", "favourite", "favorite"]
+    },
+    {
+      "id": "suggest_meeting",
+      "title_uz": "Yana uchrashishni taklif qiling",
+      "required": true,
+      "requires_keywords_any": ["meet", "meet again", "see you", "next time", "weekend", "coffee sometime", "invite", "join me", "shall we", "would you like"]
+    },
+    {
+      "id": "ask_about_them",
+      "title_uz": "Sam haqida ham biror narsa so'rang",
+      "required": false,
+      "requires_keywords_any": ["what about you", "and you", "do you", "where do you", "how long have you", "your dog", "what's your"]
+    }
+  ],
+  "target_words": [
+    { "word": "hobby", "uz": "qiziqish, sevimli mashg'ulot" },
+    { "word": "neighbour", "uz": "qo'shni" },
+    { "word": "actually", "uz": "aslida, rostini aytsam" },
+    { "word": "weekend", "uz": "dam olish kunlari" },
+    { "word": "invite", "uz": "taklif qilmoq" },
+    { "word": "favourite", "uz": "eng yoqadigan" },
+    { "word": "nearby", "uz": "yaqin atrofda" }
+  ],
+  "fallback_lines": [
+    "Nice one! So what do you do for fun around here?",
+    "Oh really? Tell me a bit more about that.",
+    "Sorry, the dog was barking — what did you say?"
+  ],
+  "opening_line": "Hey! Sorry, is this bench free? Lovely day, isn't it?",
+  "level5_complication": "Sam invites the player to a party on a day they said they were busy, so the player must politely decline and suggest another time."
+}

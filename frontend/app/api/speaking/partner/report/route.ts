@@ -8,6 +8,7 @@ import {
 import { getAuth, updateSpeakingProgress } from "@/lib/supabaseServer";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { computeSessionMetrics, describeMetrics } from "@/lib/speaking/metrics";
+import { runInBackground } from "@/lib/backgroundTask";
 
 const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
 // The report model chain: the configured model first, then every other
@@ -33,6 +34,13 @@ function roundHalf(n: number): number {
 interface HistoryTurn {
   role: "user" | "partner";
   text: string;
+}
+
+/** A failure with a message and status already fit for the candidate to see. */
+class ReportError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -201,6 +209,10 @@ The pronunciation band is an ESTIMATE from audio/notes — say so in its first e
       return parseJSONFromText(raw);
     };
 
+    // Everything above is derived from the request body, which must be fully
+    // consumed BEFORE we respond. Everything below is the expensive part and
+    // runs after the response, inside the background task.
+    const buildReport = async () => {
     let parsed: any = null;
     let audioUsed = audioParts.length > 0;
     let quotaHit = false;
@@ -231,13 +243,11 @@ The pronunciation band is an ESTIMATE from audio/notes — say so in its first e
 
     if (!parsed) {
       console.error("Speaking partner report generation failed:", lastErr);
-      return NextResponse.json(
-        {
-          error: quotaHit
-            ? "AI xizmati hozircha band (limit). Bir ozdan keyin qayta urinib ko'ring."
-            : "Hisobot tayyorlashda xatolik. Qayta urinib ko'ring.",
-        },
-        { status: 503 }
+      throw new ReportError(
+        quotaHit
+          ? "AI xizmati hozircha band (limit). Bir ozdan keyin qayta urinib ko'ring."
+          : "Hisobot tayyorlashda xatolik. Qayta urinib ko'ring.",
+        503
       );
     }
 
@@ -300,45 +310,109 @@ The pronunciation band is an ESTIMATE from audio/notes — say so in its first e
       metrics,
     };
 
-    // Best-effort persistence — never blocks the report.
+      return report;
+    };
+
+    /** Both best-effort: a bookkeeping hiccup must never cost the band score. */
+    const persistReport = async (report: Awaited<ReturnType<typeof buildReport>>) => {
+      try {
+        await (supabase as any).from("speaking_results").insert({
+          user_id: user.id,
+          part: 1,
+          question:
+            mode === "exam" ? "Live AI Examiner — full simulated test" : "Live speaking partner session",
+          transcribed_text: userTurns.map((t) => t.text).join("\n"),
+          band_score: report.overall_band,
+          fluency_coherence: report.criteria.fluency_coherence.band,
+          lexical_resource: report.criteria.lexical_resource.band,
+          grammatical_range: report.criteria.grammatical_range.band,
+          pronunciation: report.criteria.pronunciation.band,
+          grammar_errors: report.corrected_examples.map((c: any) => ({
+            error: c.said,
+            correction: c.better,
+            explanation: c.why || "",
+          })),
+          feedback: report.examiner_summary,
+        });
+      } catch (e) {
+        console.error("speaking_results insert failed (partner report):", e);
+      }
+      try {
+        await updateSpeakingProgress(supabase, user.id, {
+          bandScore: report.overall_band,
+          grammarErrors: report.corrected_examples.map((c: any) => ({
+            error: c.said,
+            correction: c.better,
+          })),
+        });
+      } catch (e) {
+        console.error("updateSpeakingProgress failed (partner report):", e);
+      }
+    };
+
+    // A job row makes the report survive the candidate closing the tab or
+    // clicking another page: the work finishes server-side and the result is
+    // stored, so the client can come back and collect it.
+    let jobId: string | null = null;
     try {
-      await (supabase as any).from("speaking_results").insert({
-        user_id: user.id,
-        part: 1,
-        question:
-          mode === "exam" ? "Live AI Examiner — full simulated test" : "Live speaking partner session",
-        transcribed_text: userTurns.map((t) => t.text).join("\n"),
-        band_score: report.overall_band,
-        fluency_coherence: report.criteria.fluency_coherence.band,
-        lexical_resource: report.criteria.lexical_resource.band,
-        grammatical_range: report.criteria.grammatical_range.band,
-        pronunciation: report.criteria.pronunciation.band,
-        grammar_errors: report.corrected_examples.map((c: any) => ({
-          error: c.said,
-          correction: c.better,
-          explanation: c.why || "",
-        })),
-        feedback: report.examiner_summary,
-      });
-    } catch (e) {
-      console.error("speaking_results insert failed (partner report):", e);
-    }
-    // Also best-effort: the report is already generated and the session is
-    // over, so a progress-tracking hiccup must never be what the candidate
-    // sees instead of their band score.
-    try {
-      await updateSpeakingProgress(supabase, user.id, {
-        bandScore: report.overall_band,
-        grammarErrors: report.corrected_examples.map((c: any) => ({
-          error: c.said,
-          correction: c.better,
-        })),
-      });
-    } catch (e) {
-      console.error("updateSpeakingProgress failed (partner report):", e);
+      const { data: job, error: jobError } = await (supabase as any)
+        .from("evaluation_jobs")
+        .insert({
+          user_id: user.id,
+          type: "speaking",
+          status: "processing",
+          // Deliberately NOT the audio or transcript — the payload is only for
+          // debugging, and jsonb is the wrong place for megabytes of speech.
+          payload: { source: "partner_report", mode, turn_count: userTurns.length },
+        })
+        .select("id")
+        .single();
+      if (jobError) {
+        console.warn("evaluation_jobs insert failed (table may not exist yet):", jobError.message || jobError);
+      } else if (job) {
+        jobId = job.id;
+      }
+    } catch (jobErr: any) {
+      console.warn("evaluation_jobs creation threw:", jobErr?.message || jobErr);
     }
 
-    return NextResponse.json(report);
+    if (jobId) {
+      const id = jobId;
+      runInBackground(async () => {
+        try {
+          const report = await buildReport();
+          await persistReport(report);
+          await (supabase as any)
+            .from("evaluation_jobs")
+            .update({ status: "completed", result: report, updated_at: new Date().toISOString() })
+            .eq("id", id);
+        } catch (err: any) {
+          console.error("Background speaking report error:", err);
+          await (supabase as any)
+            .from("evaluation_jobs")
+            .update({
+              status: "failed",
+              error: err instanceof ReportError ? err.message : "Hisobot tayyorlashda xatolik.",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", id);
+        }
+      });
+
+      return NextResponse.json({ status: "processing", id });
+    }
+
+    // Fallback: no job row, so behave exactly as before and generate inline.
+    try {
+      const report = await buildReport();
+      await persistReport(report);
+      return NextResponse.json(report);
+    } catch (err: any) {
+      if (err instanceof ReportError) {
+        return NextResponse.json({ error: err.message }, { status: err.status });
+      }
+      throw err;
+    }
   } catch (error: any) {
     console.error("Speaking partner report error:", error);
     return NextResponse.json(

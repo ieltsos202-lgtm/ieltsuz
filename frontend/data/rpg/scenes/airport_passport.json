@@ -1,0 +1,54 @@
+{
+  "id": "airport_passport",
+  "chapter": 1,
+  "order": 1,
+  "title_uz": "Pasport nazorati",
+  "intro_uz": "Samolyot Londonga qo'ndi. Navbat sizga keldi — chegara xizmati xodimi pasportingizni so'rayapti. Xotirjam bo'ling, savollar oddiy: nima uchun kelgansiz, qancha turasiz va qayerda yashaysiz.",
+  "setting": "The passport control desk at London Heathrow airport, early morning. A queue of tired travellers is behind the player.",
+  "image": "airport",
+  "npc_id": "officer_hayes",
+  "max_turns": 12,
+  "objectives": [
+    {
+      "id": "state_purpose",
+      "title_uz": "Salomlashing va tashrif maqsadini aytib bering",
+      "required": true,
+      "requires_keywords_any": ["tourist", "tourism", "holiday", "visit", "visiting", "study", "student", "work", "business", "purpose", "sightseeing", "travel"]
+    },
+    {
+      "id": "state_duration",
+      "title_uz": "Qancha vaqt qolishingizni aytib bering",
+      "required": true,
+      "requires_keywords_any": ["week", "weeks", "day", "days", "month", "months", "night", "nights", "ten", "two", "three", "fortnight"]
+    },
+    {
+      "id": "state_address",
+      "title_uz": "Qayerda yashashingizni aytib bering",
+      "required": true,
+      "requires_keywords_any": ["hotel", "hostel", "friend", "friend's", "apartment", "flat", "airbnb", "staying", "stay", "address", "relatives"]
+    },
+    {
+      "id": "mention_luggage",
+      "title_uz": "Yuk yoki bojxona haqida gapiring",
+      "required": false,
+      "requires_keywords_any": ["luggage", "suitcase", "bag", "bags", "customs", "declare", "baggage", "nothing to declare"]
+    }
+  ],
+  "target_words": [
+    { "word": "passport", "uz": "pasport" },
+    { "word": "luggage", "uz": "yuk, bagaj" },
+    { "word": "tourist", "uz": "turist, sayyoh" },
+    { "word": "purpose", "uz": "maqsad" },
+    { "word": "arrive", "uz": "yetib kelmoq" },
+    { "word": "customs", "uz": "bojxona" },
+    { "word": "week", "uz": "hafta" },
+    { "word": "hotel", "uz": "mehmonxona" }
+  ],
+  "fallback_lines": [
+    "Thank you. And how long will you stay in the UK?",
+    "I see. Where are you staying during your visit?",
+    "One moment, please. Is this your first time here?"
+  ],
+  "opening_line": "Good morning. Passport, please.",
+  "level5_complication": "The officer cannot find the player's hotel booking in the system and asks for the exact address and a phone number of the hotel."
+}
