@@ -1,10 +1,10 @@
 import type { DashboardOverview, Profile, Skill, StudyPlan } from "./types";
 
 const SKILL_GOALS: Record<Skill, string> = {
-  listening: "Complete a Listening practice test",
-  reading: "Complete a Reading practice test",
-  writing: "Practice Writing Task 2",
-  speaking: "Record a Speaking Part 2 response",
+  listening: "Listening mashqini bajarish",
+  reading: "Reading mashqini bajarish",
+  writing: "Writing Task 2 yozish",
+  speaking: "Speaking Part 2 javobini yozib olish",
 };
 
 const SKILL_LABELS: Record<Skill, string> = {
@@ -61,7 +61,7 @@ export function getTodaysGoal(
   if (focusSkill) {
     const key = focusSkill.toLowerCase() as Skill;
     if (SKILL_GOALS[key]) return SKILL_GOALS[key];
-    return `Focus on ${focusSkill}`;
+    return `${focusSkill} bo'limiga e'tibor bering`;
   }
 
   const weakest = getWeakestSkills(overview, profile, 1)[0];
@@ -78,15 +78,15 @@ export function getFocusAreasText(
 
   const focus = studyPlan?.focus_skills?.slice(0, 2);
   if (focus?.length) {
-    return `${focus.join(" and ")} — your study plan focus areas. Keep practicing these skills today.`;
+    return `${focus.join(" va ")} — rejangizdagi asosiy yo'nalishlar. Bugun shularga vaqt ajrating.`;
   }
 
   const weakest = getWeakestSkills(overview, profile, 2);
   if (weakest.length === 0) {
-    return "Complete a mock test to identify your personalized focus areas.";
+    return "Mock test topshirsangiz, qaysi bo'limga ko'proq e'tibor kerakligini aniq aytamiz.";
   }
   if (weakest.length === 1) {
-    return `${SKILL_LABELS[weakest[0]]} needs the most practice — start there today.`;
+    return `${SKILL_LABELS[weakest[0]]} eng ko'p mashq talab qiladi — bugun shundan boshlang.`;
   }
-  return `${SKILL_LABELS[weakest[0]]} and ${SKILL_LABELS[weakest[1]]} need the most practice based on your results.`;
+  return `Natijalaringizga ko'ra ${SKILL_LABELS[weakest[0]]} va ${SKILL_LABELS[weakest[1]]} eng ko'p mashq talab qiladi.`;
 }

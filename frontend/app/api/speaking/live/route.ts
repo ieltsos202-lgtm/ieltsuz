@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { QuotaError } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, trialDenied } from "@/lib/supabaseServer";
 import { loadSpeakingMemory, appendSpeakingMemory } from "@/lib/speakingMemory";
 import { streamGeminiText } from "@/lib/speaking/geminiStream";
 import { LineProtocolParser } from "@/lib/speaking/lineProtocol";
@@ -117,7 +117,8 @@ export async function POST(req: NextRequest) {
     if (firstTurn) {
       charged = await checkAndDecrementTrial(req, "speaking");
       if (!charged.ok) {
-        return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
+        const denied = trialDenied(charged);
+        return NextResponse.json({ error: denied.error }, { status: denied.status });
       }
     }
 

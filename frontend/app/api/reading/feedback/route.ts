@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, trialDenied } from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 function readingBand(correct: number): number {
   if (correct >= 39) return 9.0;
@@ -22,8 +23,30 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { test_id, test_title, correct_count, total, wrong_answers, highlighted_words, time_spent_sec, unanswered } = body;
 
-    const band = readingBand(correct_count);
-    const wrong = wrong_answers || [];
+    // Charge the credit BEFORE the AI call — previously the Gemini request ran
+    // first, so a user with zero credits still consumed AI quota and the work
+    // was discarded when the check failed.
+    const trial = await checkAndDecrementTrial(req, "reading");
+    if (!trial.ok) {
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
+    }
+    if (rateLimit(`reading-fb-ip:${clientIp(req)}`, 20, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." },
+        { status: 429 }
+      );
+    }
+
+    const correct = Math.max(0, Math.min(60, Math.round(Number(correct_count) || 0)));
+    const band = readingBand(correct);
+    // Cap the per-question payload: it is stringified verbatim into the prompt.
+    const wrong = (Array.isArray(wrong_answers) ? wrong_answers : []).slice(0, 40).map((w: any) => ({
+      question_number: Math.round(Number(w?.question_number) || 0),
+      user_answer: String(w?.user_answer ?? "").slice(0, 200),
+      correct_answer: String(w?.correct_answer ?? "").slice(0, 200),
+      question_text: String(w?.question_text ?? "").slice(0, 500),
+    }));
     const timeSec = Number(time_spent_sec) || 0;
     const skipped: number[] = Array.isArray(unanswered) ? unanswered : [];
 
@@ -31,8 +54,8 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are a senior, certified IELTS Academic Reading examiner and tutor.
 
-Test: ${test_title || "Reading Test"}
-Score: ${correct_count}/${total || 40} correct  →  Band ${band}
+Test: ${String(test_title || "Reading Test").slice(0, 120)}
+Score: ${correct}/${total || 40} correct  →  Band ${band}
 ${timeSec ? `Time spent: ${Math.floor(timeSec / 60)} min ${timeSec % 60} sec (standard test time: 60 min).` : ""}
 ${skipped.length ? `Questions left UNANSWERED: ${skipped.join(", ")} — comment on time management / which passage they ran out of time on.` : ""}
 
@@ -41,14 +64,14 @@ ${
     ? `The candidate's WRONG answers (with the correct answers) are listed below. For EACH one, explain precisely why this specific mistake happens (e.g. confused with a distractor, missed a paraphrase/synonym, True vs Not Given confusion, scanned the wrong paragraph) and give a concrete strategy to get it right. Point them to where in the passage the answer is found.
 WRONG ANSWERS:
 ${JSON.stringify(wrong, null, 2)}`
-    : `No per-question data was captured. Base your analysis on the score (${correct_count}/40) and the most common IELTS Reading failure patterns for this band, and be honest that this is general guidance.`
+    : `No per-question data was captured. Base your analysis on the score (${correct}/40) and the most common IELTS Reading failure patterns for this band, and be honest that this is general guidance.`
 }
 
 WRITE BILINGUALLY: every explanation/tip/feedback first in clear English, then the same point in natural Uzbek after " | O'zbekcha: ".
 
 Return ONLY valid JSON with EXACTLY these fields:
 {
-  "correct_count": ${correct_count},
+  "correct_count": ${correct},
   "total_questions": ${total || 40},
   "band_score": ${band},
   "wrong_analysis": [
@@ -71,14 +94,9 @@ Return ONLY valid JSON with EXACTLY these fields:
 ${hasWrong ? "Include one wrong_analysis entry for EVERY wrong answer provided." : "If no wrong answers were provided, return an empty wrong_analysis array and focus on strategy_tips and weak_question_types."}`;
 
     const feedback = await generateJSON(prompt);
-    feedback.correct_count = correct_count;
+    feedback.correct_count = correct;
     feedback.total_questions = total || 40;
     feedback.band_score = band;
-
-    const trial = await checkAndDecrementTrial(req, "reading");
-    if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
-    }
 
     const { supabase, user } = await getAuth(req);
 

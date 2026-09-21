@@ -81,21 +81,82 @@ const TRIAL_COLUMNS: Record<string, string> = {
   mock: "trial_mock_remaining",
 };
 
+/**
+ * Atomically take one unit from a numeric profile column.
+ *
+ * This is a compare-and-swap: the UPDATE only matches while the column still
+ * holds the value we read, so two concurrent requests cannot both succeed on
+ * the same credit. A plain read-then-write allowed exactly that — one credit
+ * paying for two evaluations. Done without an RPC so no migration is needed.
+ */
+async function takeOne(
+  supabase: any,
+  userId: string,
+  column: string,
+  seen: number
+): Promise<{ taken: boolean; left: number }> {
+  let current = seen;
+  // A few rounds is plenty: contention here is two tabs, not a stampede.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (current <= 0) return { taken: false, left: 0 };
+    const { data } = await supabase
+      .from("profiles")
+      .update({ [column]: current - 1 })
+      .eq("id", userId)
+      .eq(column, current)
+      .select(column)
+      .maybeSingle();
+    if (data) return { taken: true, left: (data[column] as number) ?? current - 1 };
+
+    // No row came back. Either we lost the race, or this deployment cannot
+    // return the updated row at all.
+    const { data: fresh } = await supabase
+      .from("profiles")
+      .select(column)
+      .eq("id", userId)
+      .maybeSingle();
+    const now = (fresh?.[column] as number) ?? 0;
+
+    if (now === current) {
+      // The value never moved, so nobody raced us — the UPDATE simply did not
+      // hand back a representation. Degrade to a plain decrement rather than
+      // hard-blocking the user from ever spending a credit.
+      await supabase
+        .from("profiles")
+        .update({ [column]: current - 1 })
+        .eq("id", userId);
+      return { taken: true, left: current - 1 };
+    }
+    current = now;
+  }
+  return { taken: false, left: current };
+}
+
 export async function checkAndDecrementTrial(
   req: Request,
   skill: "listening" | "reading" | "speaking" | "writing" | "mock"
-): Promise<{ ok: boolean; remaining: number; isPro: boolean; userId?: string; refundColumn?: string }> {
+): Promise<{
+  ok: boolean;
+  remaining: number;
+  isPro: boolean;
+  userId?: string;
+  refundColumn?: string;
+  /** Lets routes tell "sign in again" apart from "buy Pro". */
+  reason?: "unauthenticated" | "no_profile" | "exhausted";
+}> {
   const { supabase, user } = await getAuth(req);
-  if (!user) return { ok: false, remaining: 0, isPro: false };
+  if (!user) return { ok: false, remaining: 0, isPro: false, reason: "unauthenticated" };
 
   const column = TRIAL_COLUMNS[skill];
   const { data: profile } = await (supabase as any)
     .from("profiles")
-    .select(`is_pro, pro_expires_at, ${column}`)
+    .select(
+      `is_pro, pro_expires_at, ${column}${skill === "mock" ? ", bonus_mock_remaining" : ""}`
+    )
     .eq("id", user.id)
     .single();
 
-  if (!profile) return { ok: false, remaining: 0, isPro: false };
+  if (!profile) return { ok: false, remaining: 0, isPro: false, reason: "no_profile" };
 
   if (profile.is_pro) {
     if (profile.pro_expires_at) {
@@ -113,28 +174,60 @@ export async function checkAndDecrementTrial(
     const trialMock = (profile.trial_mock_remaining as number) ?? 0;
     const bonusMock = (profile.bonus_mock_remaining as number) ?? 0;
     if (trialMock > 0) {
-      await (supabase as any)
-        .from("profiles")
-        .update({ trial_mock_remaining: trialMock - 1 })
-        .eq("id", user.id);
-      return { ok: true, remaining: trialMock + bonusMock - 1, isPro: false, userId: user.id, refundColumn: "trial_mock_remaining" };
-    } else if (bonusMock > 0) {
-      await (supabase as any)
-        .from("profiles")
-        .update({ bonus_mock_remaining: bonusMock - 1 })
-        .eq("id", user.id);
-      return { ok: true, remaining: bonusMock - 1, isPro: false, userId: user.id, refundColumn: "bonus_mock_remaining" };
+      const t = await takeOne(supabase, user.id, "trial_mock_remaining", trialMock);
+      if (t.taken) {
+        return {
+          ok: true,
+          remaining: t.left + bonusMock,
+          isPro: false,
+          userId: user.id,
+          refundColumn: "trial_mock_remaining",
+        };
+      }
     }
-    return { ok: false, remaining: 0, isPro: false };
+    if (bonusMock > 0) {
+      const b = await takeOne(supabase, user.id, "bonus_mock_remaining", bonusMock);
+      if (b.taken) {
+        return {
+          ok: true,
+          remaining: b.left,
+          isPro: false,
+          userId: user.id,
+          refundColumn: "bonus_mock_remaining",
+        };
+      }
+    }
+    return { ok: false, remaining: 0, isPro: false, reason: "exhausted" };
   }
 
   const remaining = (profile[column] as number) ?? 0;
   if (remaining <= 0) {
-    return { ok: false, remaining: 0, isPro: false };
+    return { ok: false, remaining: 0, isPro: false, reason: "exhausted" };
   }
 
-  await (supabase as any).from("profiles").update({ [column]: remaining - 1 }).eq("id", user.id);
-  return { ok: true, remaining: remaining - 1, isPro: false, userId: user.id, refundColumn: column };
+  const took = await takeOne(supabase, user.id, column, remaining);
+  if (!took.taken) {
+    return { ok: false, remaining: took.left, isPro: false, reason: "exhausted" };
+  }
+  return { ok: true, remaining: took.left, isPro: false, userId: user.id, refundColumn: column };
+}
+
+/**
+ * The correct rejection for a failed trial check. A missing session is 401 so
+ * the client can prompt a re-login; only genuine exhaustion is 402, which is
+ * what the paywall listens for. Previously both returned 402 "upgrade to Pro",
+ * so an expired token looked like a billing problem.
+ */
+export function trialDenied(trial: {
+  reason?: "unauthenticated" | "no_profile" | "exhausted";
+}): { error: string; status: number } {
+  if (trial.reason === "unauthenticated" || trial.reason === "no_profile") {
+    return { error: "Sessiya tugagan. Qaytadan tizimga kiring.", status: 401 };
+  }
+  return {
+    error: "Bepul urinishlar tugadi. Davom etish uchun Pro ga o'ting.",
+    status: 402,
+  };
 }
 
 /**
@@ -202,17 +295,28 @@ export async function refundTrial(
   trial: { isPro: boolean; userId?: string; refundColumn?: string }
 ): Promise<void> {
   if (trial.isPro || !trial.userId || !trial.refundColumn) return;
+  const column = trial.refundColumn;
   try {
-    const { data: profile } = await (supabase as any)
-      .from("profiles")
-      .select(trial.refundColumn)
-      .eq("id", trial.userId)
-      .single();
-    const current = (profile?.[trial.refundColumn] as number) ?? 0;
-    await (supabase as any)
-      .from("profiles")
-      .update({ [trial.refundColumn]: current + 1 })
-      .eq("id", trial.userId);
+    // Compare-and-swap, same reasoning as takeOne. A blind read-then-write
+    // dropped the refund whenever another request touched the column in
+    // between, permanently costing the user the credit being returned.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select(column)
+        .eq("id", trial.userId)
+        .maybeSingle();
+      const current = (profile?.[column] as number) ?? 0;
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .update({ [column]: current + 1 })
+        .eq("id", trial.userId)
+        .eq(column, current)
+        .select(column)
+        .maybeSingle();
+      if (data) return;
+    }
+    console.error("refundTrial: gave up after contention", { userId: trial.userId, column });
   } catch (err) {
     console.error("refundTrial failed:", err);
   }

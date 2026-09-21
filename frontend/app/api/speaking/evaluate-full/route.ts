@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial, updateSpeakingProgress } from "@/lib/supabaseServer";
+import {
+  parseJSONFromText,
+  generateWithFallback,
+  QuotaError,
+  LIVE_MODEL_CHAIN,
+} from "@/lib/gemini";
+import {
+  getAuth,
+  checkAndDecrementTrial,
+  refundTrial,
+  updateSpeakingProgress,
+  trialDenied,
+} from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
+const EVAL_MODELS = [EVAL_MODEL, ...LIVE_MODEL_CHAIN.filter((m) => m !== EVAL_MODEL)];
+// A real test is 11-14 answers. The parse loop below is unbounded by nature,
+// so these caps are what stop a malformed or hostile request from base64-ing
+// unlimited audio into the worker's memory.
+const MAX_ANSWERS = 30;
+const MAX_TOTAL_AUDIO_BYTES = 40 * 1024 * 1024;
 
 function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;
@@ -18,7 +36,6 @@ interface PartAnswer {
 }
 
 async function transcribeAudio(
-  model: any,
   audioBase64: string,
   mimeType: string,
   question: string,
@@ -35,11 +52,11 @@ Rules:
 - Return ONLY the transcription text, no markdown, no explanations.`;
 
   try {
-    const result = await model.generateContent([
-      { text: prompt },
-      { inlineData: { mimeType, data: audioBase64 } },
-    ]);
-    return result.response.text().trim();
+    const text = await generateWithFallback(
+      [{ text: prompt }, { inlineData: { mimeType, data: audioBase64 } }],
+      { models: EVAL_MODELS, jsonMode: false }
+    );
+    return text.trim();
   } catch (e) {
     console.error("Transcription error:", e);
     return "[Transcription failed]";
@@ -55,41 +72,58 @@ export async function POST(req: NextRequest) {
     // Parse all answers from form data
     // Format: answers[0][part], answers[0][question], answers[0][audio]
     const answers: PartAnswer[] = [];
-    let i = 0;
-    while (true) {
+    let totalAudioBytes = 0;
+    for (let i = 0; i < MAX_ANSWERS; i++) {
       const partStr = formData.get(`answers[${i}][part]`) as string | null;
       const question = formData.get(`answers[${i}][question]`) as string | null;
       const audioFile = formData.get(`answers[${i}][audio]`) as File | null;
 
       if (!partStr || !question || !audioFile) break;
 
+      totalAudioBytes += audioFile.size || 0;
+      if (totalAudioBytes > MAX_TOTAL_AUDIO_BYTES) {
+        return NextResponse.json(
+          { error: "Yozuvlar juda katta. Qisqaroq javoblar bilan qayta urinib ko'ring." },
+          { status: 413 }
+        );
+      }
+
+      const part = parseInt(partStr, 10);
       const audioBytes = await audioFile.arrayBuffer();
       answers.push({
-        part: parseInt(partStr),
+        part: Number.isFinite(part) ? part : 1,
         question,
         audioBase64: Buffer.from(audioBytes).toString("base64"),
         mimeType: audioFile.type || "audio/webm",
       });
-      i++;
     }
 
     if (answers.length === 0) {
       return NextResponse.json({ error: "No answers provided" }, { status: 400 });
     }
 
+    // Transcribing and grading a whole test is the most expensive call the app
+    // makes; without this a single client could run it in a loop.
+    if (rateLimit(`eval-full-ip:${clientIp(req)}`, 6, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." },
+        { status: 429 }
+      );
+    }
+
     trial = await checkAndDecrementTrial(req, "speaking");
     if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
     }
 
     const { supabase, user } = await getAuth(req);
     refundSupabase = supabase;
-    const model = getModel(EVAL_MODEL, false);
 
     // Step 1: Transcribe all answers
     const transcriptions: { part: number; question: string; text: string }[] = [];
     for (const ans of answers) {
-      const text = await transcribeAudio(model, ans.audioBase64, ans.mimeType, ans.question, ans.part);
+      const text = await transcribeAudio(ans.audioBase64, ans.mimeType, ans.question, ans.part);
       transcriptions.push({ part: ans.part, question: ans.question, text });
     }
 
@@ -170,9 +204,14 @@ Return ONLY valid JSON:
   "feedback": "Honest, encouraging summary of the FULL test. What level now, single biggest fix, how to reach higher band | O'zbekcha: ..."
 }`;
 
-    const evalModel = getModel(EVAL_MODEL, true);
-    const evalResult = await evalModel.generateContent(prompt);
-    const evalText = evalResult.response.text();
+    // Validation is part of the attempt: a report truncated by the token cap
+    // retries on the next model instead of throwing away the whole test.
+    const evalText = await generateWithFallback([{ text: prompt }], {
+      models: EVAL_MODELS,
+      validate: (t) => {
+        parseJSONFromText(t);
+      },
+    });
     const feedback = parseJSONFromText(evalText);
 
     // Normalize scores
@@ -234,9 +273,22 @@ Return ONLY valid JSON:
     });
   } catch (error: any) {
     console.error("Speaking full evaluation error:", error);
+    // The refund must never be the reason the user gets no response at all.
     if (trial && refundSupabase) {
-      await refundTrial(refundSupabase, trial);
+      try {
+        await refundTrial(refundSupabase, trial);
+      } catch (refundErr) {
+        console.error("refundTrial failed (speaking full):", refundErr);
+      }
     }
-    return NextResponse.json({ error: error?.message || "Evaluation failed" }, { status: 500 });
+    const quota = error instanceof QuotaError;
+    return NextResponse.json(
+      {
+        error: quota
+          ? "AI xizmati hozircha band (limit). Urinishingiz qaytarildi — bir ozdan keyin qayta urinib ko'ring."
+          : "Baholashda xatolik. Urinishingiz qaytarildi — qayta urinib ko'ring.",
+      },
+      { status: quota ? 503 : 500 }
+    );
   }
 }

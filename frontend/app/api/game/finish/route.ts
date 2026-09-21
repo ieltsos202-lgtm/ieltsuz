@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 import { levelFromXp, levelProgress } from "@/lib/gameEngine";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
+
+// The most XP a single real game round can produce (generous headroom over
+// the engine's per-answer math). Anything above this is a forged payload.
+const MAX_XP_PER_GAME = 300;
+const MAX_COMBO = 100;
 
 interface LearnedWord {
   word: string;
@@ -17,9 +23,21 @@ export async function POST(req: NextRequest) {
     const { supabase, user } = await getAuth(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    if (rateLimit(`game-finish:${user.id}`, 30, 10 * 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov." }, { status: 429 });
+    }
+
     const body = await req.json();
-    const xpGained: number = Math.max(0, Math.round(Number(body.xpGained) || 0));
-    const bestCombo: number = Math.max(0, Math.round(Number(body.bestCombo) || 0));
+    // Client-reported values are clamped to what a real round can produce —
+    // otherwise a forged payload could mint unlimited XP.
+    const xpGained: number = Math.min(
+      MAX_XP_PER_GAME,
+      Math.max(0, Math.round(Number(body.xpGained) || 0))
+    );
+    const bestCombo: number = Math.min(
+      MAX_COMBO,
+      Math.max(0, Math.round(Number(body.bestCombo) || 0))
+    );
     const learnedWords: LearnedWord[] = Array.isArray(body.learnedWords) ? body.learnedWords : [];
     // Per-game persistence: which game, its score and best streak this run.
     const gameId = typeof body.game === "string" ? body.game.slice(0, 40) : "";

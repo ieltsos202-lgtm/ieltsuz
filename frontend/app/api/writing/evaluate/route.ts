@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, trialDenied } from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
+// Roughly 2x a long Task 2 essay. Beyond this the request is not an essay.
+const MAX_ESSAY_CHARS = 20000;
+const MAX_QUESTION_CHARS = 3000;
+
+/** Never let a refund be the reason a request dies. */
+async function safeRefund(supabase: any, trial: any) {
+  try {
+    await refundTrial(supabase, trial);
+  } catch (e) {
+    console.error("refundTrial failed (writing evaluate):", e);
+  }
+}
 
 // Round to the nearest valid IELTS half-band (0.0, 0.5, 1.0, ... 9.0).
 function roundHalf(n: number): number {
@@ -32,9 +45,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { essay_text, question, task_type, word_count } = body;
 
+    // Validate BEFORE spending the user's credit: an empty essay used to
+    // consume a trial attempt and come back with meaningless band scores.
+    const essay = typeof essay_text === "string" ? essay_text.trim() : "";
+    if (essay.length < 20) {
+      return NextResponse.json(
+        { error: "Insho juda qisqa. Kamida bir necha gap yozing." },
+        { status: 400 }
+      );
+    }
+    if (essay.length > MAX_ESSAY_CHARS) {
+      return NextResponse.json({ error: "Insho juda uzun." }, { status: 413 });
+    }
+    if (typeof question !== "string" || !question.trim()) {
+      return NextResponse.json({ error: "Savol topilmadi." }, { status: 400 });
+    }
+    if (rateLimit(`writing-eval-ip:${clientIp(req)}`, 15, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." },
+        { status: 429 }
+      );
+    }
+
     const trial = await checkAndDecrementTrial(req, "writing");
     if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
     }
 
     const { supabase, user } = await getAuth(req);
@@ -69,14 +105,18 @@ export async function POST(req: NextRequest) {
 
 TASK TYPE: ${isTask1 ? "Academic Writing Task 1 (report describing a graph/chart/process/map; min 150 words; ~20 minutes)" : "Writing Task 2 (argumentative/discussion essay; min 250 words; ~40 minutes)"}
 MINIMUM WORDS: ${minWords}
-ACTUAL WORD COUNT: ${word_count}
+ACTUAL WORD COUNT: ${
+      typeof word_count === "number" && isFinite(word_count)
+        ? word_count
+        : essay.split(/\s+/).filter(Boolean).length
+    }
 
 QUESTION / PROMPT:
-${question}
+${question.slice(0, MAX_QUESTION_CHARS)}
 
 CANDIDATE'S ESSAY:
 """
-${essay_text}
+${essay}
 """
 
 MARKING RULES (apply the official 4 criteria, each 0–9):
@@ -187,7 +227,7 @@ Return ONLY valid JSON with EXACTLY these fields:
             .eq("id", jobId);
         }
         // Give the trial attempt back since the evaluation never completed.
-        await refundTrial(supabase, trial);
+        await safeRefund(supabase, trial);
       }
     });
 
@@ -234,8 +274,13 @@ Return ONLY valid JSON with EXACTLY these fields:
       return NextResponse.json({ feedback: result });
     } catch (syncErr: any) {
       console.error("Synchronous writing evaluation error:", syncErr);
-      await refundTrial(supabase, trial);
-      return NextResponse.json({ error: syncErr.message || "Evaluation failed" }, { status: 500 });
+      await safeRefund(supabase, trial);
+      return NextResponse.json(
+        {
+          error: `${syncErr?.message || "Baholashda xatolik."} Urinishingiz qaytarildi.`,
+        },
+        { status: 503 }
+      );
     }
   } catch (error: any) {
     console.error("Writing evaluation error:", error);

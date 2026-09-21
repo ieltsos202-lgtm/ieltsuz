@@ -43,7 +43,7 @@ export interface SpokenInput {
 
 // When the Ear supplies the transcript, the examiner's job is to judge the
 // text — with a guard for transcripts that came back garbled.
-function transcriptBlock(spoken: SpokenInput): string {
+function transcriptBlock(spoken: SpokenInput, voiceNotes: boolean): string {
   const t = spoken.transcript.trim();
   return `CANDIDATE'S TRANSCRIPT (verbatim, produced by a dedicated listener — may contain [unclear] gaps):
 "${t || "(empty — silence or unintelligible audio)"}"
@@ -51,8 +51,11 @@ function transcriptBlock(spoken: SpokenInput): string {
 - If it looks garbled or unrelated to your question: the transcription may have failed — politely ask them to say it again, slower.
 - Otherwise treat it as exactly what they said, mistakes and all.${
     spoken.pronunciationNotes
-      ? `
+      ? voiceNotes
+        ? `
 - PRONUNCIATION NOTE from the analyst about their previous answer: ${spoken.pronunciationNotes} — if it still matters, work a quick correction into your reply (English stop → one clean Uzbek sentence → "Say it again.").`
+        : `
+- PRONUNCIATION NOTE from the analyst about their previous answer: ${spoken.pronunciationNotes} — note it silently for the report; do NOT voice any correction during the test.`
       : ""
   }`;
 }
@@ -122,8 +125,8 @@ export function buildExamPrompt(
   const modeTag = ctx.harsh ? "[MODE=HARSH]" : "[MODE=NORMAL]";
   const partTag = `[PART ${Math.min(3, Math.max(1, ctx.part))}]`;
   const modeRules = ctx.harsh
-    ? `MODE RULES — HARSH is active. Follow "AFTER EVERY ANSWER (HARSH mode)" and "INSULT RULES" above to the letter. The insult, when earned, is ONE separate Uzbek sentence (it is shown on screen — keep it short) or one English put-down; everything else is English. The correct version and the order to repeat are in English.`
-    : `MODE RULES — NORMAL is active. No insults. When you correct a mistake, use this rhythm: (1) English: stop them — "Wait." / "Hold on." (2) Uzbek: ONE clean, complete sentence — what they said, the correct form, one-line reason, e.g. "'He go' emas — 'He goes' bo'ladi, uchinchi shaxsda '-s' qo'shiladi." For pronunciation: "'Think' so'zida 'th' — tilni tishlar orasiga qo'yib ayt, 'sink' emas." (3) English: "Say it again." If the answer was clean, say so in one short English line and move on.`;
+    ? `MODE RULES — HARSH is active. Follow "HARSH MODE" above: impatient and sarcastic about BEHAVIOUR (silence, one-word answers, laziness, off-topic) — ONE short separate Uzbek sentence or one English put-down. But even HARSH never reveals a correction: no quoting their error, no correct form, no "say it again".`
+    : `MODE RULES — NORMAL is active. Strict and professional, no insults. NEVER correct or comment on their English during the test — after each answer give a brief neutral acknowledgement ("Thank you.", "I see.", "Okay.") and continue with the next question or a natural follow-up. Every mistake is noted silently for the end-of-test report.`;
 
   return `${EXAMINER_SYSTEM_PROMPT}
 
@@ -133,7 +136,7 @@ ${modeTag}
 ${partTag}
 
 ${modeRules}
-- One correction per turn — the most important mistake. Never let corrections eat the exam's flow.
+- NEVER voice a correction, hint, or evaluation mid-test — the report at the end covers everything.
 - Use what you remember about this candidate: hunt their known weak points and pick topics they have NOT done before.
 
 ${FOLLOW_UP_RULES}
@@ -151,7 +154,7 @@ ${historyBlock(history, "Candidate", "Examiner", 12)}
 
 ${
   spoken
-    ? transcriptBlock(spoken)
+    ? transcriptBlock(spoken, false)
     : `${listeningBlock(ctx.lastQuestion, "the candidate")}\n\nNow LISTEN to the attached audio — the candidate's latest spoken response.`
 }
 
@@ -205,7 +208,7 @@ ${historyBlock(history, userName || "User", partnerName, 6)}
 
 ${
   spoken
-    ? `${transcriptBlock(spoken)}\n- If the transcript is empty: scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".`
+    ? `${transcriptBlock(spoken, true)}\n- If the transcript is empty: scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".`
     : `${listeningBlock(lastQuestion, userName || "the learner")}\n\nLISTEN to the attached audio — ${userName || "the learner"}'s latest turn.\n- If completely silent: leave the transcript empty, scold briefly in Uzbek ("Uxlab qoldingmi? Gapir.") then repeat your question in English, emotion "annoyed" or "thinking".`
 }
 
@@ -238,7 +241,7 @@ You are running this test LIVE by voice — you hear the candidate's actual spee
 [MODE=${harsh ? "HARSH" : "NORMAL"}]
 ${
   harsh
-    ? `HARSH is active — follow the "AFTER EVERY ANSWER (HARSH mode)" and "INSULT RULES" sections exactly. One insult per turn, only for a real error, as ONE short separate Uzbek sentence or one English put-down.`
+    ? `HARSH is active — follow the "HARSH MODE" section exactly: impatient about BEHAVIOUR only, and NEVER reveal a correction (no quoting errors, no correct forms, no "say it again").`
     : `NORMAL is active — strict and professional, no insults.`
 }`
       : `You are ${examinerName} — ${userName || "this learner"}'s personal English mentor and close friend: a sharp, sarcastic, big-hearted British guy who has lived in Tashkent for years and speaks fluent Uzbek. You are talking LIVE by voice. NOT an AI. Never robotic. The conversation is in English; switch to Uzbek only as a separate, complete sentence to explain a mistake or scold laziness, then back to English.`;
@@ -248,15 +251,40 @@ ${
       ? `
 TEST STRUCTURE — you run the whole test yourself, in order:
 - Part 1 (Introduction & Interview): greet the candidate, ask their name, then ~4 short questions about familiar topics (home, work/study, hobbies, daily life). One question at a time.
-- Part 2 (Individual Long Turn): say EXACTLY the phrase "Here is your cue card." then read the cue card topic aloud in one sentence ("Describe a person who has inspired you" style — invent a fresh topic with 3-4 bullet points and say them). Then say "You have one minute to prepare." and STAY SILENT until the candidate starts talking. Let them speak 1-2 minutes uninterrupted — do NOT interrupt the long turn.
+- Part 2 (Individual Long Turn): say EXACTLY the phrase "Here is your cue card." then read the cue card topic aloud in one sentence ("Describe a person who has inspired you" style — invent a fresh topic with 3-4 bullet points and say them). Finish that turn with "You have one minute to prepare. You can take some notes if you wish." Then STOP TALKING COMPLETELY.
+  The app now takes over the timing: it runs the one minute of preparation and then times a two-minute long turn, and during BOTH of those you receive no audio at all. Say nothing. Do not ask if they are ready, do not remind them to start, do not fill the silence — you are simply unavailable until the app speaks to you again.
+  When the long turn ends you will be sent a message containing what the candidate said and an instruction to continue. Only then do you speak again, and you go to Part 3.
 - Part 3 (Two-way Discussion): ~5 abstract, analytical questions connected to the Part 2 topic. Push for opinions, comparisons, speculation.
 - When the test is finished, say goodbye briefly and end with EXACTLY: "That is the end of the speaking test."
 ${startPart > 1 ? `- IMPORTANT: skip ahead — start directly at Part ${startPart} (no earlier parts).` : ""}
-- NEVER give band scores, evaluations or feedback during the test — a real examiner never does.`
+- NEVER give band scores, evaluations or feedback during the test — a real examiner never does.
+- NEVER correct the candidate mid-test: no "Wait.", no "Say it again.", no quoting their mistake, no giving the right form, no Uzbek explanation of an error, no praise or criticism of their English. After each answer react to the CONTENT briefly and neutrally ("Thank you.", "I see.", "Okay.") and move on. Every mistake is analysed in the background and goes into the report after the test.`
       : `
 CONVERSATION FLOW:
 - Max 2-4 short spoken sentences per turn. Fast, punchy, like real voice chat. Always end with ONE question or a command.
 - Topics rotate: daily life, study, work, family, food, travel, technology, hobbies, plans — common IELTS Part 1/3 themes talked about like friends.`;
+
+  const hour = new Date().getUTCHours() + 5; // Tashkent time
+  const timeOfDay = hour % 24 < 12 ? "morning" : hour % 24 < 18 ? "afternoon" : "evening";
+  const EXAM_OPENERS = [
+    `Formal and brisk: "Good ${timeOfDay}. My name is ${examinerName}, I'll be your examiner today. Let's begin — can you tell me your full name?"`,
+    `Warm but professional: "Good ${timeOfDay}, please come in and sit down." then ask their name, then where they're from.`,
+    `Straight to business: a short "Good ${timeOfDay}." then "Shall we start? Tell me about where you live."`,
+    `Slightly friendly: greet, one human remark ("Hope you're feeling ready today."), then a Part 1 question about work or study.`,
+    `If you remember them from before, acknowledge it dryly ("Back again. Good.") then start Part 1 immediately.`,
+    `Quiet and matter-of-fact: "Good ${timeOfDay}. Take a seat." then "For the record, can you give me your full name?"`,
+  ];
+  const CHAT_OPENERS = [
+    `Tease them about a known weak point and promise to hunt it today.`,
+    `Open with a joke or a mock-serious challenge — no "hello" needed.`,
+    `Reference something you remember about them (job, city, hobby) and ask what's new.`,
+    `Fake-strict: demand to know what they did today, skip the hello entirely.`,
+    `Warm friend: genuinely happy they're back, then hit them with a surprising question.`,
+    `Start mid-conversation as if you never stopped talking: "So — I've been thinking about what you said last time..."`,
+  ];
+  const openingStyle = (mode === "exam" ? EXAM_OPENERS : CHAT_OPENERS)[
+    Math.floor(Math.random() * (mode === "exam" ? EXAM_OPENERS.length : CHAT_OPENERS.length))
+  ];
 
   return `${persona}
 
@@ -272,17 +300,30 @@ SPEAKING STYLE:
 - If they clearly don't understand, explain in ONE short, correct Uzbek sentence, then continue in English.
 - Never mention the app, the UI, band scores, or that you are an AI.
 
-CORRECTIONS — analyse every sentence they say:
+${
+  mode === "exam"
+    ? `ASSESSMENT DURING THE TEST — SILENT ONLY (ABSOLUTE RULE):
+- You are a REAL examiner: while the test runs you never correct, explain, praise or criticise the candidate's English. Not one word — not even "good job" or "that was wrong".
+- React to CONTENT only, briefly and neutrally, then ask the next question or a follow-up.
+- If they ask "was that correct?" / "how is my English?" — deflect: "We'll see at the end." and continue.
+- The app records and analyses every answer in the background; the band report and error corrections come AFTER the test — never during.`
+    : `CORRECTIONS — analyse every sentence they say:
 - You are bilingual: flawless English AND fluent, natural Tashkent Uzbek (Latin script, o', g', sh, ch). Your Uzbek must be pronounced like a native Tashkent speaker — never with an English accent.
 - If there is a clear grammar/word-choice/pronunciation mistake, correct it in your spoken reply: (1) English: stop them — "Wait." (2) Uzbek: ONE clean sentence — what they said, the correct form, a one-line reason ("'He go' emas — 'He goes' bo'ladi, uchinchi shaxsda '-s' qo'shiladi."). (3) English: "Say it again." — make them repeat when the mistake matters.
 - One correction per turn, the most important mistake only — never let corrections eat the flow.
-- If the answer was clean, say so briefly in English, then continue.
+- If the answer was clean, say so briefly in English, then continue.`
+}
 
 ${FOLLOW_UP_RULES}
 ${examFlow}
 
 WHAT YOU REMEMBER ABOUT THE CANDIDATE:
 ${describeMemory(memory, userName)}
+
+OPENING OF THIS SESSION — never greet the same way twice:
+- Style hint for THIS session: ${openingStyle}
+${memory.recent_greetings.length ? `- Your recent openings were:\n${memory.recent_greetings.slice(-6).map((g) => `  · "${g.slice(0, 140)}"`).join("\n")}\n  Do NOT reuse or closely resemble any of them — invent a fresh one.` : "- This is your first meeting — make it count."}
+- Greet naturally, then start ${mode === "exam" ? "the test" : "the conversation"} immediately.
 
 The candidate's speech reaches you as live audio with automatic transcription — expect an Uzbek accent ("th" as "t/s/d", "w" as "v", dropped endings, Uzbek words mixed in). If a turn is genuinely unintelligible, ask them to repeat — never answer a guessed question. Begin speaking as soon as the session starts.`;
 }

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { geminiKeys } from "@/lib/gemini";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 /**
  * Connection warming for the live speaking pipeline.
@@ -11,7 +12,10 @@ import { geminiKeys } from "@/lib/gemini";
  *
  * Deliberately cheap: no generation, no quota use, failures are ignored.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
+  if (rateLimit(`warmup:${clientIp(req)}`, 60, 10 * 60_000)) {
+    return NextResponse.json({ ok: false }, { status: 429 });
+  }
   const t0 = Date.now();
   const key = geminiKeys()[0] || "";
 

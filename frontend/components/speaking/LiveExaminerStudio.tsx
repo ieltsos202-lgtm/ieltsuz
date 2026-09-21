@@ -43,6 +43,9 @@ export type StudioPhase =
   | "thinking"
   | "speaking"
   | "prep"
+  // Part 2's individual long turn: the examiner is deliberately silent and just
+  // times the candidate for two minutes, exactly as in the real exam.
+  | "long_turn"
   | "report_loading"
   | "report";
 
@@ -433,11 +436,13 @@ export function StudioSession({
   onlyPart = null,
   cueCard,
   prepSeconds,
+  longTurnSeconds = 0,
   seconds,
   error,
   chatEndRef,
   onInterrupt,
   onSkipPrep,
+  onEndLongTurn = () => {},
   onGenerateReport,
   onExit,
   onResume,
@@ -461,11 +466,15 @@ export function StudioSession({
   onlyPart?: 1 | 2 | 3 | null;
   cueCard: StudioCueCard | null;
   prepSeconds: number;
+  /** Seconds left of the Part 2 long turn (exam mode only). */
+  longTurnSeconds?: number;
   seconds: number;
   error: string | null;
   chatEndRef: RefObject<HTMLDivElement>;
   onInterrupt: () => void;
   onSkipPrep: () => void;
+  /** Candidate finished the Part 2 long turn before the 2 minutes elapsed. */
+  onEndLongTurn?: () => void;
   onGenerateReport: () => void;
   onExit: () => void;
   onResume: () => void;
@@ -475,9 +484,9 @@ export function StudioSession({
 }) {
   const statusText =
     phase === "listening"
-      ? mode === "exam" && examPart === 2
-        ? "Speak for 1–2 minutes"
-        : "Listening…"
+      ? "Listening…"
+      : phase === "long_turn"
+      ? "Speak now — examiner is listening"
       : phase === "thinking"
       ? "…"
       : phase === "speaking"
@@ -486,8 +495,14 @@ export function StudioSession({
       ? "Preparation"
       : "Paused";
 
+  // The candidate is being recorded in both of these phases, so the mic meter
+  // and interim draft must be visible in both.
+  const recording = phase === "listening" || phase === "long_turn";
+
   const lastUser = [...turns].reverse().find((t) => t.role === "user");
-  const liveCorrection = lastUser?.correction ?? null;
+  // Corrections are a chat-mode feature — in an exam nothing is shown
+  // mid-test; the report at the end covers every mistake.
+  const liveCorrection = mode !== "exam" ? lastUser?.correction ?? null : null;
   const lastPartner = [...turns].reverse().find((t) => t.role === "partner");
 
   const hasTurns = turns.length > 0;
@@ -574,14 +589,14 @@ export function StudioSession({
           </button>
           <div className="flex h-6 items-center gap-2 text-sm font-medium text-content-secondary">
             {phase === "thinking" && <Loader2 className="h-4 w-4 animate-spin text-accent" />}
-            {phase === "listening" && (
+            {recording && (
               <span className="h-2 w-2 animate-pulse rounded-full bg-accent-red" />
             )}
             {statusText}
           </div>
 
           {/* Mic level — lets the learner see the mic is actually picking them up */}
-          {phase === "listening" && (
+          {recording && (
             <div className="flex h-3 items-end gap-[3px]" aria-hidden>
               {Array.from({ length: 14 }).map((_, i) => {
                 const active = micLevel * 60 > i;
@@ -606,7 +621,7 @@ export function StudioSession({
 
           {/* Agent 2's draft: the candidate's own words appearing as they
               speak — visible proof the Ear is already listening. */}
-          {phase === "listening" && liveDraft && (
+          {recording && liveDraft && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -672,6 +687,12 @@ export function StudioSession({
                   <Timer className="h-4 w-4" /> {fmt(prepSeconds)}
                 </span>
               )}
+              {phase === "long_turn" && (
+                <span className="flex items-center gap-1.5 rounded-full bg-accent-red/20 px-3 py-1 font-mono text-sm tabular-nums text-accent-red">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-red" />
+                  {fmt(longTurnSeconds)}
+                </span>
+              )}
             </div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-content-secondary">
               You should say:
@@ -685,6 +706,16 @@ export function StudioSession({
               <Button variant="gradient" size="sm" className="mt-4 w-full" onClick={onSkipPrep}>
                 <Mic className="mr-2 h-4 w-4" /> Tayyorman — boshlayman
               </Button>
+            )}
+            {phase === "long_turn" && (
+              <>
+                <p className="mt-4 text-center text-xs text-content-secondary">
+                  Imtihonchi jim turadi va faqat yozib oladi — 2 daqiqa gapiring.
+                </p>
+                <Button variant="outline" size="sm" className="mt-2 w-full" onClick={onEndLongTurn}>
+                  Tugatdim
+                </Button>
+              </>
             )}
           </motion.div>
         )}

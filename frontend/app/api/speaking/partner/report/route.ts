@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
+import {
+  parseJSONFromText,
+  generateWithFallback,
+  QuotaError,
+  LIVE_MODEL_CHAIN,
+} from "@/lib/gemini";
 import { getAuth, updateSpeakingProgress } from "@/lib/supabaseServer";
 import { rateLimit, clientIp } from "@/lib/rateLimit";
 import { computeSessionMetrics, describeMetrics } from "@/lib/speaking/metrics";
 
 const REPORT_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
+// The report model chain: the configured model first, then every other
+// audio-capable Flash model. generateWithFallback walks this against every
+// configured API key, so a rate-limited key or an overloaded model no longer
+// costs the candidate their entire finished test.
+const REPORT_MODELS = [REPORT_MODEL, ...LIVE_MODEL_CHAIN.filter((m) => m !== REPORT_MODEL)];
+// This JSON is long — four criteria with bilingual evidence, five corrections
+// and three drills. At the default 8192 it could truncate mid-object, which
+// surfaced as an unparseable response rather than an obvious cap.
+const REPORT_MAX_TOKENS = 16384;
+// Inline audio ceiling. base64 inflates this by ~4/3 and the prompt rides
+// along, so 8MB of audio leaves comfortable headroom under the API's inline
+// request limit. The live path's 3-minute WAV is ~5.8MB and fits whole.
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
 
 function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;
@@ -46,15 +64,22 @@ export async function POST(req: NextRequest) {
 
     // All the candidate's recorded turns (webm blobs), in order — lets Gemini
     // assess real pronunciation, pace, pauses and fillers, not just text.
+    // Oldest-first, and stop once the inline budget is spent: the live path can
+    // send a 3-minute WAV, and silently blowing the request limit used to lose
+    // the report entirely.
     const audioFiles = (formData.getAll("audio") as File[]).slice(0, 25);
-    const audioParts = await Promise.all(
-      audioFiles.map(async (f) => ({
+    const audioParts: { inlineData: { mimeType: string; data: string } }[] = [];
+    let audioBytes = 0;
+    for (const f of audioFiles) {
+      if (audioBytes + f.size > MAX_AUDIO_BYTES) continue;
+      audioBytes += f.size;
+      audioParts.push({
         inlineData: {
           mimeType: f.type || "audio/webm",
           data: Buffer.from(await f.arrayBuffer()).toString("base64"),
         },
-      }))
-    );
+      });
+    }
 
     // Measured speaking time per answer, sent by the client (0 if unavailable).
     let speakingSeconds = 0;
@@ -157,25 +182,64 @@ RULES FOR corrected_examples: the TOP 5 RECURRING errors, most frequent first �
 RULES FOR drills: exactly 3 concrete, doable drills targeting the recurring errors above — instructions in Uzbek, the example sentence in English.
 The pronunciation band is an ESTIMATE from audio/notes — say so in its first evidence line.`;
 
-    const model = getModel(REPORT_MODEL, true);
+    // Generate and parse as one unit: a truncated or fence-mangled response is
+    // a failed attempt, not a dead request, so it falls through to the next
+    // model/key like any other error would.
+    const attempt = async (withAudio: boolean) => {
+      const raw = await generateWithFallback(
+        withAudio ? [{ text: prompt }, ...audioParts] : [{ text: prompt }],
+        {
+          // The audio attempt stays on one model but still rotates every key —
+          // key rotation is what recovers a quota failure, and re-sending a
+          // multi-megabyte payload across the whole model chain would exhaust
+          // the worker's CPU budget before it ever succeeded. The cheap
+          // audio-less attempt gets the full chain.
+          models: withAudio ? [REPORT_MODEL] : REPORT_MODELS,
+          config: { maxOutputTokens: REPORT_MAX_TOKENS },
+        }
+      );
+      return parseJSONFromText(raw);
+    };
 
-    let result;
+    let parsed: any = null;
+    let audioUsed = audioParts.length > 0;
+    let quotaHit = false;
+    let lastErr: unknown = null;
+
     try {
-      result = await model.generateContent([{ text: prompt }, ...audioParts]);
-    } catch (e: any) {
-      const msg = e?.message || "";
-      const isQuota = msg.includes("quota") || msg.includes("429") || msg.includes("billing");
+      parsed = await attempt(audioUsed);
+    } catch (e) {
+      lastErr = e;
+      quotaHit = e instanceof QuotaError;
+    }
+
+    // Last resort: drop the audio. If the attachment is what the API is
+    // rejecting (too large, unsupported container), the transcript plus the
+    // per-turn notes — whose pronunciation bands came from the audio while the
+    // session was live — still make a real report. Losing a finished test is
+    // never the better outcome.
+    if (!parsed && audioUsed) {
+      try {
+        parsed = await attempt(false);
+        audioUsed = false;
+        console.warn("Report: audio-less fallback succeeded after:", lastErr);
+      } catch (e) {
+        lastErr = e;
+        quotaHit = quotaHit || e instanceof QuotaError;
+      }
+    }
+
+    if (!parsed) {
+      console.error("Speaking partner report generation failed:", lastErr);
       return NextResponse.json(
         {
-          error: isQuota
+          error: quotaHit
             ? "AI xizmati hozircha band (limit). Bir ozdan keyin qayta urinib ko'ring."
             : "Hisobot tayyorlashda xatolik. Qayta urinib ko'ring.",
         },
         { status: 503 }
       );
     }
-
-    const parsed = parseJSONFromText(result.response.text());
 
     const crit = (c: any) => ({
       band: roundHalf(c?.band),
@@ -187,7 +251,12 @@ The pronunciation band is an ESTIMATE from audio/notes — say so in its first e
       grammatical_range: crit(parsed.criteria?.grammatical_range),
       pronunciation: {
         ...crit(parsed.criteria?.pronunciation),
-        signal_available: parsed.criteria?.pronunciation?.signal_available !== false,
+        // Honest even when the audio-less fallback ran: the per-turn bands were
+        // themselves derived from audio while the session was live, so they
+        // still count as signal — nothing else does.
+        signal_available:
+          parsed.criteria?.pronunciation?.signal_available !== false &&
+          (audioUsed || evals.some((e) => e?.pronunciation != null)),
       },
     };
     const avg =
@@ -254,13 +323,20 @@ The pronunciation band is an ESTIMATE from audio/notes — say so in its first e
     } catch (e) {
       console.error("speaking_results insert failed (partner report):", e);
     }
-    await updateSpeakingProgress(supabase, user.id, {
-      bandScore: report.overall_band,
-      grammarErrors: report.corrected_examples.map((c: any) => ({
-        error: c.said,
-        correction: c.better,
-      })),
-    });
+    // Also best-effort: the report is already generated and the session is
+    // over, so a progress-tracking hiccup must never be what the candidate
+    // sees instead of their band score.
+    try {
+      await updateSpeakingProgress(supabase, user.id, {
+        bandScore: report.overall_band,
+        grammarErrors: report.corrected_examples.map((c: any) => ({
+          error: c.said,
+          correction: c.better,
+        })),
+      });
+    } catch (e) {
+      console.error("updateSpeakingProgress failed (partner report):", e);
+    }
 
     return NextResponse.json(report);
   } catch (error: any) {

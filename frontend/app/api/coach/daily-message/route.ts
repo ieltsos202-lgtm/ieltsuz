@@ -92,13 +92,15 @@ RULES:
 - If a skill has not been practiced recently or ever, gently nudge them toward it by name.
 - If there is no data at all, give a friendly first-day welcome nudging them to try their first test.
 - Do not use generic filler like "keep up the good work" without specifics.
-- Write in clear, friendly English.
+- WRITE THE MESSAGE IN UZBEK (latin script), warm and friendly, like a real teacher talking to a student.
+  IELTS skill names (Listening, Reading, Writing, Speaking) stay in English.
+  Example tone: "Fayzullo, kecha Reading'da 6.0 oldingiz — zo'r! Bugun Listening'ni sinab ko'ramizmi?"
 
 Return ONLY this JSON: {"message": "the daily message", "focus_skill": "listening|reading|writing|speaking|null"}`;
 
     let message = hasAnyData
-      ? `Hi ${name}! Ready for today's practice? Pick a skill and keep your streak going.`
-      : `Welcome, ${name}! Take your first practice test today to start tracking your progress toward band ${profile?.target_band ?? 7}.`;
+      ? `${name}, bugungi mashqqa tayyormisiz? Bitta bo'limni tanlab, ketma-ketlikni uzmang.`
+      : `${name}, xush kelibsiz! Band ${profile?.target_band ?? 7} sari yo'lni boshlash uchun bugun birinchi mashqni topshirib ko'ring.`;
 
     try {
       const ai = await generateJSON(prompt);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import writingPrompts from "@/data/writing_prompts.json";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 async function localPrompt(taskType: string): Promise<{ question: string; chart_data?: any } | null> {
   try {
@@ -18,9 +19,20 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const taskType = url.searchParams.get("task_type") === "task1" ? "task1" : "task2";
 
+  // Unauthenticated AI call — cap it, and skip the model entirely once the
+  // limit is hit (the local bank below still serves a prompt).
+  const limited = rateLimit(`writing-gen:${clientIp(req)}`, 20, 10 * 60_000);
+  if (limited) {
+    const local = await localPrompt(taskType);
+    if (local) {
+      return NextResponse.json({ question: local.question, chart_data: local.chart_data || null });
+    }
+  }
+
   // Generate a fresh, exam-realistic prompt with Gemini (our "latest
   // questions" source). Fall back to the local bank, then a static default.
   try {
+    if (limited) throw new Error("rate-limited");
     if (taskType === "task1") {
       const data = await generateJSON(
         `Generate one recent, realistic IELTS Academic Writing Task 1 prompt.

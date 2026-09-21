@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
+import { parseJSONFromText, generateWithFallback, LIVE_MODEL_CHAIN } from "@/lib/gemini";
 import { getAuth } from "@/lib/supabaseServer";
 import { loadSpeakingMemory, saveSpeakingMemory } from "@/lib/speakingMemory";
 
 const MODEL = process.env.PARTNER_MODEL || "gemini-3.6-flash";
+const MODELS = [MODEL, ...LIVE_MODEL_CHAIN.filter((m) => m !== MODEL)];
 
 interface Turn {
   role: "user" | "partner";
@@ -24,10 +25,22 @@ export async function POST(req: NextRequest) {
     const userTurns = turns.filter((t) => t.role === "user" && t.text?.trim());
     const memory = await loadSpeakingMemory(supabase, user.id);
 
+    // Remember how this session opened so the next greeting is different.
+    const firstPartner = turns.find((t) => t.role === "partner" && t.text?.trim())?.text?.trim();
+    const recentGreetings = memory.recent_greetings.slice();
+    if (
+      firstPartner &&
+      !recentGreetings.some((g) => g.trim().toLowerCase() === firstPartner.toLowerCase())
+    ) {
+      recentGreetings.push(firstPartner.slice(0, 300));
+    }
+    const greetingUpdate = { recent_greetings: recentGreetings.slice(-8) };
+
     if (userTurns.length === 0) {
       await saveSpeakingMemory(supabase, user.id, {
         sessions: memory.sessions + 1,
         last_session_at: new Date().toISOString(),
+        ...greetingUpdate,
       });
       return NextResponse.json({ ok: true });
     }
@@ -57,17 +70,24 @@ Return ONLY JSON:
   "topics": ["up to 15 topics already discussed (merged)"]
 }`;
 
-    const model = getModel(MODEL, true, {
-      maxOutputTokens: 900,
-      temperature: 0.4,
-      thinkingConfig: { thinkingBudget: 0 },
-    });
-
+    // Best-effort: on total failure the existing memory is kept untouched
+    // rather than overwritten with blanks (see the ?? fallbacks below).
     let parsed: any = {};
     try {
-      const res = await model.generateContent(prompt);
-      parsed = parseJSONFromText(res.response.text());
-    } catch {
+      const raw = await generateWithFallback([{ text: prompt }], {
+        models: MODELS,
+        config: {
+          maxOutputTokens: 900,
+          temperature: 0.4,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+        validate: (t) => {
+          parseJSONFromText(t);
+        },
+      });
+      parsed = parseJSONFromText(raw);
+    } catch (e) {
+      console.warn("Speaking memory consolidation failed:", e);
       parsed = {};
     }
 
@@ -85,6 +105,7 @@ Return ONLY JSON:
       topics: list(parsed.topics, 15) ?? memory.topics,
       sessions: memory.sessions + 1,
       last_session_at: new Date().toISOString(),
+      ...greetingUpdate,
     });
 
     return NextResponse.json({ ok: true });

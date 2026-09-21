@@ -13,9 +13,9 @@ function timeAgo(iso: string | null): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
-  if (hours < 1) return "just now";
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  if (hours < 1) return "hozir";
+  if (hours < 24) return `${hours} soat oldin`;
+  return `${Math.floor(hours / 24)} kun oldin`;
 }
 
 export function RecentActivity({
@@ -25,10 +25,11 @@ export function RecentActivity({
 }) {
   return (
     <Card>
-      <CardTitle>Recent activity</CardTitle>
+      <CardTitle>So&apos;nggi mashg&apos;ulotlar</CardTitle>
       {activity.length === 0 ? (
         <p className="mt-4 text-sm text-content-secondary">
-          No activity yet. Start a practice session to see your history here.
+          Hali mashg&apos;ulot yo&apos;q. Birinchi mashqni boshlasangiz, natijalar shu yerda
+          ko&apos;rinadi.
         </p>
       ) : (
         <ul className="mt-4 space-y-3">

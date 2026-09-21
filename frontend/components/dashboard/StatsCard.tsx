@@ -27,11 +27,13 @@ export function StatsCard({
     <Card className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-2xl">{icon}</span>
-        <span className={`flex items-center gap-1 text-xs font-medium ${trendColor}`}>
-          <Trend className="h-3 w-3" />
-          {delta > 0 ? "+" : ""}
-          {delta.toFixed(1)} this week
-        </span>
+        {delta !== 0 && (
+          <span className={`flex items-center gap-1 text-xs font-medium ${trendColor}`}>
+            <Trend className="h-3 w-3" />
+            {delta > 0 ? "+" : ""}
+            {delta.toFixed(1)} bu hafta
+          </span>
+        )}
       </div>
       <div>
         <p className="text-sm text-content-secondary">{label}</p>

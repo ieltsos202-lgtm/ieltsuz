@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 import { generateJSON } from "@/lib/gemini";
+import { rateLimit } from "@/lib/rateLimit";
 
 // Given a word selected while reading/listening, generate its IELTS-friendly
 // definition, Uzbek translation, IPA pronunciation and two example sentences,
@@ -19,6 +20,11 @@ export async function POST(req: NextRequest) {
 
     if (!rawWord || rawWord.length > 60) {
       return NextResponse.json({ error: "Invalid word" }, { status: 400 });
+    }
+
+    // Each new word is a paid AI call — cap per user.
+    if (rateLimit(`vocab-lookup:${user.id}`, 60, 10 * 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov." }, { status: 429 });
     }
 
     // Normalize for duplicate detection (strip surrounding punctuation).

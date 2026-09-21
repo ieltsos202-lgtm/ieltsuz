@@ -47,10 +47,10 @@ const nav: NavItem[] = [
     children: [
       { label: "Listening", href: "/listening", icon: Headphones },
       { label: "Reading", href: "/reading", icon: BookOpen },
+      { label: "Writing", href: "/writing", icon: PenLine },
       { label: "Mock Test", href: "/mock-test", icon: ClipboardCheck },
     ],
   },
-  { label: "Writing", href: "/writing", icon: PenLine },
   { label: "Speaking", href: "/speaking", icon: Mic },
   { label: "Games", href: "/game", icon: Gamepad2 },
   { label: "Vocabulary", href: "/vocabulary", icon: Library },

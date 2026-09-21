@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/supabaseServer";
 import { generateText } from "@/lib/gemini";
+import { rateLimit } from "@/lib/rateLimit";
 
 type Skill = "listening" | "reading" | "writing" | "speaking";
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
@@ -82,6 +83,14 @@ export async function POST(req: NextRequest) {
     const message = (body.message || "").toString().trim();
     if (!message) return NextResponse.json({ error: "Empty message" }, { status: 400 });
     if (message.length > 2000) return NextResponse.json({ error: "Message too long" }, { status: 400 });
+
+    // Each message is a paid AI call — cap per user so it cannot be scripted.
+    if (rateLimit(`coach-chat:${user.id}`, 30, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p xabar. Biroz kutib qayta yozing." },
+        { status: 429 }
+      );
+    }
 
     const uid = user.id;
 

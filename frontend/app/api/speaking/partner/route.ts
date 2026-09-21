@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateWithFallback, parseJSONFromText, QuotaError } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, trialDenied } from "@/lib/supabaseServer";
 import { describeMemory, loadSpeakingMemory, type SpeakingMemory } from "@/lib/speakingMemory";
 
 export type PartnerEmotion =
@@ -57,8 +57,9 @@ TEST STRUCTURE (the current part is given below — follow the stage instruction
 EXAMINER BEHAVIOR — BE A REAL PERSON:
 - Ask ONE question at a time. Never stack multiple questions.
 - Keep your own turns SHORT — 1 to 3 spoken sentences. Talk like you're actually sitting in the room: use contractions, "right?", "okay?", "so...", natural pauses.
-- React like a human. If they say something silly or give a one-word answer, tease them. "That's all? My grandmother says more than that." If they make a grammar or pronunciation mistake, correct them on the spot: stop them in English, explain in ONE clean Uzbek sentence ("'He go' emas, 'He goes' bo'ladi — uchinchi shaxsda '-s' qo'shiladi."), then "Try again." in English.
-- If they clearly don't understand, explain in ONE short, correct Uzbek sentence, then continue in English.
+- React like a human to CONTENT. If they give a one-word answer, push for more: "That's all? Tell me more."
+- NEVER correct, explain, praise or criticise their English during the test — a real examiner never does. No "Wait.", no "Say it again.", no quoting their mistake, no giving the correct form. After each answer give a brief neutral acknowledgement ("Thank you.", "I see.", "Okay.") and continue. Every mistake is noted silently for the end-of-test report.
+- If they clearly don't understand the QUESTION, rephrase it once in simpler English, then continue.
 - Do not be overly polite or robotic. No "Great answer!" No emojis. No markdown. No "As an AI". Never mention the app, the UI, or band scores mid-test.
 - If they go off topic, redirect naturally: "Alright, let's get back to the question..."
 - Adapt vocabulary difficulty slightly, but never make it obvious.
@@ -192,10 +193,8 @@ export async function POST(req: NextRequest) {
       const trial = await checkAndDecrementTrial(req, "speaking");
       charged = trial;
       if (!trial.ok) {
-        return NextResponse.json(
-          { error: "Trial limit reached. Please upgrade to Pro." },
-          { status: 402 }
-        );
+        const denied = trialDenied(trial);
+        return NextResponse.json({ error: denied.error }, { status: denied.status });
       }
     }
 

@@ -63,7 +63,17 @@ export class QuotaError extends Error {}
  */
 export async function generateWithFallback(
   parts: (string | Part)[],
-  options?: { models?: string[]; config?: Record<string, unknown>; jsonMode?: boolean }
+  options?: {
+    models?: string[];
+    config?: Record<string, unknown>;
+    jsonMode?: boolean;
+    /**
+     * Reject a syntactically valid but unusable response (e.g. JSON truncated
+     * by the token cap). Throwing here retires this attempt and moves to the
+     * next model, instead of handing the caller something it cannot parse.
+     */
+    validate?: (text: string) => void;
+  }
 ): Promise<string> {
   const models = options?.models?.length ? options.models : LIVE_MODEL_CHAIN;
   const keys = API_KEYS.length ? API_KEYS : [API_KEY];
@@ -87,8 +97,11 @@ export async function generateWithFallback(
           });
           const res = await model.generateContent(parts as Part[]);
           const text = res.response.text();
-          if (text && text.trim()) return text;
-          break; // empty response — next key/model
+          if (!text || !text.trim()) break; // empty response — next key/model
+          // A validation throw lands in the catch below and is treated as a
+          // non-quota error, i.e. worth trying a different model.
+          options?.validate?.(text);
+          return text;
         } catch (err) {
           lastErr = err;
           if (isExhausted(err)) {
@@ -113,10 +126,14 @@ export async function generateWithFallback(
 
 // Low temperature => consistent, reproducible IELTS band scoring.
 // JSON response mode => no markdown fences, far fewer parse failures.
+// The token cap is deliberately generous: a writing evaluation carries a full
+// band-8 model answer plus bilingual feedback, and truncation surfaces as an
+// unparseable response rather than an obvious limit. The cap costs nothing
+// unless it is actually used.
 const JSON_CONFIG: GenerationConfig = {
   temperature: 0.2,
   topP: 0.9,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,
   responseMimeType: "application/json",
 };
 
@@ -173,50 +190,69 @@ export function parseJSONFromText(text: string): any {
   }
 }
 
+/** Requested models first, then the rest of the chain, de-duplicated. */
+function modelChain(primary: string, fallback?: string): string[] {
+  const wanted = [primary, fallback, ...LIVE_MODEL_CHAIN].filter(
+    (m): m is string => !!m
+  );
+  return Array.from(new Set(wanted));
+}
+
+/** Turn an internal failure into something safe to show a user. */
+function friendlyAiError(err: unknown): Error {
+  if (err instanceof QuotaError) {
+    return new QuotaError(
+      "AI xizmati hozircha band (limit). Bir ozdan keyin qayta urinib ko'ring."
+    );
+  }
+  return new Error("AI javob bera olmadi. Iltimos, keyinroq qayta urinib ko'ring.");
+}
+
 /**
- * Generate plain text with retries + model fallback.
- * Handles transient 503/429 by trying multiple models with exponential backoff.
+ * Generate plain text, walking every model in the chain against every
+ * configured API key with backoff. Previously this used only the primary key,
+ * so the spare GEMINI_API_KEY_2..10 did nothing for most of the app and a
+ * single exhausted key took the feature down.
  */
 export async function generateText(
   prompt: string,
   options?: { primary?: string; fallback?: string; maxRetries?: number; jsonMode?: boolean }
 ): Promise<string> {
-  const { primary = "gemini-3.6-flash", fallback = "gemini-3.5-flash", maxRetries = 2, jsonMode = false } = options || {};
-  const models = [primary, fallback].filter(Boolean);
-
-  for (const modelName of models) {
-    const model = getModel(modelName, jsonMode);
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        if (text && text.trim()) return text.trim();
-      } catch (err: any) {
-        const status = err?.status || 0;
-        // 503 = service unavailable, 429 = rate limit — retry with longer backoff
-        const isRetryable = status === 503 || status === 429 || !status;
-        if (!isRetryable || attempt === maxRetries) {
-          // Last attempt for this model failed — try next model
-          break;
-        }
-        // Exponential backoff: 1s, 3s, 7s
-        await new Promise((r) => setTimeout(r, 1000 * (Math.pow(2, attempt) - 0.5)));
-      }
-    }
+  const {
+    primary = "gemini-3.6-flash",
+    fallback = "gemini-3.5-flash",
+    jsonMode = false,
+  } = options || {};
+  try {
+    const text = await generateWithFallback([{ text: prompt }], {
+      models: modelChain(primary, fallback),
+      jsonMode,
+    });
+    return text.trim();
+  } catch (err) {
+    throw friendlyAiError(err);
   }
-
-  throw new Error("AI javob bera olmadi. Iltimos, keyinroq qayta urinib ko'ring.");
 }
 
 /**
- * Generate a JSON result with retries + model fallback.
- * Uses JSON response mode for reliability.
+ * Generate a JSON result across the full model/key chain. A response that
+ * cannot be parsed (usually truncated output) is treated as a failed attempt
+ * and retried on the next model rather than thrown at the caller.
  */
 export async function generateJSON(
   prompt: string,
   modelName = "gemini-3.6-flash",
   retries = 2
 ): Promise<any> {
-  const text = await generateText(prompt, { primary: modelName, fallback: "gemini-3.5-flash", maxRetries: retries, jsonMode: true });
-  return parseJSONFromText(text);
+  try {
+    const text = await generateWithFallback([{ text: prompt }], {
+      models: modelChain(modelName, "gemini-3.5-flash"),
+      validate: (t) => {
+        parseJSONFromText(t);
+      },
+    });
+    return parseJSONFromText(text);
+  } catch (err) {
+    throw friendlyAiError(err);
+  }
 }

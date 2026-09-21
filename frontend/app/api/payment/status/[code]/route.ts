@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient, getAdminClient } from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest, { params }: { params: { code: string } }) {
   try {
+    // Unauthenticated by design (QR flow) — so cap lookups per IP to keep the
+    // code space from being enumerated.
+    if (rateLimit(`pay-status:${clientIp(req)}`, 60, 10 * 60_000)) {
+      return NextResponse.json({ error: "Juda ko'p so'rov." }, { status: 429 });
+    }
     // Code-based lookup: works without a session (e.g. phone scanning a QR
     // from a logged-in desktop). Falls back to the token client if no
     // service-role key is configured.

@@ -1,22 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Headphones, BookOpen, PenLine, Mic, AlertTriangle, Target, Calendar, Clock, BookOpen as BookIcon, Sparkles, Gift, Copy, Check, GraduationCap, Crown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Gift, Copy, Check, GraduationCap, Crown } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { formatExpiry } from "@/lib/pro";
 import { useProgress } from "@/hooks/useProgress";
 import { useStudyPlan } from "@/hooks/useStudyPlan";
-import { apiGet } from "@/lib/api";
-import { getFocusAreasText, getTodaysGoal } from "@/lib/dashboardHelpers";
+import { useStudyPrefs } from "@/hooks/useStudyPrefs";
+import { apiGet, apiPatch } from "@/lib/api";
+import { getFocusAreasText } from "@/lib/dashboardHelpers";
+import {
+  buildDailySchedule,
+  buildHomework,
+  currentStreak,
+  formatDateUz,
+  toISODate,
+  weakestSkills,
+} from "@/lib/dailyPlan";
 import { daysUntil } from "@/lib/utils";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RadarChart } from "@/components/dashboard/RadarChart";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { ExamCountdown } from "@/components/dashboard/ExamCountdown";
+import { TodayPlan } from "@/components/dashboard/TodayPlan";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import type { Skill } from "@/lib/types";
 
@@ -27,17 +38,11 @@ const SKILL_META: { key: Skill; label: string; icon: string }[] = [
   { key: "speaking", label: "Speaking", icon: "🎙️" },
 ];
 
-const QUICK_START = [
-  { href: "/listening", label: "Listening", desc: "Cambridge audio tests", icon: Headphones, color: "text-accent" },
-  { href: "/reading", label: "Reading", desc: "Interactive passages", icon: BookOpen, color: "text-accent-purple" },
-  { href: "/writing", label: "Writing", desc: "AI examiner feedback", icon: PenLine, color: "text-accent-green" },
-  { href: "/speaking", label: "Speaking", desc: "Voice + pronunciation", icon: Mic, color: "text-accent-yellow" },
-];
-
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { overview, loading } = useProgress();
-  const { plan: studyPlan, loading: planLoading } = useStudyPlan();
+  const { plan: studyPlan } = useStudyPlan();
+  const { prefs, setStartHour, toggleDone } = useStudyPrefs();
   const {
     active: proActive,
     expiresAt: proExpiresAt,
@@ -47,9 +52,34 @@ export default function DashboardPage() {
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [dailyMessage, setDailyMessage] = useState<string | null>(null);
-  const days = daysUntil(profile?.exam_date);
+  // Set locally after saving so the countdown appears without refetching the profile.
+  const [savedExamDate, setSavedExamDate] = useState<string | null>(null);
+
+  const examDate = savedExamDate ?? profile?.exam_date ?? null;
+  const days = daysUntil(examDate);
   const target = profile?.target_band ?? 6.5;
-  const firstName = (profile?.full_name || "there").split(" ")[0];
+  const firstName = (profile?.full_name || "do'stim").split(" ")[0];
+
+  // One stable "today" per mount keeps the generated plan from shifting mid-session.
+  const today = useMemo(() => new Date(), []);
+  const iso = toISODate(today);
+  const weak = useMemo(() => weakestSkills(overview, profile), [overview, profile]);
+  const blocks = useMemo(
+    () => buildDailySchedule(studyPlan, prefs, weak, today),
+    [studyPlan, prefs, weak, today]
+  );
+  const homework = useMemo(() => buildHomework(studyPlan, weak, today), [studyPlan, weak, today]);
+  const doneIds = prefs.done?.[iso] ?? [];
+  const streak = currentStreak(prefs, today);
+
+  const saveExamDate = async (date: string) => {
+    try {
+      await apiPatch("/api/auth/me", { exam_date: date });
+      setSavedExamDate(date);
+    } catch {
+      // Keep the form usable; the user can retry.
+    }
+  };
 
   const copyReferralCode = () => {
     if (!profile?.promo_code) return;
@@ -67,7 +97,6 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
 
-  const todaysGoal = getTodaysGoal(overview, studyPlan, profile);
   const focusText = getFocusAreasText(overview, studyPlan, profile, recommendation);
 
   const radarData = SKILL_META.map((s) => ({
@@ -78,20 +107,26 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Welcome banner */}
-      <Card className="bg-gradient-to-r from-accent/15 to-accent-purple/10">
-        <h1 className="text-2xl font-bold">
-          Hello, {firstName}! 👋
-        </h1>
-        <p className="mt-1 text-content-secondary">
-          {days !== null
-            ? `Your exam is in ${days} days. `
-            : studyPlan
-              ? `Estimated readiness: ${studyPlan.estimated_readiness_date}. `
-              : "Set your exam date in your profile. "}
-          Today&apos;s goal: <span className="text-content-primary font-medium">{todaysGoal}</span>
-        </p>
-      </Card>
+      {/* Exam countdown + study load */}
+      <ExamCountdown
+        firstName={firstName}
+        examDate={examDate}
+        daysLeft={days}
+        plan={studyPlan}
+        streak={streak}
+        onSaveExamDate={saveExamDate}
+      />
+
+      {/* Today's timetable + homework */}
+      <TodayPlan
+        dateLabel={formatDateUz(today, true)}
+        blocks={blocks}
+        homework={homework}
+        doneIds={doneIds}
+        startHour={prefs.start_hour}
+        onToggle={(id) => toggleDone(iso, id)}
+        onStartHour={setStartHour}
+      />
 
       {/* Daily AI Coach message */}
       {dailyMessage && (
@@ -101,7 +136,7 @@ export default function DashboardPage() {
               <GraduationCap className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-accent">Your AI Coach — Today</p>
+              <p className="text-xs font-semibold text-accent">AI ustozingizdan — bugun</p>
               <p className="mt-1 text-sm text-content-secondary">{dailyMessage}</p>
             </div>
           </div>
@@ -135,7 +170,9 @@ export default function DashboardPage() {
       {/* Trial usage */}
       {profile && !proActive && (
         <Card className="border-accent-yellow/30 bg-accent-yellow/5">
-          <p className="text-sm font-semibold text-accent-yellow">Free Trials Remaining</p>
+          <p className="text-sm font-semibold text-accent-yellow">
+            Bepul sinov mashg&apos;ulotlari qoldi
+          </p>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {[
               { label: "Listening", val: profile.trial_listening_remaining ?? 0 },
@@ -161,8 +198,9 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Referral / bonus card */}
-      {profile?.promo_code && (
+      {/* Referral / bonus card — trial bonuses are meaningless on Pro,
+          so the card is hidden while the subscription is active. */}
+      {profile?.promo_code && !proActive && (
         <Card className="border-accent/30 bg-gradient-to-br from-accent/10 to-accent-purple/10">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/15">
@@ -197,64 +235,6 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* AI Study Plan Card */}
-      {!planLoading && studyPlan && (
-        <Card className="border-accent/30 bg-gradient-to-br from-accent/5 to-accent-purple/5">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/15">
-              <Sparkles className="h-6 w-6 text-accent" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold">Your AI Study Plan</h2>
-                  <p className="text-sm text-content-secondary">
-                    {studyPlan.current_level} → Band {(studyPlan.target_band ?? 6.5).toFixed(1)}
-                  </p>
-                </div>
-                <Link href="/mock-test">
-                  <Button variant="gradient" size="sm">
-                    Start Mock Test
-                  </Button>
-                </Link>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-lg bg-bg-tertiary/50 p-3 text-center">
-                  <Clock className="mx-auto h-4 w-4 text-accent" />
-                  <p className="mt-1 text-lg font-bold">{studyPlan.estimated_days}</p>
-                  <p className="text-[10px] text-content-secondary">days left</p>
-                </div>
-                <div className="rounded-lg bg-bg-tertiary/50 p-3 text-center">
-                  <BookIcon className="mx-auto h-4 w-4 text-accent-purple" />
-                  <p className="mt-1 text-lg font-bold">{studyPlan.mocks_per_week}</p>
-                  <p className="text-[10px] text-content-secondary">mocks/week</p>
-                </div>
-                <div className="rounded-lg bg-bg-tertiary/50 p-3 text-center">
-                  <Target className="mx-auto h-4 w-4 text-accent-green" />
-                  <p className="mt-1 text-lg font-bold">{studyPlan.daily_study_hours}h</p>
-                  <p className="text-[10px] text-content-secondary">daily study</p>
-                </div>
-                <div className="rounded-lg bg-bg-tertiary/50 p-3 text-center">
-                  <Calendar className="mx-auto h-4 w-4 text-accent-yellow" />
-                  <p className="mt-1 text-lg font-bold">{studyPlan.estimated_readiness_date}</p>
-                  <p className="text-[10px] text-content-secondary">ready by</p>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(studyPlan.focus_skills ?? []).map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium text-accent"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
       {loading ? (
         <LoadingSpinner />
       ) : (
@@ -275,9 +255,9 @@ export default function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Radar */}
             <Card>
-              <CardTitle>Skill overview</CardTitle>
+              <CardTitle>Bo&apos;limlar bo&apos;yicha ko&apos;rsatkich</CardTitle>
               <p className="mb-2 text-sm text-content-secondary">
-                Current vs target band ({target.toFixed(1)})
+                Hozirgi natija va maqsad ({target.toFixed(1)}) solishtirilgan
               </p>
               <RadarChart data={radarData} />
             </Card>
@@ -290,33 +270,10 @@ export default function DashboardPage() {
           <Card className="flex items-start gap-3 border-accent-yellow/40">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-accent-yellow" />
             <div>
-              <p className="font-medium">Focus Areas</p>
+              <p className="font-medium">Nimaga e&apos;tibor berish kerak</p>
               <p className="text-sm text-content-secondary">{focusText}</p>
             </div>
           </Card>
-
-          {/* Quick start */}
-          <div>
-            <h2 className="mb-4 text-lg font-semibold">Quick start</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {QUICK_START.map((q) => (
-                <Card key={q.href} className="flex flex-col gap-4">
-                  <div className="inline-flex w-fit rounded-[var(--radius)] bg-bg-tertiary p-3">
-                    <q.icon className={`h-6 w-6 ${q.color}`} />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{q.label}</p>
-                    <p className="text-sm text-content-secondary">{q.desc}</p>
-                  </div>
-                  <Link href={q.href} className="mt-auto">
-                    <Button variant="outline" size="sm" className="w-full">
-                      Start
-                    </Button>
-                  </Link>
-                </Card>
-              ))}
-            </div>
-          </div>
         </>
       )}
     </div>

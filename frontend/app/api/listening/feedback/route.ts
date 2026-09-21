@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, trialDenied } from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 function listeningBand(correct: number): number {
   if (correct >= 39) return 9.0;
@@ -27,8 +28,30 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { test_id, test_title, correct_count, total, wrong_answers, time_spent_sec, unanswered } = body;
 
-    const band = listeningBand(correct_count);
-    const wrong = wrong_answers || [];
+    // Charge the credit BEFORE the AI call — previously the Gemini request ran
+    // first, so a user with zero credits still consumed AI quota and the work
+    // was discarded when the check failed.
+    const trial = await checkAndDecrementTrial(req, "listening");
+    if (!trial.ok) {
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
+    }
+    if (rateLimit(`listening-fb-ip:${clientIp(req)}`, 20, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." },
+        { status: 429 }
+      );
+    }
+
+    const correct = Math.max(0, Math.min(60, Math.round(Number(correct_count) || 0)));
+    const band = listeningBand(correct);
+    // Cap the per-question payload: it is stringified verbatim into the prompt.
+    const wrong = (Array.isArray(wrong_answers) ? wrong_answers : []).slice(0, 40).map((w: any) => ({
+      question_number: Math.round(Number(w?.question_number) || 0),
+      user_answer: String(w?.user_answer ?? "").slice(0, 200),
+      correct_answer: String(w?.correct_answer ?? "").slice(0, 200),
+      question_text: String(w?.question_text ?? "").slice(0, 500),
+    }));
     const timeSec = Number(time_spent_sec) || 0;
     const skipped: number[] = Array.isArray(unanswered) ? unanswered : [];
 
@@ -36,8 +59,8 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are a senior, certified IELTS Listening examiner and tutor.
 
-Test: ${test_title || "Listening Test"}
-Score: ${correct_count}/${total || 40} correct  →  Band ${band}
+Test: ${String(test_title || "Listening Test").slice(0, 120)}
+Score: ${correct}/${total || 40} correct  →  Band ${band}
 ${timeSec ? `Time spent: ${Math.floor(timeSec / 60)} min ${timeSec % 60} sec (standard test time: 30 min + 10 min transfer).` : ""}
 ${skipped.length ? `Questions left UNANSWERED: ${skipped.join(", ")} — comment on time management / avoidance patterns.` : ""}
 
@@ -46,14 +69,14 @@ ${
     ? `The candidate's WRONG answers (with the correct answers) are listed below. For EACH one, analyse precisely why a learner would have made that specific mistake (e.g. spelling, plural/singular, distractor in the audio, paraphrase they missed, number/date format) and give a concrete, actionable tip to avoid it next time.
 WRONG ANSWERS:
 ${JSON.stringify(wrong, null, 2)}`
-    : `No per-question data was captured. Base your analysis on the score (${correct_count}/40) and the most common IELTS Listening failure patterns for this band, and be honest that this is general guidance.`
+    : `No per-question data was captured. Base your analysis on the score (${correct}/40) and the most common IELTS Listening failure patterns for this band, and be honest that this is general guidance.`
 }
 
 WRITE BILINGUALLY: every explanation/tip/feedback first in clear English, then the same point in natural Uzbek after " | O'zbekcha: ".
 
 Return ONLY valid JSON with EXACTLY these fields:
 {
-  "correct_count": ${correct_count},
+  "correct_count": ${correct},
   "total_questions": ${total || 40},
   "band_score": ${band},
   "wrong_analysis": [
@@ -73,14 +96,9 @@ Return ONLY valid JSON with EXACTLY these fields:
 ${hasWrong ? "Include one wrong_analysis entry for EVERY wrong answer provided." : "If no wrong answers were provided, return an empty wrong_analysis array and focus on weak_areas and improvement_tips."}`;
 
     const feedback = await generateJSON(prompt);
-    feedback.correct_count = correct_count;
+    feedback.correct_count = correct;
     feedback.total_questions = total || 40;
     feedback.band_score = band;
-
-    const trial = await checkAndDecrementTrial(req, "listening");
-    if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
-    }
 
     const { supabase, user } = await getAuth(req);
 

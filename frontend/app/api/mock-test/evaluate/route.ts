@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth, checkAndDecrementTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, trialDenied } from "@/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
 
     const trial = await checkAndDecrementTrial(req, "mock");
     if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
     }
 
     const body = await req.json();

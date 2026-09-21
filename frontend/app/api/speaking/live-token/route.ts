@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth, checkAndDecrementTrial, refundTrial } from "@/lib/supabaseServer";
+import { getAuth, checkAndDecrementTrial, refundTrial, trialDenied } from "@/lib/supabaseServer";
 import { loadSpeakingMemory } from "@/lib/speakingMemory";
 import { buildLiveSystemInstruction } from "@/lib/speaking/prompts";
 import { geminiKeys } from "@/lib/gemini";
@@ -30,11 +30,18 @@ import { maxSessionMs } from "@/lib/speaking/session";
 // The winner also speaks correct Tashkent Uzbek on the Charon voice.
 const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || "gemini-3.1-flash-live-preview";
 // End-of-speech silence window. Short = the examiner answers almost instantly;
-// too short and it cuts in while the candidate is still thinking. Part 2's long
-// turn gets a wider window because pausing mid-answer is normal there. 250ms is
-// the value the Jarvis assistant uses.
-const SILENCE_MS = Math.max(150, Number(process.env.LIVE_SILENCE_MS) || 250);
-const SILENCE_MS_LONG_TURN = SILENCE_MS * 3;
+// too short and it cuts in while the candidate is still thinking. 250ms was
+// tuned on a fluent native speaker and is wrong for this audience: an IELTS
+// candidate pauses mid-sentence hunting for a word, the examiner treated that
+// as the end of the answer and talked over them. 500ms still feels immediate
+// but survives a normal hesitation. Part 2's long turn gets a much wider window
+// because 1-2 minutes of monologue is full of pauses.
+const SILENCE_MS = Math.max(150, Number(process.env.LIVE_SILENCE_MS) || 500);
+const SILENCE_MS_LONG_TURN = Math.max(SILENCE_MS, Number(process.env.LIVE_SILENCE_MS_LONG) || 1500);
+// Audio kept BEFORE the detected speech onset. At 20ms the opening consonant
+// was being cut off, which both mangled the transcript and made the examiner
+// mishear the answer. 200ms is enough to capture the attack of the first word.
+const PREFIX_PADDING_MS = Math.max(20, Number(process.env.LIVE_PREFIX_PADDING_MS) || 200);
 const AUTH_TOKENS_URL = "https://generativelanguage.googleapis.com/v1beta/auth_tokens";
 
 export async function POST(req: NextRequest) {
@@ -61,10 +68,8 @@ export async function POST(req: NextRequest) {
     if (firstTurn) {
       charged = await checkAndDecrementTrial(req, "speaking");
       if (!charged.ok) {
-        return NextResponse.json(
-          { error: "Trial limit reached. Please upgrade to Pro." },
-          { status: 402 }
-        );
+        const denied = trialDenied(charged);
+        return NextResponse.json({ error: denied.error }, { status: denied.status });
       }
     }
 
@@ -87,25 +92,38 @@ export async function POST(req: NextRequest) {
         speechConfig: {
           voiceConfig: { prebuiltVoiceConfig: { voiceName: "Charon" } },
         },
+        // An examiner reads the next question off a script — it has nothing to
+        // reason about. Leaving the thinking budget on the default let the model
+        // stall for seconds before answering; zero removes that entirely.
+        thinkingConfig: { thinkingBudget: 0 },
       },
       systemInstruction: { parts: [{ text: systemInstruction }] },
       // Text record of both sides for the transcript + post-session report.
       inputAudioTranscription: {},
       outputAudioTranscription: {},
-      // Turn detection, tuned the way the Jarvis assistant does it: HIGH
-      // sensitivity on both ends with minimal prefix padding and a short
-      // silence window, so the examiner starts answering the moment the
-      // candidate stops. Safe at this sensitivity because the client stops
-      // sending mic audio while the examiner is speaking — without that gate,
-      // speaker echo trips "start of speech" and truncates the reply.
+      // Turn detection: high sensitivity on both ends so speech onset is caught
+      // immediately, with the silence window (above) doing the real work of
+      // deciding when the candidate has actually finished. Safe at this
+      // sensitivity because the client only forwards mic audio above a
+      // barge-in energy threshold while the examiner is speaking — raw speaker
+      // echo would otherwise trip "start of speech" and truncate the reply.
       realtimeInputConfig: {
         automaticActivityDetection: {
           disabled: false,
           startOfSpeechSensitivity: "START_SENSITIVITY_HIGH",
           endOfSpeechSensitivity: "END_SENSITIVITY_HIGH",
-          prefixPaddingMs: 20,
+          prefixPaddingMs: PREFIX_PADDING_MS,
           silenceDurationMs: startPart === 2 ? SILENCE_MS_LONG_TURN : SILENCE_MS,
         },
+      },
+      // Gemini Live re-reads the whole session context on every turn, so without
+      // compression a full mock gets measurably slower answer after answer and
+      // then dies outright around the 15-minute audio limit — mid-Part-3, with
+      // the report unwritten. A sliding window holds latency flat and lets the
+      // session run the full test.
+      contextWindowCompression: {
+        triggerTokens: "16000",
+        slidingWindow: { targetTokens: "8000" },
       },
       // A dropped socket resumes the same conversation instead of restarting
       // the test from Part 1.

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedClient, getAdminClient } from "@/lib/supabaseServer";
 import { extendedExpiry, planDaysFromAmount } from "@/lib/pro";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateWithFallback } from "@/lib/gemini";
 import crypto from "crypto";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// A receipt screenshot; anything larger is not a phone screenshot and would
+// only waste an AI call and the worker's memory.
+const MAX_SCREENSHOT_BYTES = 10 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +18,21 @@ export async function POST(req: NextRequest) {
 
     if (!file || !code) {
       return NextResponse.json({ error: "Missing screenshot or code" }, { status: 400 });
+    }
+    if (typeof file.size !== "number" || file.size === 0) {
+      return NextResponse.json({ error: "Skrinshot bo'sh. Qayta yuklang." }, { status: 400 });
+    }
+    if (file.size > MAX_SCREENSHOT_BYTES) {
+      return NextResponse.json(
+        { error: "Skrinshot juda katta (10MB dan oshmasin)." },
+        { status: 400 }
+      );
+    }
+    if (file.type && !file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "Faqat rasm (skrinshot) yuklash mumkin." },
+        { status: 400 }
+      );
     }
 
     // Find payment by code
@@ -38,11 +55,15 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
     const hash = crypto.createHash("sha256").update(buffer).digest("hex");
 
-    // Check for duplicate screenshot
+    // Reuse check. Only an APPROVED payment means the receipt was already
+    // cashed in — that is the actual fraud vector. Matching against pending or
+    // rejected rows locked honest users out of their own genuine receipt after
+    // a misread, because the hash is stored on rejection too.
     const { data: existing } = await supabase
       .from("payments")
       .select("id")
       .eq("screenshot_hash", hash)
+      .eq("status", "approved")
       .neq("id", payment.id)
       .maybeSingle();
 
@@ -50,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This screenshot has already been used for another payment." }, { status: 400 });
     }
 
-    const ext = file.name.split(".").pop() || "png";
+    const ext = (file.name || "").split(".").pop() || "png";
     const path = `payments/${payment.user_id}/${Date.now()}.${ext}`;
 
     // Storage is optional — verification still proceeds even if it fails.
@@ -67,8 +88,6 @@ export async function POST(req: NextRequest) {
       /* ignore storage errors */
     }
 
-    // Gemini verification
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
     const base64Image = buffer.toString("base64");
 
     const prompt = `Analyze this payment screenshot and extract:
@@ -94,31 +113,52 @@ Respond ONLY in this JSON format:
   "reasoning": "brief explanation"
 }`;
 
-    const geminiResult = await model.generateContent([
-      { text: prompt },
-      { inlineData: { mimeType: file.type, data: base64Image } },
-    ]);
-
-    const response = geminiResult.response.text();
-
-    // Extract JSON
-    let jsonMatch = response.match(/\{[\s\S]*\}/);
+    // Real money is on the line here, so this call gets the full model/key
+    // chain with backoff. A single rate-limited key used to reject a genuine
+    // receipt outright and leave the payer unable to activate Pro.
     let analysis: any = {};
-    if (jsonMatch) {
-      try {
-        analysis = JSON.parse(jsonMatch[0]);
-      } catch {
-        // ignore parse error
-      }
+    try {
+      const response = await generateWithFallback(
+        [
+          { text: prompt },
+          { inlineData: { mimeType: file.type || "image/png", data: base64Image } },
+        ],
+        { config: { temperature: 0 } }
+      );
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) analysis = JSON.parse(jsonMatch[0]);
+    } catch (aiErr) {
+      // Never auto-reject on our own outage: the payment stays pending and the
+      // user is asked to retry, rather than being told their receipt is bad.
+      console.error("Payment screenshot verification failed:", aiErr);
+      return NextResponse.json(
+        {
+          error:
+            "Tekshiruv xizmati hozircha javob bermadi. To'lovingiz saqlanib turibdi — bir ozdan keyin skrinshotni qayta yuklang.",
+        },
+        { status: 503 }
+      );
     }
 
     const expectedAmount = payment.amount;
     const cardNumber = (process.env.CARD_NUMBER || process.env.NEXT_PUBLIC_CARD_NUMBER || "").replace(/\D/g, "");
     const cardLast4 = cardNumber.slice(-4);
 
-    const amountOk = analysis.amount === expectedAmount || Math.abs((analysis.amount || 0) - expectedAmount) < 1000;
-    const cardOk = !!cardLast4 && (analysis.card_last4?.includes(cardLast4) || analysis.card_last4?.includes(cardNumber));
-    const statusOk = analysis.status?.toLowerCase().includes("success") || analysis.status?.toLowerCase().includes("paid") || analysis.status?.toLowerCase().includes("muvaffaqiyatli") || analysis.status?.toLowerCase().includes("successfully");
+    // The model sometimes returns the amount as a formatted string ("49 000").
+    const reportedAmount = Number(String(analysis.amount ?? "").replace(/[^\d.-]/g, ""));
+    const amountOk =
+      Number.isFinite(reportedAmount) && Math.abs(reportedAmount - expectedAmount) < 1000;
+    // Everything below comes from model output, so it is coerced before use —
+    // a numeric card_last4 would otherwise throw on .includes and surface as a
+    // bare "Upload failed" to someone who genuinely paid.
+    const reportedCard = String(analysis.card_last4 ?? "");
+    const reportedStatus = String(analysis.status ?? "").toLowerCase();
+    const cardOk =
+      !!cardLast4 && (reportedCard.includes(cardLast4) || reportedCard.includes(cardNumber));
+    const statusOk =
+      reportedStatus.includes("success") ||
+      reportedStatus.includes("paid") ||
+      reportedStatus.includes("muvaffaqiyatli");
     // Fully automatic decision — no manual review. Accept on strong signals
     // (amount + recipient card + success status) unless confidence is low.
     const notLowConfidence = analysis.confidence !== "low";

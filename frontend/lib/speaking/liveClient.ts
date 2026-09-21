@@ -27,6 +27,8 @@ export interface LiveSessionHandlers {
   onClose?: (graceful: boolean, reason: string) => void;
   /** First audio byte arrived — latency metric. */
   onFirstAudio?: (ms: number) => void;
+  /** Server is about to terminate this session — reconnect now, not on close. */
+  onGoAway?: (timeLeftMs: number) => void;
 }
 
 const WS_BASE = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService";
@@ -49,6 +51,7 @@ export class GeminiLiveSession {
   private t0 = 0;
   private firstAudioSent = false;
   private graceful = false;
+  private resumptionHandle = "";
 
   private constructor(
     private readonly handlers: LiveSessionHandlers
@@ -66,11 +69,17 @@ export class GeminiLiveSession {
     token: string,
     model: string,
     sessionConfig: Record<string, unknown>,
-    handlers: LiveSessionHandlers
+    handlers: LiveSessionHandlers,
+    /** Rejoin a dropped session instead of starting a new conversation. */
+    resumeHandle?: string
   ): Promise<GeminiLiveSession> {
     const session = new GeminiLiveSession(handlers);
     const setup = JSON.stringify({
-      setup: { model: `models/${model}`, ...sessionConfig },
+      setup: {
+        model: `models/${model}`,
+        ...sessionConfig,
+        ...(resumeHandle ? { sessionResumption: { handle: resumeHandle } } : {}),
+      },
     });
     await session.open(
       `${WS_BASE}.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`,
@@ -82,6 +91,11 @@ export class GeminiLiveSession {
   private open(url: string, setupMessage: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(url);
+      // The Live API sends EVERYTHING (setupComplete, audio, transcripts) as
+      // binary frames. With the default "blob" type, event.data is a Blob —
+      // JSON.parse("") throws, setupComplete is never seen, the handshake
+      // times out and the session silently falls back to the slow pipeline.
+      ws.binaryType = "arraybuffer";
       this.ws = ws;
       this.t0 = performance.now();
       let settled = false;
@@ -102,7 +116,11 @@ export class GeminiLiveSession {
       ws.onmessage = (event) => {
         let msg: any;
         try {
-          msg = JSON.parse(typeof event.data === "string" ? event.data : "");
+          const raw =
+            typeof event.data === "string"
+              ? event.data
+              : new TextDecoder().decode(event.data as ArrayBuffer);
+          msg = JSON.parse(raw);
         } catch {
           return;
         }
@@ -132,6 +150,18 @@ export class GeminiLiveSession {
   }
 
   private handleMessage(msg: any) {
+    // Latest resumption handle; the socket can die at any moment, so keep it.
+    const handle = msg?.sessionResumptionUpdate;
+    if (handle?.resumable && typeof handle.newHandle === "string") {
+      this.resumptionHandle = handle.newHandle;
+    }
+    if (msg?.goAway) {
+      const left = String(msg.goAway.timeLeft || "");
+      const secs = Number(left.replace(/s$/, "")) || 0;
+      this.handlers.onGoAway?.(Math.max(0, secs * 1000));
+      return;
+    }
+
     const sc = msg?.serverContent;
     if (!sc) return;
 
@@ -198,6 +228,11 @@ export class GeminiLiveSession {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 
+  /** Token that lets a fresh socket continue this same conversation. */
+  get resumeHandle() {
+    return this.resumptionHandle;
+  }
+
   close() {
     this.graceful = true;
     try { this.ws?.close(); } catch { /* noop */ }
@@ -206,24 +241,52 @@ export class GeminiLiveSession {
 }
 
 /**
- * Scheduled PCM playback at 24kHz. Chunks are appended back-to-back on a
- * running timeline; reset() flushes everything (barge-in).
+ * Scheduled PCM playback at 24kHz.
+ *
+ * Two things matter for the examiner to sound like a person rather than a
+ * stuttering radio:
+ *
+ * 1. ONE AudioContext for the whole session. Closing and rebuilding it on
+ *    every barge-in used to cost 50-200ms of cold start before the next reply
+ *    could be heard, and Chrome caps a page at ~6 concurrent contexts — after a
+ *    handful of interruptions `new AudioContext()` simply failed and the
+ *    examiner went permanently silent. Flushing now means stopping the sources,
+ *    not destroying the device.
+ *
+ * 2. A real jitter buffer. Chunks arrive over a WebSocket, so their spacing is
+ *    not the spacing they must be played at. Scheduling the first chunk of a
+ *    turn only 20ms ahead meant any network hiccup landed past its slot and
+ *    produced an audible gap mid-word. We give the first chunk a LEAD and then
+ *    append back-to-back; if the queue ever underruns we re-lead instead of
+ *    stacking late buffers on top of each other.
  */
+const JITTER_LEAD_S = 0.12;
+
 export class PcmPlayer {
   private ctx: AudioContext | null = null;
+  private bus: GainNode | null = null;
+  private sources = new Set<AudioBufferSourceNode>();
   private nextStart = 0;
   private playing = 0;
   private onEmpty: (() => void) | null = null;
+  private generation = 0;
 
-  private ensureCtx(): AudioContext {
+  private ensureCtx(): { ctx: AudioContext; bus: GainNode } {
     if (!this.ctx) {
       const Ctor =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new Ctor({ sampleRate: 24000 });
+      this.ctx = new Ctor({ sampleRate: 24000, latencyHint: "interactive" });
+      this.bus = this.ctx.createGain();
+      this.bus.connect(this.ctx.destination);
     }
     if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
-    return this.ctx;
+    return { ctx: this.ctx, bus: this.bus! };
+  }
+
+  /** Pre-open the audio device so the first reply is not paying for it. */
+  warmup() {
+    this.ensureCtx();
   }
 
   /** Called when the playback queue drains to silence. */
@@ -235,21 +298,35 @@ export class PcmPlayer {
     return this.playing > 0;
   }
 
+  /** Seconds of audio still queued ahead of the play head. */
+  get bufferedSeconds() {
+    if (!this.ctx) return 0;
+    return Math.max(0, this.nextStart - this.ctx.currentTime);
+  }
+
   push(pcm: Int16Array) {
     if (pcm.length === 0) return;
-    const ctx = this.ensureCtx();
+    const { ctx, bus } = this.ensureCtx();
     const buf = ctx.createBuffer(1, pcm.length, 24000);
     const ch = buf.getChannelData(0);
     for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 0x8000;
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    src.connect(ctx.destination);
+    src.connect(bus);
+
+    // Start of a turn, or the queue underran while chunks were in flight:
+    // give the stream a fresh lead so playback is continuous from here.
     const now = ctx.currentTime;
-    const start = Math.max(now + 0.02, this.nextStart);
+    const start = this.nextStart > now ? this.nextStart : now + JITTER_LEAD_S;
     src.start(start);
     this.nextStart = start + buf.duration;
+
     this.playing++;
+    this.sources.add(src);
+    const gen = this.generation;
     src.onended = () => {
+      this.sources.delete(src);
+      if (gen !== this.generation) return; // flushed — its slot is gone
       this.playing--;
       if (this.playing <= 0) {
         this.playing = 0;
@@ -258,19 +335,32 @@ export class PcmPlayer {
     };
   }
 
-  /** Barge-in: drop everything queued/playing. */
+  /** Barge-in: drop everything queued/playing, keep the audio device open. */
   reset() {
-    if (this.ctx) {
-      try { void this.ctx.close(); } catch { /* noop */ }
-    }
-    this.ctx = null;
-    this.nextStart = 0;
+    this.generation++;
+    this.sources.forEach((src) => {
+      try {
+        src.onended = null;
+        src.stop();
+        src.disconnect();
+      } catch {
+        /* already finished */
+      }
+    });
+    this.sources.clear();
     this.playing = 0;
+    this.nextStart = 0;
   }
 
   dispose() {
     this.reset();
     this.onEmpty = null;
+    const ctx = this.ctx;
+    this.ctx = null;
+    this.bus = null;
+    if (ctx) {
+      try { void ctx.close(); } catch { /* noop */ }
+    }
   }
 }
 
@@ -288,4 +378,41 @@ export function resampleTo16k(pcm: Int16Array, fromRate: number): Int16Array {
     out[i] = Math.round(pcm[i0] * (1 - frac) + pcm[i1] * frac);
   }
   return out;
+}
+
+/**
+ * Concatenate captured PCM16 mic chunks into one mono WAV Blob (16kHz).
+ * In live mode there are no per-turn audio blobs — the examiner hears the
+ * socket directly — so the candidate's gated speech is accumulated here and
+ * uploaded with the end-of-test report for real pronunciation assessment.
+ */
+export function pcmChunksToWavBlob(chunks: Int16Array[], sampleRate = 16000): Blob | null {
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  if (total === 0) return null;
+  const data = new Int16Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    data.set(c, off);
+    off += c.length;
+  }
+  const buf = new ArrayBuffer(44 + data.length * 2);
+  const v = new DataView(buf);
+  const wstr = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+  };
+  wstr(0, "RIFF");
+  v.setUint32(4, 36 + data.length * 2, true);
+  wstr(8, "WAVE");
+  wstr(12, "fmt ");
+  v.setUint32(16, 16, true); // PCM chunk size
+  v.setUint16(20, 1, true); // PCM format
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true); // byte rate
+  v.setUint16(32, 2, true); // block align
+  v.setUint16(34, 16, true); // bits per sample
+  wstr(36, "data");
+  v.setUint32(40, data.length * 2, true);
+  new Int16Array(buf, 44).set(data);
+  return new Blob([buf], { type: "audio/wav" });
 }

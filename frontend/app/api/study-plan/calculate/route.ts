@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateJSON } from "@/lib/gemini";
 import { buildStudyPlan } from "@/lib/studyPlan";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   const { current_level, target_band } = await req.json();
   const fallback = buildStudyPlan(current_level, target_band);
+
+  // Unauthenticated AI call — cap it; the deterministic plan above is the
+  // graceful answer when the limit is hit.
+  if (rateLimit(`study-calc:${clientIp(req)}`, 20, 10 * 60_000)) {
+    return NextResponse.json(fallback);
+  }
 
   try {
     const prompt = `An IELTS student is at an estimated band ${fallback.current_band_estimate} and targeting band ${fallback.target_band}.

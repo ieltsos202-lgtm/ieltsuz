@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSpeakingExaminer } from "@/hooks/useSpeakingExaminer";
 import { apiPost, apiPostForm, apiPostFormStream, apiPostStream, apiDelete } from "@/lib/api";
 import { playLiveTurn, type LiveTurnEval } from "@/lib/speaking/livePlayer";
-import { GeminiLiveSession, PcmPlayer, resampleTo16k } from "@/lib/speaking/liveClient";
+import { GeminiLiveSession, PcmPlayer, resampleTo16k, pcmChunksToWavBlob } from "@/lib/speaking/liveClient";
 import {
   StudioIntro,
   StudioSession,
@@ -31,9 +31,21 @@ const NO_SPEECH_MS = 15000;
 // (it rejects turns past the cap) — this just ends the test cleanly first.
 const MAX_SESSION_MS = 20 * 60 * 1000;
 const HARSH_STORAGE_KEY = "speaking:harsh";
-// How long the mic stays gated after the last examiner audio chunk, so the
-// speaker's tail does not read back as the candidate starting to speak.
+// How long the mic stays energy-gated after the last examiner audio chunk, so
+// the speaker's tail does not read back as the candidate starting to speak.
 const MIC_GATE_TAIL_MS = 260;
+// While the examiner is speaking we do NOT mute the mic — that made barge-in
+// impossible, so the candidate could never cut in or ask for a repeat. Instead
+// audio is forwarded only above this multiple of the measured room noise floor:
+// residual speaker echo (the browser AEC already attenuates it) stays below the
+// bar, a person actually talking clears it easily.
+const BARGE_IN_RMS_FACTOR = 3.5;
+const BARGE_IN_RMS_FLOOR = 0.02;
+// Real IELTS Part 2: exactly one minute to prepare, then up to two minutes of
+// uninterrupted speech during which the examiner says nothing at all and only
+// times the candidate. Mock exam only — Friendly Chat has no long turn.
+const PART2_PREP_SECONDS = 60;
+const PART2_TALK_SECONDS = 120;
 
 type ExamPart = 1 | 2 | 3;
 
@@ -84,7 +96,8 @@ function SpeakingPartnerContent() {
   const [onlyPart, setOnlyPart] = useState<ExamPart | null>(null);
   const [micHint, setMicHint] = useState<string | null>(null);
   const [cueCard, setCueCard] = useState<StudioCueCard | null>(null);
-  const [prepSeconds, setPrepSeconds] = useState(60);
+  const [prepSeconds, setPrepSeconds] = useState(PART2_PREP_SECONDS);
+  const [longTurnSeconds, setLongTurnSeconds] = useState(PART2_TALK_SECONDS);
   // HARSH mode is opt-in per browser session (18+ warning in the intro).
   const [harsh, setHarsh] = useState(false);
   const harshRef = useRef(false);
@@ -156,6 +169,34 @@ function SpeakingPartnerContent() {
   const partnerTurnOpenRef = useRef(false);
   const userSpeakStartRef = useRef(0);
   const micLevelAtRef = useRef(0);
+  // The model stops generating well before its audio finishes playing; this
+  // holds the "examiner is still talking" state until the queue actually drains.
+  const liveDrainPendingRef = useRef(false);
+  // Handle that lets a fresh socket continue the same conversation, plus a
+  // bounded retry count so a genuinely dead session still falls back instead of
+  // reconnecting forever.
+  const liveResumeRef = useRef("");
+  const liveReconnectsRef = useRef(0);
+  const liveResumingRef = useRef(false);
+  // Forward refs: a dropped session calls resumeLive, which calls back into
+  // startLiveSession — the two are mutually recursive.
+  const startLiveSessionRef = useRef<
+    (m: StudioMode, part: ExamPart, resumeHandle?: string) => Promise<void>
+  >(async () => {});
+  const resumeLiveRef = useRef<(handle?: string) => Promise<void>>(async () => {});
+  // Rolling estimate of the room's noise floor, measured only while the
+  // examiner is silent, so the barge-in threshold adapts to the user's mic.
+  const noiseFloorRef = useRef(0.005);
+  // --- Part 2 long turn (mock exam only) ---
+  // While this is active no mic audio reaches the Live socket, which is what
+  // guarantees the examiner stays silent for the full two minutes.
+  const longTurnActiveRef = useRef(false);
+  const longTurnTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Mirror of the countdown readable from callbacks without a stale closure.
+  const longTurnSecondsLeftRef = useRef(PART2_TALK_SECONDS);
+  // The cue card is announced mid-sentence, so the prep clock must not start
+  // until the examiner has actually finished reading the card out.
+  const cuePrepPendingRef = useRef(false);
   // One element for every streamed turn: reusing it keeps the autoplay
   // permission granted by the user's first tap.
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -175,6 +216,11 @@ function SpeakingPartnerContent() {
   // Index of the newest eval entry — the Analyst's pronunciation band may
   // arrive AFTER the Scorer's eval, so we merge it into the same slot.
   const pendingEvalIdxRef = useRef(-1);
+  // Live mode: the candidate's gated speech (mic chunks that passed the
+  // examiner-speaking gate AND a voice threshold) accumulates here and is
+  // uploaded as one WAV with the report — real audio for pronunciation.
+  const livePcmRef = useRef<Int16Array[]>([]);
+  const livePcmLenRef = useRef(0);
 
   // Hard stop for whatever the examiner is saying: pauses, detaches the source
   // so a MediaSource pump can't keep feeding it, and cancels the TTS download.
@@ -275,17 +321,197 @@ function SpeakingPartnerContent() {
     }
     livePlayerRef.current?.dispose();
     livePlayerRef.current = null;
-    prepActiveRef.current = false;
+    // NOTE: the Part 2 prep/long-turn flags are deliberately NOT cleared here.
+    // stopLive also runs as the first step of a mid-test reconnect, and clearing
+    // them would reopen the mic to the model in the middle of the long turn.
+    // startSession and generateReport reset them explicitly instead.
   }, []);
+
+  /** Browser recogniser used to draft what the candidate says, live. */
+  const startDraftRecognition = useCallback(() => {
+    draftTranscriptRef.current = "";
+    setLiveDraft("");
+    try {
+      const Rec =
+        (window as unknown as { SpeechRecognition?: new () => any }).SpeechRecognition ||
+        (window as unknown as { webkitSpeechRecognition?: new () => any }).webkitSpeechRecognition;
+      if (!Rec) return;
+      const rec = new Rec();
+      rec.lang = "en-US";
+      rec.interimResults = true;
+      rec.continuous = true;
+      rec.onresult = (e: any) => {
+        let draft = "";
+        for (let i = 0; i < e.results.length; i++) {
+          draft += (e.results[i][0]?.transcript || "") + " ";
+        }
+        draft = draft.trim();
+        draftTranscriptRef.current = draft;
+        setLiveDraft(draft);
+      };
+      rec.onerror = () => {};
+      rec.start();
+      speechRecRef.current = rec;
+    } catch {
+      /* unavailable — the captured WAV still carries the answer */
+    }
+  }, []);
+
+  const stopDraftRecognition = useCallback(() => {
+    try {
+      speechRecRef.current?.stop();
+    } catch {
+      /* noop */
+    }
+    speechRecRef.current = null;
+  }, []);
+
+  /**
+   * End of the Part 2 long turn: either the two minutes elapsed or the
+   * candidate tapped "Tugatdim". Records the answer, then hands the examiner
+   * back control with an explicit instruction to move on.
+   */
+  const endLongTurn = useCallback(() => {
+    if (!longTurnActiveRef.current) return;
+    longTurnActiveRef.current = false;
+    if (longTurnTimerRef.current) clearInterval(longTurnTimerRef.current);
+    longTurnTimerRef.current = null;
+    setLongTurnSeconds(0);
+
+    stopDraftRecognition();
+    const said = draftTranscriptRef.current.trim();
+    draftTranscriptRef.current = "";
+    setLiveDraft("");
+    if (!aliveRef.current) return;
+
+    const spokenFor = Math.max(1, PART2_TALK_SECONDS - longTurnSecondsLeftRef.current);
+    const topic = cueCardRef.current?.topic || "the cue card topic";
+
+    if (said) {
+      setTurns((prev) => [...prev, { role: "user", text: said }]);
+      turnDurationsRef.current.push(spokenFor);
+      // Score the long turn off-path, exactly like every other answer.
+      void apiPost<{ eval?: LiveTurnEval | null }>("/api/speaking/partner/analyze", {
+        transcript: said.slice(0, 2000),
+        question: topic.slice(0, 400),
+        mode: "exam",
+        part: 2,
+        duration: spokenFor,
+      })
+        .then((a) => {
+          if (!aliveRef.current || !a?.eval) return;
+          const ev = a.eval;
+          if (ev.fluency != null || ev.grammar != null || ev.lexical != null) {
+            evalsRef.current.push(ev);
+          }
+        })
+        .catch(() => {});
+    }
+
+    const session = liveSessionRef.current;
+    if (!session?.connected) return;
+
+    // Part 2 practice on its own has no Part 3 to move to.
+    if (onlyPartRef.current === 2) {
+      liveFinishRef.current = true;
+      setPhase("thinking");
+      session.sendText(
+        `(The candidate's two-minute long turn on "${topic}" is over. Say one short closing line, then end with exactly: "That is the end of the speaking test.")`
+      );
+      return;
+    }
+
+    examPartRef.current = 3;
+    setExamPart(3);
+    setPhase("thinking");
+    session.sendText(
+      `(The candidate's two-minute long turn is over — the time is up. This is what they said, transcribed: "${
+        said.slice(0, 1200) || "(inaudible)"
+      }". Do NOT comment on their English. Ask ONE short follow-up about the topic if it is natural, then move straight into Part 3 with your first abstract discussion question linked to "${topic}".)`
+    );
+  }, [stopDraftRecognition]);
+
+  /**
+   * The two-minute individual long turn. The examiner must not make a sound, so
+   * the mic is disconnected from the Live socket for its whole duration — the
+   * model literally cannot hear a pause to answer into. Audio is still captured
+   * locally for the report.
+   */
+  const startLongTurn = useCallback(() => {
+    if (!aliveRef.current) return;
+    prepActiveRef.current = false;
+    longTurnActiveRef.current = true;
+    longTurnSecondsLeftRef.current = PART2_TALK_SECONDS;
+    setLongTurnSeconds(PART2_TALK_SECONDS);
+    setPhase("long_turn");
+    startDraftRecognition();
+
+    if (longTurnTimerRef.current) clearInterval(longTurnTimerRef.current);
+    longTurnTimerRef.current = setInterval(() => {
+      longTurnSecondsLeftRef.current -= 1;
+      const left = longTurnSecondsLeftRef.current;
+      setLongTurnSeconds(Math.max(0, left));
+      if (left <= 0) endLongTurn();
+    }, 1000);
+  }, [startDraftRecognition, endLongTurn]);
+
+  /** The one minute of preparation that precedes the long turn. */
+  const startPart2Prep = useCallback(() => {
+    if (!aliveRef.current) return;
+    cuePrepPendingRef.current = false;
+    prepActiveRef.current = true;
+    setPhase("prep");
+    setPrepSeconds(PART2_PREP_SECONDS);
+    if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    prepTimerRef.current = setInterval(() => {
+      setPrepSeconds((s) => {
+        if (s <= 1) {
+          if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+          prepTimerRef.current = null;
+          startLongTurn();
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }, [startLongTurn]);
 
   /**
    * Gemini Live path: mint an ephemeral token, open the socket, stream mic
    * PCM both ways. Throws on any failure — the caller falls back to the
    * legacy record → Gemini → ElevenLabs pipeline.
    */
-  const startLiveSession = async (m: StudioMode, startPart: ExamPart) => {
+  const startLiveSession = async (
+    m: StudioMode,
+    startPart: ExamPart,
+    resumeHandle?: string
+  ) => {
+    const resuming = !!resumeHandle;
     const player = new PcmPlayer();
     livePlayerRef.current = player;
+    // What happens once the examiner's turn is genuinely over — meaning its last
+    // sample has left the speaker, not merely that the model stopped composing.
+    const settleTurn = () => {
+      if (!aliveRef.current) return;
+      micGateUntilRef.current = 0;
+      if (liveFinishRef.current) {
+        liveFinishRef.current = false;
+        void generateReportRef.current();
+        return;
+      }
+      // The cue card has now been read out in full — the minute starts here.
+      if (cuePrepPendingRef.current) {
+        startPart2Prep();
+        return;
+      }
+      if (!prepActiveRef.current && !longTurnActiveRef.current) setPhase("listening");
+    };
+
+    player.setOnEmpty(() => {
+      if (!liveDrainPendingRef.current) return;
+      liveDrainPendingRef.current = false;
+      settleTurn();
+    });
 
     const tok = await apiPost<{
       token: string;
@@ -302,6 +528,10 @@ function SpeakingPartnerContent() {
     if (firstTurnRef.current) liveChargedRef.current = true;
     if (!aliveRef.current) throw new Error("aborted");
 
+    // Detect the cue card announcement and show the card. The prep clock is
+    // NOT started here: the examiner is still mid-sentence reading the topic and
+    // its bullet points aloud, and starting the minute now used to eat 10-15
+    // seconds of the candidate's preparation time. onTurnComplete starts it.
     const maybeCueCard = (acc: string) => {
       if (modeRef.current !== "exam" || cueCardRef.current) return;
       if (!/cue card/i.test(acc)) return;
@@ -315,27 +545,17 @@ function SpeakingPartnerContent() {
       setCueCard(cc);
       examPartRef.current = 2;
       setExamPart(2);
-      // Visual prep countdown — the model itself waits for the candidate.
-      prepActiveRef.current = true;
-      setPhase("prep");
-      setPrepSeconds(60);
-      if (prepTimerRef.current) clearInterval(prepTimerRef.current);
-      prepTimerRef.current = setInterval(() => {
-        setPrepSeconds((s) => {
-          if (s <= 1) {
-            if (prepTimerRef.current) clearInterval(prepTimerRef.current);
-            prepTimerRef.current = null;
-            prepActiveRef.current = false;
-            if (aliveRef.current) setPhase("listening");
-            return 0;
-          }
-          return s - 1;
-        });
-      }, 1000);
+      cuePrepPendingRef.current = true;
     };
 
     const session = await GeminiLiveSession.connect(tok.token, tok.model, tok.sessionConfig, {
       onAudio: (pcm) => {
+        // A reply arriving proves the (re)connection is healthy.
+        liveReconnectsRef.current = 0;
+        // Part 2 is the candidate's floor alone. The model is fed silence and so
+        // should never speak here, but if it ever does, it is not played — the
+        // guarantee that the examiner stays quiet does not depend on the model.
+        if (prepActiveRef.current || longTurnActiveRef.current) return;
         player.push(pcm);
         // Mic gate (same trick as Jarvis): stop forwarding mic audio while the
         // examiner talks. Speaker echo would otherwise register as "start of
@@ -367,6 +587,45 @@ function SpeakingPartnerContent() {
           turnDurationsRef.current.push(
             Math.max(1, Math.round((Date.now() - userSpeakStartRef.current) / 1000))
           );
+          // Background analysis: score this answer and (in chat mode) fetch
+          // the correction chip — the examiner's voice never waits for it.
+          const said = pendingUserRef.current.trim();
+          if (said) {
+            const question =
+              [...turnsRef.current].reverse().find((x) => x.role === "partner")?.text || "";
+            const uIdx = turnsRef.current.length - 1;
+            const dur = turnDurationsRef.current.at(-1) || 0;
+            const m = modeRef.current;
+            void apiPost<{
+              correction?: StudioTurn["correction"];
+              vocab_tip?: StudioTurn["vocab_tip"];
+              eval?: LiveTurnEval | null;
+            }>("/api/speaking/partner/analyze", {
+              transcript: said.slice(0, 2000),
+              question: question.slice(0, 400),
+              mode: m,
+              part: examPartRef.current,
+              duration: dur,
+            })
+              .then((a) => {
+                if (!aliveRef.current || !a) return;
+                if (a.eval && (a.eval.fluency != null || a.eval.grammar != null || a.eval.lexical != null)) {
+                  evalsRef.current.push(a.eval);
+                }
+                // Corrections are a chat-mode feature — in an exam they stay
+                // invisible until the final report.
+                if (m !== "exam" && (a.correction || a.vocab_tip)) {
+                  setTurns((prev) =>
+                    prev.map((x, i) =>
+                      i === uIdx && x.role === "user"
+                        ? { ...x, correction: a.correction ?? x.correction ?? null, vocab_tip: a.vocab_tip ?? x.vocab_tip ?? null }
+                        : x
+                    )
+                  );
+                }
+              })
+              .catch(() => {});
+          }
         }
         userTurnOpenRef.current = false;
         pendingUserRef.current = "";
@@ -394,25 +653,41 @@ function SpeakingPartnerContent() {
       onTurnComplete: () => {
         partnerTurnOpenRef.current = false;
         pendingPartnerRef.current = "";
-        micGateUntilRef.current = 0; // examiner finished — listen again at once
         if (!aliveRef.current) return;
-        if (liveFinishRef.current) {
-          liveFinishRef.current = false;
-          void generateReportRef.current();
+        // The model has finished composing, but its voice is still coming out of
+        // the speaker. Everything that follows a turn — the prep clock, the next
+        // listening state, even ending the test — waits for the queue to drain.
+        // Generating the report here used to tear the socket down mid-goodbye.
+        if (player.isPlaying) {
+          liveDrainPendingRef.current = true;
           return;
         }
-        if (!prepActiveRef.current) setPhase("listening");
+        settleTurn();
       },
       onInterrupted: () => {
-        // Barge-in: flush queued audio, keep whatever transcript arrived.
+        // Barge-in: flush queued audio, keep whatever transcript arrived. The
+        // flush drops the sources without firing onEmpty, so clear the pending
+        // drain here too or it would resolve against the next turn.
         player.reset();
+        liveDrainPendingRef.current = false;
         micGateUntilRef.current = 0;
         partnerTurnOpenRef.current = false;
         pendingPartnerRef.current = "";
-        if (aliveRef.current) setPhase("listening");
+        if (!aliveRef.current) return;
+        // Part 2 owns the screen for its full duration — an interrupt must not
+        // knock the prep clock or the long turn off it.
+        if (prepActiveRef.current || longTurnActiveRef.current) return;
+        setPhase("listening");
       },
-      onClose: (graceful) => {
+      onGoAway: () => {
+        // The server is about to cut this session. Reconnecting now, while the
+        // socket is still healthy, keeps the test seamless.
+        void resumeLiveRef.current();
+      },
+      onClose: (graceful, reason) => {
         if (!aliveRef.current || graceful) return;
+        console.warn("[speaking] live socket closed:", reason);
+        const handle = liveSessionRef.current?.resumeHandle || liveResumeRef.current;
         stopLive();
         isLiveRef.current = false;
         setIsLive(false);
@@ -424,12 +699,17 @@ function SpeakingPartnerContent() {
             void apiDelete("/api/speaking/live-token").catch(() => {});
           }
           void startSessionRef.current(modeRef.current, onlyPartRef.current);
-        } else {
-          // Mid-conversation drop: turns are preserved, the next answer just
-          // goes through the legacy pipeline.
-          setError("Jonli rejim uzildi — oddiy rejimda davom etadi.");
-          setPhase("idle");
+          return;
         }
+        // Mid-test drop: rejoin the same conversation rather than throwing the
+        // test away. Only after repeated failures do we degrade.
+        if (handle && liveReconnectsRef.current < 3) {
+          liveResumeRef.current = handle;
+          void resumeLiveRef.current(handle);
+          return;
+        }
+        setError("Jonli rejim uzildi — oddiy rejimda davom etadi.");
+        setPhase("idle");
       },
     });
     if (!aliveRef.current) {
@@ -437,6 +717,21 @@ function SpeakingPartnerContent() {
       throw new Error("aborted");
     }
     liveSessionRef.current = session;
+
+    // Kick off the greeting the instant the socket is up. This used to run last,
+    // after getUserMedia and the worklet had loaded, which left 200-700ms of
+    // silence before the examiner said anything. The candidate cannot talk over
+    // a greeting they have not heard yet, so nothing is lost by starting it
+    // while the mic is still being wired up.
+    player.warmup();
+    if (resuming) {
+      // Rejoined mid-test: the examiner is in the middle of an exam, not meeting
+      // the candidate. Say nothing and go straight back to listening.
+      setPhase("listening");
+    } else {
+      setPhase("thinking");
+      session.sendText("(The candidate has just joined the room. Greet them and begin.)");
+    }
 
     // Mic → PCM16 @16kHz → socket. The worklet context asks for 16kHz; where
     // the browser ignores it we resample on the main thread.
@@ -460,21 +755,87 @@ function SpeakingPartnerContent() {
         micLevelAtRef.current = now;
         setMicLevel(Math.min(1, data.rms * 5));
       }
-      // Gated while the examiner speaks or its audio is still draining.
-      if (player.isPlaying || Date.now() < micGateUntilRef.current) return;
-      session.sendAudio(resampleTo16k(data.pcm, ctx.sampleRate));
+      const pcm16 = resampleTo16k(data.pcm, ctx.sampleRate);
+
+      // Part 2: during preparation and the two-minute long turn the examiner
+      // must not make a sound. The candidate's speech is withheld from the model
+      // so it never hears a pause it could answer into — but we keep the socket
+      // fed with digital silence, because two minutes of nothing at all risks the
+      // session being dropped as idle, which would kill the test mid-Part-2.
+      // Silence never trips the VAD, so the examiner stays quiet either way.
+      const silentWindow = prepActiveRef.current || longTurnActiveRef.current;
+      if (silentWindow) {
+        session.sendAudio(new Int16Array(pcm16.length));
+      } else {
+        // While the examiner speaks the mic is energy-gated, not muted: quiet
+        // frames (room noise, residual speaker echo) are dropped, but genuine
+        // speech is forwarded so the server's VAD can fire `interrupted` and the
+        // candidate can actually cut in. Muting outright made barge-in impossible.
+        const examinerAudible = player.isPlaying || Date.now() < micGateUntilRef.current;
+        if (examinerAudible) {
+          const bar = Math.max(BARGE_IN_RMS_FLOOR, noiseFloorRef.current * BARGE_IN_RMS_FACTOR);
+          if (data.rms >= bar) session.sendAudio(pcm16);
+        } else {
+          // Track the noise floor only when nothing is coming out of the speaker,
+          // so the threshold reflects the room rather than the examiner's voice.
+          noiseFloorRef.current = noiseFloorRef.current * 0.95 + Math.min(data.rms, 0.05) * 0.05;
+          session.sendAudio(pcm16);
+        }
+      }
+
+      // Keep the candidate's own speech for the end-of-test pronunciation
+      // analysis — only chunks with real voice energy, capped at ~3 minutes
+      // (rolling window keeps the freshest speech, e.g. the Part 2 long turn).
+      if (data.rms > 0.01) {
+        livePcmRef.current.push(pcm16);
+        livePcmLenRef.current += pcm16.length;
+        const cap = 16000 * 180;
+        while (livePcmLenRef.current > cap && livePcmRef.current.length) {
+          livePcmLenRef.current -= livePcmRef.current[0].length;
+          livePcmRef.current.shift();
+        }
+      }
     };
     liveMicRef.current = { ctx, node, source };
 
     firstTurnRef.current = false;
     isLiveRef.current = true;
     setIsLive(true);
-    setPhase("thinking");
-    setSeconds(0);
-    timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
-    // Kick off the greeting — the model speaks first.
-    session.sendText("(The candidate has just joined the room. Greet them and begin.)");
+    // The session clock keeps running across a reconnect — restarting it would
+    // hand the candidate free time on the 20-minute cap.
+    if (!resuming) {
+      setSeconds(0);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    }
   };
+
+  /**
+   * Rejoin a live session that dropped (or is about to) using its resumption
+   * handle, so a socket failure mid-test does not cost the candidate the test.
+   */
+  const resumeLive = useCallback(async (handle?: string) => {
+    if (!aliveRef.current || liveResumingRef.current) return;
+    const h = handle || liveSessionRef.current?.resumeHandle || liveResumeRef.current;
+    if (!h) return;
+    liveResumingRef.current = true;
+    liveReconnectsRef.current += 1;
+    liveResumeRef.current = h;
+    try {
+      stopLive();
+      await startLiveSessionRef.current(modeRef.current, examPartRef.current, h);
+    } catch (e) {
+      console.warn("[speaking] live resume failed:", (e as Error)?.message || e);
+      if (!aliveRef.current) return;
+      setError("Jonli rejim uzildi — oddiy rejimda davom etadi.");
+      setPhase("idle");
+    } finally {
+      liveResumingRef.current = false;
+    }
+  }, [stopLive]);
+
+  startLiveSessionRef.current = startLiveSession;
+  resumeLiveRef.current = resumeLive;
 
   useEffect(() => {
     aliveRef.current = true;
@@ -493,6 +854,7 @@ function SpeakingPartnerContent() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+      if (longTurnTimerRef.current) clearInterval(longTurnTimerRef.current);
       if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
       audioCtxRef.current?.close().catch(() => {});
     };
@@ -671,10 +1033,21 @@ function SpeakingPartnerContent() {
     userBlobsRef.current = [];
     turnDurationsRef.current = [];
     evalsRef.current = [];
+    livePcmRef.current = [];
+    livePcmLenRef.current = 0;
     pendingEvalIdxRef.current = -1;
     lastPronRef.current = "";
     draftTranscriptRef.current = "";
     setLiveDraft("");
+    // Part 2 long turn state from any previous run in this tab.
+    if (longTurnTimerRef.current) clearInterval(longTurnTimerRef.current);
+    longTurnTimerRef.current = null;
+    longTurnActiveRef.current = false;
+    prepActiveRef.current = false;
+    cuePrepPendingRef.current = false;
+    longTurnSecondsLeftRef.current = PART2_TALK_SECONDS;
+    setLongTurnSeconds(PART2_TALK_SECONDS);
+    setPrepSeconds(PART2_PREP_SECONDS);
     firstTurnRef.current = true;
     silenceStrikesRef.current = 0;
     memorySyncedRef.current = false;
@@ -725,6 +1098,8 @@ function SpeakingPartnerContent() {
         setIsLive(false);
         stopLive();
         const msg = (e as Error)?.message || "";
+        // The legacy pipeline is ~10x slower — never hide why we landed here.
+        console.warn("[speaking] live mode failed, using legacy pipeline:", msg || e);
         if (msg.includes("Trial limit") || msg.includes("402")) {
           setUpgradeNeeded(true);
           return;
@@ -734,18 +1109,39 @@ function SpeakingPartnerContent() {
           void apiDelete("/api/speaking/live-token").catch(() => {});
         }
         if (!aliveRef.current) return;
+        setMicHint("Jonli rejim ulanmadi — sekin rejimda ishlayapti. (Console'da '[speaking]' qidiruvini tekshiring)");
       }
     }
 
     const firstName = profile?.full_name ? profile.full_name.split(" ")[0] : "";
+    const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    const name = firstName ? ", " + firstName : "";
     let greeting =
       m === "exam"
         ? startPart === 2
-          ? `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}. We'll go straight to Part 2. You have one minute to prepare, then speak for one to two minutes. Your topic is: ${FALLBACK_CUE.topic}`
+          ? pick([
+              `Good afternoon${name}. I'm ${partnerName}. We'll go straight to Part 2. You have one minute to prepare, then speak for one to two minutes. Your topic is: ${FALLBACK_CUE.topic}`,
+              `Hello${name}, take a seat. I'm ${partnerName}. We're starting at Part 2 today — one minute to prepare, then you speak for up to two minutes. Here is your topic: ${FALLBACK_CUE.topic}`,
+              `Good afternoon${name}. ${partnerName} here. Straight into Part 2: prepare for one minute, then talk for one to two minutes. The topic: ${FALLBACK_CUE.topic}`,
+            ])
           : startPart === 3
-          ? `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}. Let's go straight to Part 3. Why do you think some people are more influential in society than others?`
-          : `Good afternoon${firstName ? ", " + firstName : ""}. I'm ${partnerName}, your examiner today. Let's begin with Part 1. Could you tell me your full name, please?`
-        : `Hey${firstName ? " " + firstName : ""}, it's ${partnerName}. Ready to work? Tell me — what did you actually do today?`;
+          ? pick([
+              `Good afternoon${name}. I'm ${partnerName}. Let's go straight to Part 3. Why do you think some people are more influential in society than others?`,
+              `Hello${name}, I'm ${partnerName}. We're jumping into Part 3 — deeper questions today. First: do you think technology has changed how people make friends?`,
+              `Good afternoon${name}. ${partnerName} speaking. Part 3 only today. Let's start with this: what makes a good neighbour?`,
+            ])
+          : pick([
+              `Good afternoon${name}. I'm ${partnerName}, your examiner today. Let's begin with Part 1. Could you tell me your full name, please?`,
+              `Hello${name}, please sit down. I'm ${partnerName} and I'll be examining you today. Let's start — what's your full name?`,
+              `Good afternoon${name}. My name is ${partnerName}. Shall we begin? Tell me — do you work, or are you a student?`,
+              `Hi${name}, come in. I'm ${partnerName}. We'll start with a few questions about you — where are you from?`,
+            ])
+        : pick([
+            `Hey${firstName ? " " + firstName : ""}, it's ${partnerName}. Ready to work? Tell me — what did you actually do today?`,
+            `Look who's back${firstName ? " — " + firstName : ""}! ${partnerName} here. No warm-up today — tell me something interesting that happened this week.`,
+            `Hey${firstName ? " " + firstName : ""}. ${partnerName}. Quick question before anything else — what's one thing you want to get better at this week?`,
+            `${firstName ? firstName + "! " : ""}Good to hear you. It's ${partnerName}. Talk to me — how's the studying going, honestly?`,
+          ]);
     let emo: StudioEmotion = m === "exam" ? "neutral" : "happy";
     let greetingCue: StudioCueCard | null = null;
 
@@ -1075,6 +1471,12 @@ function SpeakingPartnerContent() {
     setIsLive(false);
     stopAudio();
     if (prepTimerRef.current) clearInterval(prepTimerRef.current);
+    if (longTurnTimerRef.current) clearInterval(longTurnTimerRef.current);
+    longTurnTimerRef.current = null;
+    longTurnActiveRef.current = false;
+    prepActiveRef.current = false;
+    cuePrepPendingRef.current = false;
+    stopDraftRecognition();
     if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
     releaseStream();
     setPhase("report_loading");
@@ -1091,20 +1493,42 @@ function SpeakingPartnerContent() {
       const evals = evalsRef.current;
       form.append("evals", JSON.stringify(evals));
       const userTurnCount = turnsRef.current.filter((t) => t.role === "user").length;
+      // Live mode captured the candidate's gated speech as PCM — send it as
+      // one WAV so the report hears real pronunciation, pace and pauses.
+      const wav = pcmChunksToWavBlob(livePcmRef.current);
+      if (wav) form.append("audio", wav, "session.wav");
       if (evals.length < userTurnCount * 0.8) {
         userBlobsRef.current.forEach((b, i) => form.append("audio", b, `turn-${i}.webm`));
       }
       form.append("durations", JSON.stringify(turnDurationsRef.current));
-      const res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
+      // One silent retry. This is the payoff of a 15-minute test, and the
+      // failure that loses it is almost always a transient upstream blip —
+      // the candidate should never have to discover that the "Hisobot" button
+      // is what rescues their session.
+      let res: StudioReport | null = null;
+      let firstErr: unknown = null;
+      for (let attempt = 0; attempt < 2 && aliveRef.current; attempt++) {
+        try {
+          res = await apiPostForm<StudioReport>("/api/speaking/partner/report", form);
+          break;
+        } catch (e) {
+          firstErr = firstErr ?? e;
+          if (attempt === 0) await new Promise((r) => setTimeout(r, 2500));
+        }
+      }
       if (!aliveRef.current) return;
+      if (!res) throw firstErr ?? new Error("Hisobot tayyorlanmadi.");
       setReport(res);
       setPhase("report");
     } catch (e: unknown) {
       if (!aliveRef.current) return;
-      setError((e as Error)?.message || "Hisobot tayyorlashda xatolik.");
+      const msg = (e as Error)?.message || "Hisobot tayyorlashda xatolik.";
+      // The transcript, scores and audio are all still in memory, so the
+      // "Hisobot" button really can recover this — say so.
+      setError(`${msg} Suhbatingiz saqlanib turibdi — "Hisobot" tugmasini qayta bosing.`);
       setPhase("idle");
     }
-  }, [partnerName, syncMemory, releaseStream, stopAudio, stopLive]);
+  }, [partnerName, syncMemory, releaseStream, stopAudio, stopLive, stopDraftRecognition]);
   generateReportRef.current = generateReport;
 
   const exitSession = useCallback(() => {
@@ -1195,7 +1619,11 @@ function SpeakingPartnerContent() {
       form.append("draft_transcript", draftTranscriptRef.current.slice(0, 1500));
     }
     if (lastPronRef.current) {
-      form.append("pronunciation_notes", lastPronRef.current.slice(0, 400));
+      // In an exam the examiner never voices corrections — the note stays
+      // for the report only, so it is not forwarded into the next prompt.
+      if (modeRef.current !== "exam") {
+        form.append("pronunciation_notes", lastPronRef.current.slice(0, 400));
+      }
       lastPronRef.current = "";
     }
     form.append("turn_duration", String(turnDurationsRef.current.at(-1) || 0));
@@ -1299,7 +1727,8 @@ function SpeakingPartnerContent() {
               if (ev && ev.pronunciation == null) ev.pronunciation = pronBand;
             }
             const idx = userIndex;
-            if (idx < 0 || (!a.correction && !a.vocab_tip)) return;
+            // Exam mode: corrections stay invisible until the final report.
+            if (idx < 0 || modeRef.current === "exam" || (!a.correction && !a.vocab_tip)) return;
             setTurns((prev) =>
               prev.map((t, i) =>
                 i === idx && t.role === "user"
@@ -1442,6 +1871,7 @@ function SpeakingPartnerContent() {
       onlyPart={onlyPart}
       cueCard={cueCard}
       prepSeconds={prepSeconds}
+      longTurnSeconds={longTurnSeconds}
       seconds={seconds}
       error={error}
       chatEndRef={chatEndRef}
@@ -1463,11 +1893,14 @@ function SpeakingPartnerContent() {
         prepTimerRef.current = null;
         prepActiveRef.current = false;
         if (isLiveRef.current) {
-          setPhase("listening");
+          // Ready early: start the timed two-minute long turn now.
+          if (modeRef.current === "exam") startLongTurn();
+          else setPhase("listening");
           return;
         }
         void startRecording();
       }}
+      onEndLongTurn={endLongTurn}
       onGenerateReport={() => void generateReport()}
       onExit={exitSession}
       userAnswerCount={turns.filter((t) => t.role === "user").length}

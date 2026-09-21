@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getModel, parseJSONFromText } from "@/lib/gemini";
-import { getAuth, checkAndDecrementTrial, refundTrial, updateSpeakingProgress } from "@/lib/supabaseServer";
+import {
+  parseJSONFromText,
+  generateWithFallback,
+  QuotaError,
+  LIVE_MODEL_CHAIN,
+} from "@/lib/gemini";
+import {
+  getAuth,
+  checkAndDecrementTrial,
+  refundTrial,
+  updateSpeakingProgress,
+  trialDenied,
+} from "@/lib/supabaseServer";
+import { rateLimit, clientIp } from "@/lib/rateLimit";
 
 const EVAL_MODEL = process.env.EVAL_MODEL || "gemini-3.6-flash";
+const EVAL_MODELS = [EVAL_MODEL, ...LIVE_MODEL_CHAIN.filter((m) => m !== EVAL_MODEL)];
+// One spoken answer. Anything beyond this is not a Part 1-3 response.
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+
+/** Never let a refund be the reason a request dies. */
+async function safeRefund(supabase: any, trial: any) {
+  try {
+    await refundTrial(supabase, trial);
+  } catch (e) {
+    console.error("refundTrial failed (speaking evaluate):", e);
+  }
+}
 
 function roundHalf(n: number): number {
   if (typeof n !== "number" || isNaN(n)) return 0;
@@ -30,16 +54,32 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File;
-    const question = formData.get("question") as string;
-    const part = parseInt(formData.get("part") as string);
+    const question = ((formData.get("question") as string) || "").slice(0, 1000);
+    // A missing or malformed part used to become NaN and be written straight
+    // into the results row, where the database rejected it.
+    const parsedPart = parseInt((formData.get("part") as string) || "", 10);
+    const part = parsedPart === 1 || parsedPart === 2 || parsedPart === 3 ? parsedPart : 1;
 
     if (!audioFile) {
       return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
     }
+    if (!audioFile.size) {
+      return NextResponse.json({ error: "Yozuv bo'sh. Qayta urinib ko'ring." }, { status: 400 });
+    }
+    if (audioFile.size > MAX_AUDIO_BYTES) {
+      return NextResponse.json({ error: "Yozuv juda katta." }, { status: 413 });
+    }
+    if (rateLimit(`speak-eval-ip:${clientIp(req)}`, 20, 10 * 60_000)) {
+      return NextResponse.json(
+        { error: "Juda ko'p so'rov. Biroz kutib qayta urinib ko'ring." },
+        { status: 429 }
+      );
+    }
 
     const trial = await checkAndDecrementTrial(req, "speaking");
     if (!trial.ok) {
-      return NextResponse.json({ error: "Trial limit reached. Please upgrade to Pro." }, { status: 402 });
+      const denied = trialDenied(trial);
+      return NextResponse.json({ error: denied.error }, { status: denied.status });
     }
 
     const { supabase, user } = await getAuth(req);
@@ -67,10 +107,9 @@ export async function POST(req: NextRequest) {
       console.warn("evaluation_jobs creation threw:", jobErr?.message || jobErr);
     }
 
-    const model = getModel(EVAL_MODEL, true);
-
     const audioBytes = await audioFile.arrayBuffer();
     const audioBase64 = Buffer.from(audioBytes).toString("base64");
+    const audioMime = audioFile.type || "audio/webm";
 
     const partGuidance =
       part === 1
@@ -119,21 +158,26 @@ Return ONLY valid JSON:
   "feedback": "Honest, encouraging summary: level now, single biggest fix, how to reach a higher band | O'zbekcha: ..."
 }`;
 
+    // One definition for both the background and synchronous paths, so they
+    // cannot drift apart. Parse validation is part of the attempt: a truncated
+    // response retries on the next model rather than failing the evaluation.
+    const evaluate = async () => {
+      const text = await generateWithFallback(
+        [{ text: prompt }, { inlineData: { mimeType: audioMime, data: audioBase64 } }],
+        {
+          models: EVAL_MODELS,
+          validate: (t) => {
+            parseJSONFromText(t);
+          },
+        }
+      );
+      return parseJSONFromText(text);
+    };
+
     // Run AI evaluation in background after response is sent
     runInBackground(async () => {
       try {
-        const result = await model.generateContent([
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: audioFile.type || "audio/webm",
-              data: audioBase64,
-            },
-          },
-        ]);
-
-        const text = result.response.text();
-        const feedback = parseJSONFromText(text);
+        const feedback = await evaluate();
 
         // Normalize bands to valid IELTS half-bands.
         feedback.fluency_coherence = roundHalf(feedback.fluency_coherence);
@@ -201,7 +245,7 @@ Return ONLY valid JSON:
             .eq("id", jobId);
         }
         // Give the trial attempt back since the evaluation never completed.
-        await refundTrial(supabase, trial);
+        await safeRefund(supabase, trial);
       }
     });
 
@@ -212,18 +256,7 @@ Return ONLY valid JSON:
 
     // Fallback: evaluate synchronously if job table doesn't exist
     try {
-      const result = await model.generateContent([
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: audioFile.type || "audio/webm",
-            data: audioBase64,
-          },
-        },
-      ]);
-
-      const text = result.response.text();
-      const feedback = parseJSONFromText(text);
+      const feedback = await evaluate();
       feedback.fluency_coherence = roundHalf(feedback.fluency_coherence);
       feedback.lexical_resource = roundHalf(feedback.lexical_resource);
       feedback.grammatical_range = roundHalf(feedback.grammatical_range);
@@ -266,8 +299,16 @@ Return ONLY valid JSON:
       });
     } catch (syncErr: any) {
       console.error("Synchronous speaking evaluation error:", syncErr);
-      await refundTrial(supabase, trial);
-      return NextResponse.json({ error: syncErr.message || "Evaluation failed" }, { status: 500 });
+      await safeRefund(supabase, trial);
+      const quota = syncErr instanceof QuotaError;
+      return NextResponse.json(
+        {
+          error: quota
+            ? "AI xizmati hozircha band (limit). Urinishingiz qaytarildi — bir ozdan keyin qayta urinib ko'ring."
+            : "Baholashda xatolik. Urinishingiz qaytarildi — qayta urinib ko'ring.",
+        },
+        { status: quota ? 503 : 500 }
+      );
     }
   } catch (error: any) {
     console.error("Speaking evaluation error:", error);

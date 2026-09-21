@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateWithFallback, parseJSONFromText } from "@/lib/gemini";
 import { getAuth } from "@/lib/supabaseServer";
 import { appendSpeakingMemory, loadSpeakingMemory } from "@/lib/speakingMemory";
+import { evalTurn } from "@/lib/speaking/agents";
 
 // Off-critical-path analysis of one user turn. Runs on a small, fast text
 // model while the examiner's voice is already playing, so it never delays the
@@ -27,7 +28,13 @@ export async function POST(req: NextRequest) {
     const transcript = String(body?.transcript || "").slice(0, 2000).trim();
     const question = String(body?.question || "").slice(0, 400);
     const mode = body?.mode === "exam" ? "exam" : "chat";
-    if (!transcript) return NextResponse.json({ correction: null, vocab_tip: null });
+    const part = Math.min(3, Math.max(1, Number(body?.part) || 1));
+    const duration = Math.max(0, Number(body?.duration) || 0);
+    if (!transcript) return NextResponse.json({ correction: null, vocab_tip: null, eval: null });
+
+    // The Scorer runs in parallel — every answer gets a background band
+    // estimate that the end-of-test report merges in.
+    const evalPromise = evalTurn(transcript, question, part, duration).catch(() => null);
 
     const prompt = `You are an IELTS speaking coach reviewing ONE spoken answer from an Uzbek learner of English.
 Question they answered: "${question || "(unknown)"}"
@@ -53,7 +60,7 @@ Rules: only flag mistakes that are clearly present in the words above — never 
       });
       parsed = parseJSONFromText(raw);
     } catch {
-      return NextResponse.json({ correction: null, vocab_tip: null });
+      return NextResponse.json({ correction: null, vocab_tip: null, eval: await evalPromise });
     }
 
     const correction =
@@ -85,7 +92,7 @@ Rules: only flag mistakes that are clearly present in the words above — never 
       await appendSpeakingMemory(supabase, user.id, memory, delta).catch(() => {});
     }
 
-    return NextResponse.json({ correction, vocab_tip });
+    return NextResponse.json({ correction, vocab_tip, eval: await evalPromise });
   } catch (e) {
     console.error("analyze error:", e);
     return NextResponse.json({ correction: null, vocab_tip: null });
