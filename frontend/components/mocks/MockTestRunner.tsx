@@ -13,7 +13,6 @@ import {
   RotateCcw,
   Headphones,
   BookOpen,
-  Gamepad2,
   Clock,
   CheckCircle2,
   XCircle,
@@ -420,11 +419,6 @@ export function MockTestRunner({ kind, testId }: { kind: Kind; testId: string })
         ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/game" className="flex-1">
-            <Button variant="outline" className="w-full">
-              <Gamepad2 className="mr-2 h-4 w-4" /> Play Word Games
-            </Button>
-          </Link>
           <Button variant="outline" className="flex-1" onClick={retry}>
             <RotateCcw className="mr-2 h-4 w-4" /> Try Again
           </Button>

@@ -16,7 +16,6 @@ import {
   Crown,
   GraduationCap,
   ExternalLink,
-  Gamepad2,
   ChevronDown,
   type LucideIcon,
 } from "lucide-react";
@@ -52,7 +51,6 @@ const nav: NavItem[] = [
     ],
   },
   { label: "Speaking", href: "/speaking", icon: Mic },
-  { label: "Games", href: "/game", icon: Gamepad2 },
   { label: "Vocabulary", href: "/vocabulary", icon: Library },
   { label: "Progress", href: "/progress", icon: TrendingUp },
 ];
