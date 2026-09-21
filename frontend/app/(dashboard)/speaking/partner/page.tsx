@@ -520,6 +520,7 @@ function SpeakingPartnerContent() {
     }>("/api/speaking/live-token", {
       mode: m,
       part: startPart,
+      only_part: onlyPartRef.current,
       partner_name: partnerName,
       user_name: profile?.full_name || "",
       harsh: harshRef.current,

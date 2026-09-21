@@ -59,6 +59,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const mode = body?.mode === "exam" ? "exam" : "chat";
     const startPart = Math.min(3, Math.max(1, Number(body?.part) || 1));
+    // Single-part drill (Practice Part N) — the examiner must not advance past it.
+    const onlyPart =
+      mode === "exam" && [1, 2, 3].includes(Number(body?.only_part))
+        ? Number(body.only_part)
+        : null;
     const partnerName = String(body?.partner_name || "Adam").slice(0, 40);
     const userName = String(body?.user_name || "").slice(0, 60);
     const harsh = body?.harsh === true || body?.harsh === "1";
@@ -80,7 +85,8 @@ export async function POST(req: NextRequest) {
       userName,
       memory,
       startPart,
-      harsh
+      harsh,
+      onlyPart
     );
 
     // NOTE on shape: responseModalities and speechConfig belong INSIDE
